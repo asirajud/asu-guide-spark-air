@@ -296,7 +296,7 @@ export function NotebookView({
                   </p>
                 </div>
               ) : (
-                <ul className="flex flex-col">
+                <ul className="thin-scroll -mx-1 flex max-h-[296px] flex-col overflow-y-auto px-1">
                   {nb.pages.map((p) => (
                     <PageRow
                       key={p.position}
