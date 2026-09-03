@@ -366,12 +366,12 @@ export function Chat({
           {isEmpty ? (
             <div className="flex h-full flex-col items-center justify-center pb-24">
               <Image
-                src="/sparky.png"
+                src="/mark.png"
                 alt=""
-                width={156}
-                height={310}
+                width={64}
+                height={64}
                 priority
-                className="h-[64px] w-auto drop-shadow-[0_0_18px_rgba(255,198,39,0.25)]"
+                className="size-[64px] drop-shadow-[0_0_18px_rgba(255,198,39,0.25)]"
               />
               <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
                 {asurite

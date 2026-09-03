@@ -7,3 +7,7 @@
 
 Real measured latencies, if the illustration is ever re-annotated: speech 0.4s ·
 image 1.8s · chat 1.7s · titles 0.3s · rerank 0.15s.
+
+## App mark
+
+`../asu-guide/public/mark.png` — the constellation sparkle used in the empty state and side nav. Generated on AIR with `flux-2` (512×512, prompt: four-point sparkle of interconnected nodes, gold #FFC627 with a maroon #8C1D40 core), background keyed out. The other two candidates from the same run are in `logo-candidates/`. `pitchfork.png` is ASU's registered athletics mark, kept for reference only; it is not used in the app.
