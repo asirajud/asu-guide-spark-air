@@ -162,7 +162,7 @@ export function NotebookView({
   /** A nudged note becomes the student's next chat turn, framed the way they asked, and is struck through. */
   function nudge(note: StickyNote) {
     if (!hasRead || nb.asking) return
-    void nb.ask(`${NUDGE_PREFIX}\n\n${note.text}`)
+    void nb.ask(`${NUDGE_PREFIX}\n\n${note.text}`, { source: 'sticky', display: note.text })
     sticky.markDone(note.id)
   }
 
@@ -354,9 +354,21 @@ export function NotebookView({
               <div className="mt-3 flex flex-col gap-7">
                 {nb.turns.map((t) =>
                   t.role === 'user' ? (
-                    <div key={t.id} className="flex justify-end">
-                      <p className="bg-surface-2 text-fg max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">
-                        {t.content}
+                    <div key={t.id} className="flex flex-col items-end gap-1.5">
+                      {t.source === 'sticky' && (
+                        <span className="flex items-center gap-1.5 pr-2 text-[12.5px] tracking-[0.02em] text-[#ffc627]/90">
+                          <span aria-hidden className="size-1.5 rounded-full bg-[#ffc627]" />
+                          From your sticky notes · asked Sol to help answer
+                        </span>
+                      )}
+                      <p
+                        className={`text-fg max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em] whitespace-pre-wrap ${
+                          t.source === 'sticky'
+                            ? 'border border-[#ffc627]/25 bg-[#ffc627]/[0.07]'
+                            : 'bg-surface-2'
+                        }`}
+                      >
+                        {t.display ?? t.content}
                       </p>
                     </div>
                   ) : (

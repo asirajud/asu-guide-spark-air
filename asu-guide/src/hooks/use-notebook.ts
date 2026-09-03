@@ -32,6 +32,10 @@ export type NotebookTurn = {
   role: 'user' | 'assistant'
   content: string
   meta?: { model: string; ms: number }
+  /** 'sticky' when the turn was nudged in from the sticky board, so the UI can say so. */
+  source?: 'sticky'
+  /** For a sticky turn: the note as written, without the framing sent to the model. */
+  display?: string
 }
 export type IngestProgress = { done: number; total: number; current: number | null }
 export type QueuedPage = { imageName: string; previewUrl: string }
@@ -254,7 +258,7 @@ export function useNotebook(id: string | null) {
   }, [ingesting, queued.length, runBatch])
 
   const ask = useCallback(
-    async (question: string) => {
+    async (question: string, opts?: { source: 'sticky'; display: string }) => {
       const q = question.trim()
       if (!q || !id || asking) return
 
@@ -262,6 +266,7 @@ export function useNotebook(id: string | null) {
         id: crypto.randomUUID(),
         role: 'user',
         content: q,
+        ...(opts ? { source: opts.source, display: opts.display } : {}),
       }
 
       setTurns((prev) => [...prev, userTurn])
