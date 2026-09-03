@@ -20,7 +20,7 @@ type ChatMessage = {
 }
 
 function contextualise(m: Incoming): ChatMessage {
-  if (m.role === 'assistant' && m.kind === 'vision') {
+  if (m.role === 'assistant' && (m.kind === 'vision' || m.kind === 'media')) {
     return {
       role: 'assistant',
       content: `[Media the student shared earlier, as read by an ASU AIR vision or speech model]: ${m.content}`,
@@ -39,7 +39,8 @@ Be concise: one to three short sentences unless the student asks for detail. Nev
   }
   prompt += `\n[Media the student shared earlier, as read by an ASU AIR vision or speech model]: `
   if (hasTools) {
-    prompt += `\nYou have tools for finding real ASU events. Call search_events whenever the student asks what is on, what to do, or about anything happening on campus — never answer from memory, because you do not have the event calendar in your context. Call reserve_spot only when the student clearly asks to be signed up for a specific event, and only when you know their ASURITE. Never invent an event, a date, a location or an event id: every id you pass to another tool must have come back from search_events in this conversation. When a tool returns an error naming a field, fix that field and call it again rather than apologising to the student.`
+    prompt += `\nYou have tools for finding real ASU events. Call search_events whenever the student asks what is on, what to do, or about anything happening on campus — never answer from memory, because you do not have the event calendar in your context. Call reserve_spot only when the student clearly asks to be signed up for a specific event, and only when you know their ASURITE. Never invent an event, a date, a location or an event id: every id you pass to another tool must have come back from search_events in this conversation. When a tool returns an error naming a field, fix that field and call it again rather than apologising to the student.
+When a turn marked [Media the student shared earlier] describes an event flyer or poster, that IS the event the student means: immediately call search_events with its title and club, then act on the best match. If the student asks to be signed up and nobody is signed in, still run the search and show the event, then say they need to sign in before you can reserve. If the search finds nothing close, say the event is not on the campus calendar and point them at the flyer's own instructions.`
     prompt += `\nA reservation made with reserve_spot is a demo record in this app's own database: it does not contact Sun Devil Central, no seat is actually held, and nothing is emailed. Never tell the student to expect a confirmation email, a text, a calendar invite or a link to join, and never say a spot has been held with the club or with ASU. Say that you have noted the RSVP here, and point them at the event's own page to sign up for real.`
   } else {
     prompt += `\nYou have no access to the live event calendar right now, so say plainly that you cannot look events up rather than guessing.`
