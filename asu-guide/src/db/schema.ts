@@ -146,3 +146,13 @@ export const featureSettings = sqliteTable('feature_settings', {
 })
 
 export type FeatureSettingRow = typeof featureSettings.$inferSelect
+
+/** Small scalar settings an admin edits from /s/admin (e.g. notebook page cap). Key/value, string-typed. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type AppSettingRow = typeof appSettings.$inferSelect

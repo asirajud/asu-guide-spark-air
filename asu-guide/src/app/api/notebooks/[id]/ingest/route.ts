@@ -12,7 +12,8 @@ import { featureGate } from '@/lib/features'
 import { safeError } from '@/lib/api-error'
 import { airFetch, callAir } from '@/lib/air/call'
 import { THINKING_OFF } from '@/lib/air/models'
-import { addPage, getNotebook, nextPosition, setDigest } from '@/lib/notebooks'
+import { addPage, getNotebook, nextPosition, renameNotebook, setDigest } from '@/lib/notebooks'
+import { getNotebookPageCap } from '@/lib/app-settings'
 import {
   DIGEST_MAX_TOKENS,
   PAGE_READER_MAX_TOKENS,
@@ -23,7 +24,6 @@ import {
 export const runtime = 'nodejs'
 export const maxDuration = 300
 
-const MAX_PAGES = 20
 // The gateway 413s above roughly 3MB of base64 (~2.2MB of bytes). The client
 // downscales first; this is the backstop, applied per page so one oversized
 // photo does not sink the whole upload.
@@ -41,6 +41,7 @@ export type IngestEvent =
       error?: string
     }
   | { type: 'digest'; position: number; digest: string; model: string; ms: number }
+  | { type: 'renamed'; name: string; model: string }
   | { type: 'done'; pages: number; digest: string }
   | { type: 'error'; error: string }
 
@@ -72,8 +73,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (files.length === 0) {
     return NextResponse.json({ error: 'No page images supplied.' }, { status: 400 })
   }
-  if (files.length > MAX_PAGES) {
-    return NextResponse.json({ error: `At most ${MAX_PAGES} pages per upload.` }, { status: 400 })
+  // The cap is per notebook, not per upload: the client queues more pages while
+  // a batch is being read, so what matters is how many the notebook will hold.
+  const cap = getNotebookPageCap()
+  const room = cap - found.pages.length
+  if (files.length > room) {
+    return NextResponse.json(
+      {
+        error:
+          room <= 0
+            ? `This notebook already holds its maximum of ${cap} pages.`
+            : `This notebook holds at most ${cap} pages; only ${room} more can be added.`,
+      },
+      { status: 400 },
+    )
   }
 
   const encoder = new TextEncoder()
@@ -82,7 +95,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const emit = (ev: IngestEvent) =>
         controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'))
       try {
-        await ingest(id, files, found.notebook.digest, emit)
+        await ingest(
+          {
+            id,
+            asurite: session.asurite,
+            name: found.notebook.name,
+            digest: found.notebook.digest,
+          },
+          files,
+          emit,
+        )
       } catch (err) {
         emit({
           type: 'error',
@@ -107,13 +129,60 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   })
 }
 
+const DEFAULT_NAME = 'New notebook'
+
+/** Name a still-unnamed notebook from its first digest, the way chats are titled from their opener. */
+async function autoTitle(digest: string): Promise<{ title: string; model: string } | null> {
+  try {
+    const { value, model } = await callAir('title', async (m) => {
+      const res = await airFetch(
+        '/chat/completions',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: m,
+            max_tokens: 24,
+            temperature: 0.3,
+            ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
+            messages: [
+              {
+                role: 'system',
+                content:
+                  'You name study notebooks. Reply with a title of 2 to 5 words in Title Case naming the subject, like a course or topic. No quotes, no punctuation at the end, no preamble.',
+              },
+              {
+                role: 'user',
+                content: `Title this notebook from its notes:\n\n${digest.slice(0, 1200)}`,
+              },
+            ],
+          }),
+        },
+        12_000,
+      )
+      const data = (await res.json()) as { choices?: { message?: { content?: string | null } }[] }
+      const title = (data.choices?.[0]?.message?.content ?? '')
+        .replace(/^["'\s]+|["'\s.]+$/g, '')
+        .split('\n')[0]
+        .slice(0, 60)
+        .trim()
+      if (!title) throw new Error(`${m} returned an empty title`)
+      return title
+    })
+    return { title: value, model }
+  } catch {
+    return null
+  }
+}
+
 async function ingest(
-  notebookId: string,
+  nb: { id: string; asurite: string; name: string; digest: string },
   files: File[],
-  startingDigest: string,
   emit: (ev: IngestEvent) => void,
 ) {
-  let digest = startingDigest
+  const notebookId = nb.id
+  let name = nb.name
+  let digest = nb.digest
   let position = await nextPosition(notebookId)
 
   for (const file of files) {
@@ -252,6 +321,14 @@ async function ingest(
         digest = merged.value
         await setDigest(notebookId, digest, merged.model)
         emit({ type: 'digest', position, digest, model: merged.model, ms: merged.ms })
+
+        if (name === DEFAULT_NAME) {
+          const titled = await autoTitle(digest)
+          if (titled && (await renameNotebook(notebookId, nb.asurite, titled.title))) {
+            name = titled.title
+            emit({ type: 'renamed', name, model: titled.model })
+          }
+        }
       } catch (err) {
         console.warn(`[notebooks/ingest] digest merge failed at page ${position}: ${err}`)
       }

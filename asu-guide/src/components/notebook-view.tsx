@@ -123,11 +123,18 @@ export function NotebookView({
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const n = nb.pages.length
+  const total = n + nb.queued.length
+  const full = total >= nb.cap
   const hasRead = nb.pages.some((p) => p.status === 'read')
 
   useEffect(() => {
     if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
   }, [nb.asking, nb.turns.length])
+
+  // The server names a "New notebook" from its first digest; tell the shell so the nav updates.
+  useEffect(() => {
+    if (nb.renamedTo) onRenamed?.(nb.renamedTo)
+  }, [nb.renamedTo, onRenamed])
 
   async function confirmRemove() {
     setDeleting(true)
@@ -200,9 +207,10 @@ export function NotebookView({
             />
             <p className="text-muted text-[13px]">
               Notebook · {n} {n === 1 ? 'page' : 'pages'}
-              {nb.ingesting &&
-                nb.progress &&
-                ` · reading page ${nb.progress.current} of ${nb.progress.total}`}
+              {nb.ingesting && nb.progress?.current && (
+                <span className="text-[#ffc627]"> · reading page {nb.progress.current}</span>
+              )}
+              {nb.queued.length > 0 && ` · ${nb.queued.length} queued`}
             </p>
           </div>
           <button
@@ -224,12 +232,16 @@ export function NotebookView({
           right={
             <button
               type="button"
-              disabled={nb.ingesting}
+              disabled={full}
+              title={full ? `This notebook holds at most ${nb.cap} pages` : undefined}
               onClick={() => fileRef.current?.click()}
               className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-1.5 text-[13.5px] transition-colors hover:bg-white/5 disabled:opacity-40"
             >
               <Plus className="size-3.5" />
               Add pages
+              <span className="text-muted tabular-nums">
+                {total}/{nb.cap}
+              </span>
             </button>
           }
         >
@@ -249,7 +261,7 @@ export function NotebookView({
             }}
             className={`mt-3 rounded-3xl border border-dashed p-4 transition-colors ${dragging ? 'border-[#ffc627]/60 bg-[#ffc627]/5' : 'border-white/12'}`}
           >
-            {nb.pages.length === 0 && !nb.ingesting ? (
+            {total === 0 && !nb.ingesting ? (
               <div className="flex flex-col items-center gap-2 py-4">
                 <PhotoStack className="size-8 text-muted" />
                 <p className="text-muted text-center text-[14px]">
@@ -265,6 +277,22 @@ export function NotebookView({
                     page={p}
                     expanded={expanded === p.position}
                     onToggle={() => setExpanded(expanded === p.position ? null : p.position)}
+                  />
+                ))}
+                {nb.queued.map((q, i) => (
+                  <PageRow
+                    key={`queued-${n + i + 1}`}
+                    page={{
+                      position: n + i + 1,
+                      imageName: q.imageName,
+                      reading: '',
+                      status: 'queued',
+                      model: '',
+                      ms: 0,
+                      previewUrl: q.previewUrl,
+                    }}
+                    expanded={false}
+                    onToggle={() => {}}
                   />
                 ))}
               </ul>

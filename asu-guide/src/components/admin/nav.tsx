@@ -15,6 +15,12 @@ const SECTIONS = [
     href: '/s/admin/services',
     label: 'Services',
     hint: 'Tools the model can reach',
+    Icon: BriefIcon,
+  },
+  {
+    href: '/s/admin/notebooks',
+    label: 'Notebooks',
+    hint: 'Switch and page cap',
     Icon: NotebookIcon,
   },
 ]

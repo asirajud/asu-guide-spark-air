@@ -2,8 +2,6 @@ import { CAPABILITIES } from '@/lib/air/capabilities'
 import { MODELS } from '@/lib/air/models'
 import { readOverrides } from '@/lib/air/settings'
 import { SettingsPanel } from '@/components/admin/settings-panel'
-import { FeaturesPanel } from '@/components/admin/features-panel'
-import { readFeatures } from '@/lib/features'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,8 +30,6 @@ export default async function AdminSettings() {
       </p>
 
       <SettingsPanel capabilities={CAPABILITIES} initial={initial} />
-
-      <FeaturesPanel initial={readFeatures()} />
     </>
   )
 }

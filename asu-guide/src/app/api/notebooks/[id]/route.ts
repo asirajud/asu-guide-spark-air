@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { featureGate } from '@/lib/features'
 import { getNotebook, renameNotebook, deleteNotebook } from '@/lib/notebooks'
+import { getNotebookPageCap } from '@/lib/app-settings'
 
 export const runtime = 'nodejs'
 
@@ -19,6 +20,8 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (!found) return NextResponse.json({ error: 'No such notebook.' }, { status: 404 })
 
   return NextResponse.json({
+    /** Pages this notebook may hold in total; the client sizes its queue by it. */
+    cap: getNotebookPageCap(),
     notebook: {
       id: found.notebook.id,
       name: found.notebook.name,
