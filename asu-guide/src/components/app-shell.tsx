@@ -58,11 +58,24 @@ function writeStored(key: string, value: string | null) {
   }
 }
 
+/**
+ * Keep the address bar in step without a navigation: replaceState swaps the
+ * path and nothing re-renders or refetches, so the back button is not spammed
+ * with every chat switch either.
+ */
+function setUrl(path: string) {
+  if (typeof window !== 'undefined' && window.location.pathname !== path) {
+    window.history.replaceState(null, '', path)
+  }
+}
+
 export function AppShell({
   events,
   asurite,
   railInitiallyOpen = true,
   notebooksEnabled = false,
+  initialChat = null,
+  initialNotebook = null,
 }: {
   events: DemoEvent[]
   asurite: string | null
@@ -70,6 +83,9 @@ export function AppShell({
   railInitiallyOpen?: boolean
   /** Admin switch from /s/admin. Off hides the section and skips the fetch. */
   notebooksEnabled?: boolean
+  /** From the URL (`/c/<id>`, `/n/<id>`): what to open first instead of the remembered chat. */
+  initialChat?: string | null
+  initialNotebook?: string | null
 }) {
   const [chats, setChats] = useState<ChatSummary[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -118,12 +134,21 @@ export function AppShell({
       if (cancelled) return
       setChats(list)
 
-      // Only restore a conversation that still exists and still belongs here.
-      const last = readStored(activeKey(asurite))
-      if (last && list.some((c) => c.id === last)) {
-        void select(last)
-      } else if (last) {
-        writeStored(activeKey(asurite), null)
+      // The URL wins over the remembered chat, so a shared or refreshed
+      // /c/<id> opens that chat. Only restore a conversation that still exists
+      // and still belongs here; a foreign id lands on an empty chat at `/`.
+      if (initialNotebook && notebooksEnabled) {
+        openNotebookById(initialNotebook)
+      } else if (initialChat && list.some((c) => c.id === initialChat)) {
+        void select(initialChat)
+      } else {
+        if (initialChat || initialNotebook) setUrl('/')
+        const last = readStored(activeKey(asurite))
+        if (last && list.some((c) => c.id === last)) {
+          void select(last)
+        } else if (last) {
+          writeStored(activeKey(asurite), null)
+        }
       }
 
       // Refresh notebooks if asurite is non-null
@@ -136,6 +161,7 @@ export function AppShell({
   }, [asurite])
 
   function newChat() {
+    setUrl('/')
     setPreview(null)
     setOpenNotebook(null)
     chatIdRef.current = null
@@ -182,6 +208,7 @@ export function AppShell({
           }
           writeStored(activeKey(asurite), id)
           setActiveId(id)
+          setUrl(`/c/${id}`)
           // Only a title generated in this session animates; restores do not.
           setJustTitled(id)
           return id
@@ -224,6 +251,7 @@ export function AppShell({
 
     chatIdRef.current = Promise.resolve(id)
     setActiveId(id)
+    setUrl(`/c/${id}`)
     setSessionKey((k) => k + 1)
     setRestoredTurns(
       data.messages.map((m) => ({
@@ -287,6 +315,7 @@ export function AppShell({
   function openNotebookById(id: string) {
     setPreview(null)
     setOpenNotebook(id)
+    setUrl(`/n/${id}`)
     setNavOpen(false)
   }
 
@@ -310,6 +339,7 @@ export function AppShell({
           openPreview={preview}
           onOpenPreview={(id) => {
             setPreview(id)
+            setUrl('/')
             setOpenNotebook(null)
             setNavOpen(false)
           }}
