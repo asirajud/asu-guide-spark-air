@@ -63,30 +63,29 @@ export function AttachSheet({
             </a>
           </div>
         ) : (
-        <div className="flex justify-center gap-3">
-          {actions.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onPick(id)}
-              className="flex w-[92px] flex-col items-center gap-2 rounded-2xl py-3 transition-colors hover:bg-white/5 active:scale-95"
-            >
-              <span className="flex size-14 items-center justify-center rounded-full bg-[#2a2b2c]">
-                <Icon className="text-fg size-[22px]" />
-              </span>
-              <span className="text-fg text-[13px]">{label}</span>
-            </button>
-          ))}
-        </div>
-
+          <div className="flex justify-center gap-3">
+            {actions.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onPick(id)}
+                className="flex w-[92px] flex-col items-center gap-2 rounded-2xl py-3 transition-colors hover:bg-white/5 active:scale-95"
+              >
+                <span className="flex size-14 items-center justify-center rounded-full bg-[#2a2b2c]">
+                  <Icon className="text-fg size-[22px]" />
+                </span>
+                <span className="text-fg text-[13px]">{label}</span>
+              </button>
+            ))}
+          </div>
         )}
 
         {!locked && (
-        <p className="text-muted mt-3 px-1 text-center text-[12px] leading-snug">
-          Images and video are read on ASU AIR — <span className="text-fg/80">gemma4-31b-it</span>,{' '}
-          <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
-          <span className="text-fg/80">qwen3-asr</span>.
-        </p>
+          <p className="text-muted mt-3 px-1 text-center text-[12px] leading-snug">
+            Images and video are read on ASU AIR — <span className="text-fg/80">gemma4-31b-it</span>
+            , <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
+            <span className="text-fg/80">qwen3-asr</span>.
+          </p>
         )}
       </div>
     </div>

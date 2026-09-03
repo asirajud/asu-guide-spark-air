@@ -53,7 +53,10 @@ function Prose({ text }: { text: string }) {
         if (bullet) {
           return (
             <span key={i} className="flex gap-2.5 py-[3px]">
-              <span aria-hidden className="text-muted mt-[9px] size-[5px] shrink-0 rounded-full bg-current" />
+              <span
+                aria-hidden
+                className="text-muted mt-[9px] size-[5px] shrink-0 rounded-full bg-current"
+              />
               <span className="min-w-0 flex-1">
                 <Inline text={bullet[1]} />
               </span>

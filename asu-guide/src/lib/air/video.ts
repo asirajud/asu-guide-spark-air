@@ -12,7 +12,10 @@ const SILENCE_FLOOR_DB = -45
 /** Clips shorter than this aren't worth transcribing. */
 const MIN_SPEECH_SECONDS = 0.8
 
-function run(bin: string, args: string[]): Promise<{ code: number; stderr: string; stdout: string }> {
+function run(
+  bin: string,
+  args: string[],
+): Promise<{ code: number; stderr: string; stdout: string }> {
   return new Promise((resolve, reject) => {
     const p = spawn(bin, args)
     let stderr = ''
@@ -54,10 +57,14 @@ export async function prepareVideo(file: File): Promise<PreparedVideo> {
     await writeFile(srcPath, Buffer.from(await file.arrayBuffer()))
 
     const probe = await run(FFPROBE, [
-      '-v', 'error',
-      '-show_entries', 'format=duration',
-      '-show_entries', 'stream=codec_type',
-      '-of', 'default=noprint_wrappers=1',
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-show_entries',
+      'stream=codec_type',
+      '-of',
+      'default=noprint_wrappers=1',
       srcPath,
     ])
     if (probe.code !== 0) throw new Error('That file could not be read as a video.')
@@ -67,10 +74,19 @@ export async function prepareVideo(file: File): Promise<PreparedVideo> {
 
     const videoPath = join(dir, 'small.mp4')
     const shrink = await run(FFMPEG, [
-      '-v', 'error', '-y',
-      '-i', srcPath,
-      '-vf', 'scale=-2:640,fps=8',
-      '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '30',
+      '-v',
+      'error',
+      '-y',
+      '-i',
+      srcPath,
+      '-vf',
+      'scale=-2:640,fps=8',
+      '-c:v',
+      'libx264',
+      '-pix_fmt',
+      'yuv420p',
+      '-crf',
+      '30',
       '-an',
       videoPath,
     ])
@@ -87,9 +103,18 @@ export async function prepareVideo(file: File): Promise<PreparedVideo> {
     } else {
       const wavPath = join(dir, 'audio.wav')
       const extract = await run(FFMPEG, [
-        '-v', 'error', '-y',
-        '-i', srcPath,
-        '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'pcm_s16le',
+        '-v',
+        'error',
+        '-y',
+        '-i',
+        srcPath,
+        '-vn',
+        '-ac',
+        '1',
+        '-ar',
+        '16000',
+        '-c:a',
+        'pcm_s16le',
         wavPath,
       ])
 
@@ -97,7 +122,17 @@ export async function prepareVideo(file: File): Promise<PreparedVideo> {
         silenceReason = 'The audio track could not be read.'
       } else {
         // volumedetect prints to stderr; null muxer keeps it cheap.
-        const vol = await run(FFMPEG, ['-v', 'info', '-i', wavPath, '-af', 'volumedetect', '-f', 'null', '-'])
+        const vol = await run(FFMPEG, [
+          '-v',
+          'info',
+          '-i',
+          wavPath,
+          '-af',
+          'volumedetect',
+          '-f',
+          'null',
+          '-',
+        ])
         const mean = Number(/mean_volume:\s*(-?[\d.]+) dB/.exec(vol.stderr)?.[1] ?? NaN)
         meanVolumeDb = Number.isFinite(mean) ? mean : null
 

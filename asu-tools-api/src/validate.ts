@@ -12,13 +12,11 @@ import type { ToolSpec } from './registry.js'
 const ajv = new Ajv({ allErrors: true, strict: false, coerceTypes: false })
 addFormats(ajv)
 
-const cache = new Map<string, ValidateFunction>()   // keyed by tool name
+const cache = new Map<string, ValidateFunction>() // keyed by tool name
 
 export type FieldError = { field: string; rule: string; message: string; expected?: unknown }
 
-export type ValidationResult =
-  | { ok: true }
-  | { ok: false; errors: FieldError[]; summary: string }
+export type ValidationResult = { ok: true } | { ok: false; errors: FieldError[]; summary: string }
 
 export function compileFor(tool: ToolSpec): ValidateFunction {
   const existing = cache.get(tool.name)
@@ -100,12 +98,14 @@ export function validateArgs(tool: ToolSpec, args: unknown): ValidationResult {
   if (args === null || args === undefined || Array.isArray(args) || typeof args !== 'object') {
     return {
       ok: false,
-      errors: [{
-        field: '(root)',
-        rule: 'type',
-        message: 'Arguments must be a JSON object.'
-      }],
-      summary: 'Arguments must be a JSON object.'
+      errors: [
+        {
+          field: '(root)',
+          rule: 'type',
+          message: 'Arguments must be a JSON object.',
+        },
+      ],
+      summary: 'Arguments must be a JSON object.',
     }
   }
 
@@ -123,22 +123,22 @@ export function validateArgs(tool: ToolSpec, args: unknown): ValidationResult {
     const field = fieldPathOf(err)
     const rule = err.keyword
     const key = `${field}|${rule}`
-    
+
     if (seen.has(key)) {
       continue
     }
-    
+
     seen.add(key)
-    
+
     errors.push({
       field,
       rule,
       message: messageOf(err),
-      expected: err.params
+      expected: err.params,
     })
   }
 
-  const summary = errors.map(e => e.message).join(' ')
+  const summary = errors.map((e) => e.message).join(' ')
 
   return { ok: false, errors, summary }
 }
@@ -154,9 +154,10 @@ export function describeSchema(tool: ToolSpec): string {
 
   const parts: string[] = []
   for (const [name, prop] of Object.entries(props)) {
-    const type = prop && typeof prop === 'object' && 'type' in prop
-      ? String((prop as { type?: unknown }).type ?? 'any')
-      : 'any'
+    const type =
+      prop && typeof prop === 'object' && 'type' in prop
+        ? String((prop as { type?: unknown }).type ?? 'any')
+        : 'any'
     const requiredParam = required.includes(name) ? 'required' : 'optional'
     parts.push(`${name} (${type}, ${requiredParam})`)
   }

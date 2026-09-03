@@ -9,10 +9,10 @@ external AI vendor is used at runtime.
 
 ## Apps
 
-| Path | Port | What it is |
-| --- | --- | --- |
-| `asu-guide/` | 3000 | The assistant — chat, voice, image, video, saved conversations |
-| `asu-sso/` | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake |
+| Path         | Port | What it is                                                                    |
+| ------------ | ---- | ----------------------------------------------------------------------------- |
+| `asu-guide/` | 3000 | The assistant — chat, voice, image, video, saved conversations                |
+| `asu-sso/`   | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake |
 
 ## What it does
 
@@ -27,7 +27,7 @@ external AI vendor is used at runtime.
   for actual signal first: ASR models invent text from silence.
 - **Conversation titles** — named by `qwen3-30b-a3b-instruct-2507` (~0.3s).
 - **Model fallback** — every service has an ordered model list. A model the
-  gateway *refuses* is benched for 24h; a model that is merely *slow* is not.
+  gateway _refuses_ is benched for 24h; a model that is merely _slow_ is not.
   See `src/lib/air/`.
 - **Sign in** — real authorization-code flow with PKCE against `asu-sso`.
 

@@ -73,9 +73,7 @@ export function windowEnd(filters: SearchFilters): Date {
 
 export function toDto(row: EventRow): EventDto {
   const venue =
-    !row.location?.trim() || row.location === LOCATION_PLACEHOLDER
-      ? null
-      : row.location.trim()
+    !row.location?.trim() || row.location === LOCATION_PLACEHOLDER ? null : row.location.trim()
 
   return {
     id: row.id,

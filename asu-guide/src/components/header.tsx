@@ -16,14 +16,14 @@ export function Header({
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 px-4">
       {onMenu && (
-      <button
-        type="button"
-        aria-label="Toggle menu"
-        onClick={onMenu}
-        className="bg-surface text-fg flex size-12 items-center justify-center rounded-full transition-colors hover:bg-[#2a2a2a] active:scale-95"
-      >
-        <Hamburger className="size-6" />
-      </button>
+        <button
+          type="button"
+          aria-label="Toggle menu"
+          onClick={onMenu}
+          className="bg-surface text-fg flex size-12 items-center justify-center rounded-full transition-colors hover:bg-[#2a2a2a] active:scale-95"
+        >
+          <Hamburger className="size-6" />
+        </button>
       )}
 
       <div className="flex flex-1 items-center gap-1.5 pl-1">

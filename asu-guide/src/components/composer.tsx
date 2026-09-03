@@ -43,11 +43,7 @@ export function Composer({
       {attachment && (
         <div className="bg-surface-2 flex items-center gap-3 self-start rounded-2xl p-2 pr-3">
           {attachment.kind === 'video' ? (
-            <video
-              src={attachment.url}
-              muted
-              className="size-11 rounded-xl object-cover"
-            />
+            <video src={attachment.url} muted className="size-11 rounded-xl object-cover" />
           ) : (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -69,68 +65,68 @@ export function Composer({
       )}
 
       <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        onSubmit()
-      }}
-      className="bg-surface-2 flex h-16 items-center gap-3 rounded-full pr-5 pl-4"
-    >
-      <button
-        type="button"
-        onClick={onAttachClick}
-        aria-label={attachOpen ? 'Close attachment menu' : 'Add an image'}
-        aria-expanded={attachOpen}
-        className="text-fg/90 p-1 transition-transform duration-200"
-        style={{ transform: attachOpen ? 'rotate(45deg)' : undefined }}
+        onSubmit={(e) => {
+          e.preventDefault()
+          onSubmit()
+        }}
+        className="bg-surface-2 flex h-16 items-center gap-3 rounded-full pr-5 pl-4"
       >
-        <Plus className="size-[26px]" />
-      </button>
-
-      <input
-        ref={inputRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={transcribing}
-        placeholder={recording ? 'Listening…' : 'Ask ASU Guide'}
-        aria-label="Ask ASU Guide"
-        autoComplete="off"
-        className="text-fg placeholder:text-muted min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.01em] outline-none disabled:opacity-50"
-      />
-
-      {showSend ? (
-        <button
-          type="submit"
-          aria-label="Send"
-          className="bg-asu-gold text-asu-accent-fg flex size-9 items-center justify-center rounded-full transition-transform active:scale-95"
-        >
-          <SendArrow className="size-[19px]" />
-        </button>
-      ) : (
         <button
           type="button"
-          onClick={onMicToggle}
-          disabled={transcribing}
-          aria-label={recording ? 'Stop recording' : 'Voice input'}
-          aria-pressed={recording}
-          className={
-            recording
-              ? 'relative flex size-9 items-center justify-center rounded-full bg-red-500/90 text-white transition-colors'
-              : 'text-fg/90 p-1 transition-colors disabled:opacity-40'
-          }
+          onClick={onAttachClick}
+          aria-label={attachOpen ? 'Close attachment menu' : 'Add an image'}
+          aria-expanded={attachOpen}
+          className="text-fg/90 p-1 transition-transform duration-200"
+          style={{ transform: attachOpen ? 'rotate(45deg)' : undefined }}
         >
-          {recording && (
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full bg-red-500/40"
-              style={{
-                transform: `scale(${1 + Math.min(voiceLevel, 1) * 0.55})`,
-                transition: 'transform 90ms linear',
-              }}
-            />
-          )}
-          <Mic className="relative size-[23px]" />
+          <Plus className="size-[26px]" />
         </button>
-      )}
+
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={transcribing}
+          placeholder={recording ? 'Listening…' : 'Ask ASU Guide'}
+          aria-label="Ask ASU Guide"
+          autoComplete="off"
+          className="text-fg placeholder:text-muted min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.01em] outline-none disabled:opacity-50"
+        />
+
+        {showSend ? (
+          <button
+            type="submit"
+            aria-label="Send"
+            className="bg-asu-gold text-asu-accent-fg flex size-9 items-center justify-center rounded-full transition-transform active:scale-95"
+          >
+            <SendArrow className="size-[19px]" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onMicToggle}
+            disabled={transcribing}
+            aria-label={recording ? 'Stop recording' : 'Voice input'}
+            aria-pressed={recording}
+            className={
+              recording
+                ? 'relative flex size-9 items-center justify-center rounded-full bg-red-500/90 text-white transition-colors'
+                : 'text-fg/90 p-1 transition-colors disabled:opacity-40'
+            }
+          >
+            {recording && (
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-red-500/40"
+                style={{
+                  transform: `scale(${1 + Math.min(voiceLevel, 1) * 0.55})`,
+                  transition: 'transform 90ms linear',
+                }}
+              />
+            )}
+            <Mic className="relative size-[23px]" />
+          </button>
+        )}
       </form>
     </div>
   )

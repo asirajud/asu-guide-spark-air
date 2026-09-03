@@ -2,7 +2,14 @@
 // Direct use of node:http instead of web frameworks
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { handleJsonRpc, sessionTools, toOpenAiTools, callTool } from './mcp.js'
-import { listServices, upsertService, removeService, allTools, reloadRegistry, ContractError } from './registry.js'
+import {
+  listServices,
+  upsertService,
+  removeService,
+  allTools,
+  reloadRegistry,
+  ContractError,
+} from './registry.js'
 import { checkHealth } from './dispatch.js'
 import { clearValidatorCache } from './validate.js'
 
@@ -23,7 +30,7 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
     let body = ''
     const MAX_BODY_SIZE = 200_000
 
-    req.on('data', chunk => {
+    req.on('data', (chunk) => {
       if (body.length > MAX_BODY_SIZE) {
         reject(new Error('BodyTooLarge'))
         req.destroy()
@@ -61,14 +68,18 @@ function handleOptions(res: ServerResponse, methods: string, headers: string) {
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   // CORS headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*')
-  
+
   const url = new URL(req.url!, `http://${req.headers.host}`)
   const path = url.pathname
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     if (path === '/mcp') {
-      handleOptions(res, 'GET,POST,DELETE,OPTIONS', 'Content-Type, Mcp-Session-Id, MCP-Protocol-Version')
+      handleOptions(
+        res,
+        'GET,POST,DELETE,OPTIONS',
+        'Content-Type, Mcp-Session-Id, MCP-Protocol-Version',
+      )
     } else {
       handleOptions(res, 'GET,POST,DELETE,OPTIONS', 'Content-Type')
     }
@@ -83,7 +94,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       service: 'asu-tools-api',
       services: services.length,
       tools: allTools().length,
-      sessionTools: sessionTools().map(t => t.name),
+      sessionTools: sessionTools().map((t) => t.name),
     })
     return
   }
@@ -93,7 +104,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     try {
       const body = await readJson(req)
       const out = await handleJsonRpc(body)
-      
+
       if (out === null) {
         // Notification, respond with 202
         res.writeHead(202)
@@ -124,7 +135,8 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (req.method === 'GET' && path === '/mcp') {
     json(res, 405, {
       error: 'Method not allowed',
-      message: 'This deployment implements the POST-only variant of the Streamable HTTP transport (no SSE stream).',
+      message:
+        'This deployment implements the POST-only variant of the Streamable HTTP transport (no SSE stream).',
     })
     return
   }
@@ -152,10 +164,10 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       // changed schema would keep being checked against the old one.
       clearValidatorCache()
       const status = result.created ? 201 : 200
-      json(res, status, { 
-        service: result.service, 
-        created: result.created, 
-        tools: result.service.tools.map((t) => t.name) 
+      json(res, status, {
+        service: result.service,
+        created: result.created,
+        tools: result.service.tools.map((t) => t.name),
       })
     } catch (err) {
       if (err instanceof ContractError) {
@@ -219,7 +231,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 // Start server
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[asu-tools-api] MCP + registry on http://127.0.0.1:${PORT}`)
-  
+
   // Log registered services
   const services = listServices()
   for (const { id, baseUrl } of services) {

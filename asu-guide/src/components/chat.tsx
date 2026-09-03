@@ -31,17 +31,31 @@ const uid = () => `t${Date.now().toString(36)}-${seq++}`
 
 type Phase = 'idle' | 'transcribing' | 'thinking' | 'streaming' | 'done'
 
-export function Chat({ events, asurite, onTurn, restoredTurns }: {
+export function Chat({
+  events,
+  asurite,
+  onTurn,
+  restoredTurns,
+}: {
   events: DemoEvent[]
   asurite?: string | null
   /** Called once a turn is final, so the shell can persist it. */
-  onTurn?: (t: { role: 'user' | 'assistant'; content: string; kind: string; imageName?: string | null }) => void
+  onTurn?: (t: {
+    role: 'user' | 'assistant'
+    content: string
+    kind: string
+    imageName?: string | null
+  }) => void
   restoredTurns?: Turn[] | null
 }) {
   const [turns, setTurns] = useState<Turn[]>(restoredTurns ?? [])
   const [phase, setPhase] = useState<Phase>(restoredTurns?.length ? 'done' : 'idle')
   const [draft, setDraft] = useState('')
-  const [attachment, setAttachment] = useState<{ file: File; url: string; kind: 'image' | 'video' } | null>(null)
+  const [attachment, setAttachment] = useState<{
+    file: File
+    url: string
+    kind: 'image' | 'video'
+  } | null>(null)
   const [attachOpen, setAttachOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -72,10 +86,10 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
         setTimeout(() => {
           const partial = words.slice(0, i + 1).join('')
           setTurns((t) => t.map((x) => (x.id === id ? { ...x, content: partial } : x)))
-    if (i === words.length - 1) {
-      setPhase('done')
-      onTurn?.({ role: 'assistant', content: body, kind })
-    }
+          if (i === words.length - 1) {
+            setPhase('done')
+            onTurn?.({ role: 'assistant', content: body, kind })
+          }
         }, i * 18),
       )
     })
@@ -140,7 +154,17 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
    */
   async function sendImage(file: File, question: string, previewUrl: string) {
     const q = question || 'What is this?'
-    setTurns((t) => [...t, { id: uid(), role: 'user', content: q, kind: 'vision', mediaUrl: previewUrl, mediaKind: 'image' }])
+    setTurns((t) => [
+      ...t,
+      {
+        id: uid(),
+        role: 'user',
+        content: q,
+        kind: 'vision',
+        mediaUrl: previewUrl,
+        mediaKind: 'image',
+      },
+    ])
     setDraft('')
     setPhase('thinking')
     onTurn?.({ role: 'user', content: q, kind: 'vision', imageName: file.name })
@@ -151,12 +175,20 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
       if (question) body.append('prompt', question)
 
       const res = await fetch('/api/vision', { method: 'POST', body })
-      const data = (await res.json()) as { text?: string; error?: string; model?: string; ms?: number }
+      const data = (await res.json()) as {
+        text?: string
+        error?: string
+        model?: string
+        ms?: number
+      }
       if (!res.ok || !data.text) throw new Error(data.error ?? 'Could not read that image.')
 
       appendAssistant(data.text, 'vision', [], { model: data.model ?? 'AIR', ms: data.ms ?? 0 })
     } catch (err) {
-      appendAssistant(err instanceof Error ? err.message : 'Something went wrong reading that image.', 'text')
+      appendAssistant(
+        err instanceof Error ? err.message : 'Something went wrong reading that image.',
+        'text',
+      )
     }
   }
 
@@ -166,7 +198,17 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
    */
   async function sendVideo(file: File, question: string, previewUrl: string) {
     const q = question || 'What happens in this video?'
-    setTurns((t) => [...t, { id: uid(), role: 'user', content: q, kind: 'vision', mediaUrl: previewUrl, mediaKind: 'video' }])
+    setTurns((t) => [
+      ...t,
+      {
+        id: uid(),
+        role: 'user',
+        content: q,
+        kind: 'vision',
+        mediaUrl: previewUrl,
+        mediaKind: 'video',
+      },
+    ])
     setDraft('')
     setPhase('thinking')
     onTurn?.({ role: 'user', content: q, kind: 'vision', imageName: file.name })
@@ -195,7 +237,10 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
         note,
       })
     } catch (err) {
-      appendAssistant(err instanceof Error ? err.message : 'Something went wrong reading that video.', 'text')
+      appendAssistant(
+        err instanceof Error ? err.message : 'Something went wrong reading that video.',
+        'text',
+      )
     }
   }
 
@@ -238,7 +283,6 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
     setPhase(turns.length ? 'done' : 'idle')
   }
 
-
   const isEmpty = turns.length === 0 && phase === 'idle'
 
   return (
@@ -255,55 +299,91 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
         {/* Scroller spans the full width so its bar sits at the window edge;
             the thread itself stays a centred, readable column. */}
         <div className="mx-auto w-full max-w-[820px] px-5 pb-8">
-        {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center pb-24">
-            <Sparkle className="size-[52px]" />
-            <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
-              {asurite ? 'Where should we start?' : 'Meet ASU Guide, your personal campus assistant'}
-            </h1>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-7 pt-2">
-            {turns.map((t, i) => {
-              const streamingLast = phase === 'streaming' && i === turns.length - 1
-              const cards = t.events && t.events.length > 0 ? t.events : t.kind === 'events' ? events : []
+          {isEmpty ? (
+            <div className="flex h-full flex-col items-center justify-center pb-24">
+              <Sparkle className="size-[52px]" />
+              <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
+                {asurite
+                  ? 'Where should we start?'
+                  : 'Meet ASU Guide, your personal campus assistant'}
+              </h1>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-7 pt-2">
+              {turns.map((t, i) => {
+                const streamingLast = phase === 'streaming' && i === turns.length - 1
+                const cards =
+                  t.events && t.events.length > 0 ? t.events : t.kind === 'events' ? events : []
 
-              return t.role === 'user' ? (
-                <div key={t.id} className="flex flex-col items-end gap-2">
-                  {t.mediaUrl && (t.mediaKind === 'video'
-                    ? <video src={t.mediaUrl} muted loop autoPlay playsInline className="animate-rise max-h-56 max-w-[70%] rounded-3xl object-cover" />
-                    : /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={t.mediaUrl} alt="Media you sent" className="animate-rise max-h-56 max-w-[70%] rounded-3xl object-cover" />)}
-                  <p className="bg-surface-2 text-fg animate-rise max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">{t.content}</p>
-                </div>
-              ) : (
-                <div key={t.id}>
-                  <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
-                    <RichText text={t.content} />
-                    {streamingLast && (<span className="bg-fg/80 ml-0.5 inline-block h-[17px] w-[2px] translate-y-[2px] animate-pulse" />)}
+                return t.role === 'user' ? (
+                  <div key={t.id} className="flex flex-col items-end gap-2">
+                    {t.mediaUrl &&
+                      (t.mediaKind === 'video' ? (
+                        <video
+                          src={t.mediaUrl}
+                          muted
+                          loop
+                          autoPlay
+                          playsInline
+                          className="animate-rise max-h-56 max-w-[70%] rounded-3xl object-cover"
+                        />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={t.mediaUrl}
+                          alt="Media you sent"
+                          className="animate-rise max-h-56 max-w-[70%] rounded-3xl object-cover"
+                        />
+                      ))}
+                    <p className="bg-surface-2 text-fg animate-rise max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">
+                      {t.content}
+                    </p>
                   </div>
-                  {t.meta && (<p className="animate-rise text-muted mt-4 text-[12.5px]">Read by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in {(t.meta.ms / 1000).toFixed(1)}s{t.meta.note ? ` · ${t.meta.note}` : ''}</p>)}
-                  {cards.length > 0 && (
-                    <>
-                      <h2 className="animate-rise mt-6 text-[17px] font-bold text-white">Coming up near you</h2>
-                      <ul className="mt-3 flex flex-col gap-3">
-                        {cards.map((e, i) => (<EventCard key={e.id} event={e} index={i} />))}
-                      </ul>
-                    </>
-                  )}
+                ) : (
+                  <div key={t.id}>
+                    <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
+                      <RichText text={t.content} />
+                      {streamingLast && (
+                        <span className="bg-fg/80 ml-0.5 inline-block h-[17px] w-[2px] translate-y-[2px] animate-pulse" />
+                      )}
+                    </div>
+                    {t.meta && (
+                      <p className="animate-rise text-muted mt-4 text-[12.5px]">
+                        Read by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in{' '}
+                        {(t.meta.ms / 1000).toFixed(1)}s{t.meta.note ? ` · ${t.meta.note}` : ''}
+                      </p>
+                    )}
+                    {cards.length > 0 && (
+                      <>
+                        <h2 className="animate-rise mt-6 text-[17px] font-bold text-white">
+                          Coming up near you
+                        </h2>
+                        <ul className="mt-3 flex flex-col gap-3">
+                          {cards.map((e, i) => (
+                            <EventCard key={e.id} event={e} index={i} />
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+              {phase === 'transcribing' && (
+                <div className="flex justify-end">
+                  <p className="bg-surface-2 animate-rise rounded-3xl px-5 py-3.5">
+                    <span
+                      role="status"
+                      aria-label="Transcribing"
+                      className="border-muted/40 border-t-fg/80 my-[3px] block size-[17px] animate-spin rounded-full border-2"
+                    />
+                  </p>
                 </div>
-              )
-            })}
-            {phase === 'transcribing' && (
-              <div className="flex justify-end">
-                <p className="bg-surface-2 animate-rise rounded-3xl px-5 py-3.5">
-                  <span role="status" aria-label="Transcribing" className="border-muted/40 border-t-fg/80 my-[3px] block size-[17px] animate-spin rounded-full border-2" />
-                </p>
-              </div>
-            )}
-            {phase === 'thinking' && (<p className="shimmer-text text-[17px] font-medium">Thinking…</p>)}
-          </div>
-        )}
+              )}
+              {phase === 'thinking' && (
+                <p className="shimmer-text text-[17px] font-medium">Thinking…</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -359,9 +439,10 @@ export function Chat({ events, asurite, onTurn, restoredTurns }: {
             e.target.value = ''
             if (!file) return
             if (attachment) URL.revokeObjectURL(attachment.url)
-            const kind = file.type.startsWith('video/') || /\.(mp4|mov|m4v|webm)$/i.test(file.name)
-              ? ('video' as const)
-              : ('image' as const)
+            const kind =
+              file.type.startsWith('video/') || /\.(mp4|mov|m4v|webm)$/i.test(file.name)
+                ? ('video' as const)
+                : ('image' as const)
             setAttachment({ file, url: URL.createObjectURL(file), kind })
             inputRef.current?.focus()
           }}

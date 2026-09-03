@@ -201,7 +201,11 @@ export function AppShell({
         id: m.id,
         role: m.role,
         content: m.content,
-        kind: (m.kind === 'vision' ? 'vision' : m.kind === 'events' ? 'events' : 'text') as Turn['kind'],
+        kind: (m.kind === 'vision'
+          ? 'vision'
+          : m.kind === 'events'
+            ? 'events'
+            : 'text') as Turn['kind'],
         restored: true,
         // Object URLs die with the page, and cited cards are not stored, so a
         // reloaded thread comes back as text. The model still sees every word of it.
@@ -231,19 +235,19 @@ export function AppShell({
   return (
     <>
       {asurite && (
-      <SideNav
-        open={navOpen}
-        chats={chats}
-        activeId={activeId}
-        onClose={() => setNavOpen(false)}
-        onNewChat={newChat}
-        onSelect={select}
-        onRename={(id, title) => patch(id, { title })}
-        onTogglePin={(id, pinned) => patch(id, { pinned })}
-        onDelete={remove}
-        asurite={asurite}
-        railOpen={railOpen}
-      />
+        <SideNav
+          open={navOpen}
+          chats={chats}
+          activeId={activeId}
+          onClose={() => setNavOpen(false)}
+          onNewChat={newChat}
+          onSelect={select}
+          onRename={(id, title) => patch(id, { title })}
+          onTogglePin={(id, pinned) => patch(id, { pinned })}
+          onDelete={remove}
+          asurite={asurite}
+          railOpen={railOpen}
+        />
       )}
 
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

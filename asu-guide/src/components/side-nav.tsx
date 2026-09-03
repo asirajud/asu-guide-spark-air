@@ -52,7 +52,8 @@ export function SideNav({
   }, [open])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && (menuFor ? setMenuFor(null) : onClose())
+    const onKey = (e: KeyboardEvent) =>
+      e.key === 'Escape' && (menuFor ? setMenuFor(null) : onClose())
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [menuFor, onClose])

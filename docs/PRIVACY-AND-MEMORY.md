@@ -3,15 +3,16 @@
 This document was drafted and reviewed by ASU AIR open-weight models.
 
 ## 1. The core tension
+
 The system must never transmit raw user utterances or client-side profile state to the server. Principle: **profile construction and storage are strictly client-side; the server only receives transient, de-identified, single-turn payloads for inference.** This forbids sending full chat histories, voice input, or structured user profiles over the network. It permits sending redacted, anonymized text fragments for entity extraction, provided no session identifier or user key is attached.
 
 ## 2. Storage options
 
-| Option | Where the profile lives | FERPA exposure | Device loss | Multi-device | Failure modes |
-|--------|-------------------------|----------------|-------------|--------------|---------------|
-| (a) On-device only | Browser (IndexedDB / OPFS) | None (data never leaves device) | Permanent loss if device fails or is reset | Not supported | Safari storage eviction (7-day), quota limits, no sync |
-| (b) Server-side per-user rows | SQLite DB, keyed by ASURITE | High (creates a persistent, identifiable record of inferred interests) | No loss | Full support | FERPA violation risk, requires strict access controls, audit trails |
-| (c) Hybrid (client-encrypted) | Encrypted blob in SQLite, key derived client-side | None (server cannot decrypt) | Permanent if key is lost | Supported if key is synced (e.g. via iCloud Keychain) | Key management complexity, sync conflicts, client-side decryption overhead |
+| Option                        | Where the profile lives                           | FERPA exposure                                                         | Device loss                                | Multi-device                                          | Failure modes                                                              |
+| ----------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| (a) On-device only            | Browser (IndexedDB / OPFS)                        | None (data never leaves device)                                        | Permanent loss if device fails or is reset | Not supported                                         | Safari storage eviction (7-day), quota limits, no sync                     |
+| (b) Server-side per-user rows | SQLite DB, keyed by ASURITE                       | High (creates a persistent, identifiable record of inferred interests) | No loss                                    | Full support                                          | FERPA violation risk, requires strict access controls, audit trails        |
+| (c) Hybrid (client-encrypted) | Encrypted blob in SQLite, key derived client-side | None (server cannot decrypt)                                           | Permanent if key is lost                   | Supported if key is synced (e.g. via iCloud Keychain) | Key management complexity, sync conflicts, client-side decryption overhead |
 
 On-device storage avoids FERPA exposure but fails under device loss and Safari's aggressive eviction. Server-side rows enable sync but create FERPA-relevant records linking inferred interests to an ASURITE—crossing the regulatory line. The hybrid model stores only ciphertext on the server, so breaches expose nothing. Key loss still means profile loss, and cross-device sync depends on platform key management.
 
@@ -21,33 +22,33 @@ On-device storage avoids FERPA exposure but fails under device loss and Safari's
 
 **Entity table**
 
-| Entity type | Example | Where it comes from |
-|-------------|---------|---------------------|
-| Person | the user | ASURITE from OAuth, local ID only |
-| Interest | robotics, live music | onboarding selection, chat extraction |
-| Org/Club | ASU AI Society | chat extraction, event metadata |
-| Event | hackathon, lecture | event catalog, chat mentions |
-| Place | Polytechnic Hall, Tempe campus | chat extraction, event location |
-| Course | CSE 466 | chat extraction |
-| Contact | "Sarah from robotics club" | chat extraction, stored as alias only |
-| TimePreference | weekday evenings | onboarding, chat extraction |
-| Modality | in-person | chat extraction |
-| Constraint | wheelchair access, $5 max | chat extraction |
+| Entity type    | Example                        | Where it comes from                   |
+| -------------- | ------------------------------ | ------------------------------------- |
+| Person         | the user                       | ASURITE from OAuth, local ID only     |
+| Interest       | robotics, live music           | onboarding selection, chat extraction |
+| Org/Club       | ASU AI Society                 | chat extraction, event metadata       |
+| Event          | hackathon, lecture             | event catalog, chat mentions          |
+| Place          | Polytechnic Hall, Tempe campus | chat extraction, event location       |
+| Course         | CSE 466                        | chat extraction                       |
+| Contact        | "Sarah from robotics club"     | chat extraction, stored as alias only |
+| TimePreference | weekday evenings               | onboarding, chat extraction           |
+| Modality       | in-person                      | chat extraction                       |
+| Constraint     | wheelchair access, $5 max      | chat extraction                       |
 
 **Typed-edge table**
 
-| Edge | From -> To | Example |
-|------|------------|---------|
-| INTERESTED_IN | Person -> Interest | user -> robotics |
-| ATTENDED | Person -> Event | user -> hackathon |
-| DECLINED | Person -> Event | user -> lecture |
-| MEMBER_OF | Person -> Org/Club | user -> AI Society |
-| LOCATED_AT | Event -> Place | hackathon -> Polytechnic Hall |
-| ENROLLED_IN | Person -> Course | user -> CSE 466 |
-| KNOWS | Person -> Contact | user -> "Sarah from robotics club" |
-| PREFERS_TIME | Person -> TimePreference | user -> weekday evenings |
-| AVOIDS | Person -> Event/Place | user -> downtown campus |
-| CO_ATTENDS_WITH | Person -> Contact | user -> "Sarah from robotics club" |
+| Edge            | From -> To               | Example                            |
+| --------------- | ------------------------ | ---------------------------------- |
+| INTERESTED_IN   | Person -> Interest       | user -> robotics                   |
+| ATTENDED        | Person -> Event          | user -> hackathon                  |
+| DECLINED        | Person -> Event          | user -> lecture                    |
+| MEMBER_OF       | Person -> Org/Club       | user -> AI Society                 |
+| LOCATED_AT      | Event -> Place           | hackathon -> Polytechnic Hall      |
+| ENROLLED_IN     | Person -> Course         | user -> CSE 466                    |
+| KNOWS           | Person -> Contact        | user -> "Sarah from robotics club" |
+| PREFERS_TIME    | Person -> TimePreference | user -> weekday evenings           |
+| AVOIDS          | Person -> Event/Place    | user -> downtown campus            |
+| CO_ATTENDS_WITH | Person -> Contact        | user -> "Sarah from robotics club" |
 
 Every edge carries: `confidence` (0-1), `provenance` (conversation_id + turn_index), `first_seen`, `last_seen`, `evidence_count`, and `source` enum (`stated` | `inferred` | `observed`).
 
@@ -117,6 +118,7 @@ A compact "context pack" is assembled at query time from the local graph and inj
 **Selection rule**: top-N edges by `confidence * recency_decay`, filtered to entity types the current query actually needs. An events query needs Interest, TimePreference, Place, Constraint — not Course or Contact.
 
 **Rendered shape**: de-identified bullet list, no names, no ASURITE:
+
 ```
 likes: robotics, live music
 prefers: weekday evenings
@@ -126,12 +128,12 @@ constraints: wheelchair access, $5 max
 
 The pack is rebuilt per request and never cached server-side.
 
-| Query type | Entity types included | Approx budget |
-|------------|----------------------|---------------|
-| Events | Interest, TimePreference, Place, Constraint | 120 tokens |
-| Courses | Interest, Course, Place | 100 tokens |
-| People | Contact, Org/Club, Interest | 80 tokens |
-| General | Interest, Place, Modality | 60 tokens |
+| Query type | Entity types included                       | Approx budget |
+| ---------- | ------------------------------------------- | ------------- |
+| Events     | Interest, TimePreference, Place, Constraint | 120 tokens    |
+| Courses    | Interest, Course, Place                     | 100 tokens    |
+| People     | Contact, Org/Club, Interest                 | 80 tokens     |
+| General    | Interest, Place, Modality                   | 60 tokens     |
 
 A pack this small will sometimes omit a relevant preference, which is the correct failure direction - missing a preference is less harmful than leaking one.
 
@@ -145,15 +147,15 @@ Four controls, each with explicit storage-layer behavior.
 
 **Wipe my data**: The following table specifies exactly what is deleted and how verification occurs.
 
-| Store | What is deleted | Verified how |
-|-------|-----------------|--------------|
-| wasm-SQLite graph file | All nodes, edges, provenance, tombstones | User sees an empty inspection screen |
-| IndexedDB/OPFS | All indexed data, file handles | Subsequent export produces a JSON file containing only an empty object |
-| localStorage/sessionStorage | Session tokens, UI state | User sees an empty inspection screen |
-| Cached embeddings | All vector caches | User sees an empty inspection screen |
-| Saved conversations table | All conversation records | User sees an empty inspection screen |
-| Server session cookie | Session identifier | Cookie absent from subsequent requests |
-| Server-side chat titles | All generated titles | API returns empty list |
+| Store                       | What is deleted                          | Verified how                                                           |
+| --------------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| wasm-SQLite graph file      | All nodes, edges, provenance, tombstones | User sees an empty inspection screen                                   |
+| IndexedDB/OPFS              | All indexed data, file handles           | Subsequent export produces a JSON file containing only an empty object |
+| localStorage/sessionStorage | Session tokens, UI state                 | User sees an empty inspection screen                                   |
+| Cached embeddings           | All vector caches                        | User sees an empty inspection screen                                   |
+| Saved conversations table   | All conversation records                 | User sees an empty inspection screen                                   |
+| Server session cookie       | Session identifier                       | Cookie absent from subsequent requests                                 |
+| Server-side chat titles     | All generated titles                     | API returns empty list                                                 |
 
 Nothing can be recalled from the AIR gateway. Once a turn was sent, it is outside the app's control, which is why redaction happens before the send, not after. Browser-level caches, service workers, and OPFS handles held open are outside the app's control.
 
@@ -175,12 +177,12 @@ Pending candidates expire if the light is never tapped within 7 days or after 10
 
 ## 8. What is honest to claim in a five-minute pitch
 
-| Honest to claim | Would be overclaiming |
-|-----------------|----------------------|
-| The profile never leaves the device | Calling it FERPA-compliant (nobody has reviewed it) |
+| Honest to claim                                          | Would be overclaiming                                                                         |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| The profile never leaves the device                      | Calling it FERPA-compliant (nobody has reviewed it)                                           |
 | Inference runs on ASU-owned hardware, no external vendor | Claiming the extraction call sends nothing sensitive when it sends redacted conversation text |
-| The user can see, correct and wipe everything | Claiming multi-device sync or key escrow that is not built |
-| A working demo of the light and the approve/reject loop | Claiming the local model path works when it is a sketch |
-| Privacy-by-design architecture | Claiming accuracy numbers from a demo with one user |
+| The user can see, correct and wipe everything            | Claiming multi-device sync or key escrow that is not built                                    |
+| A working demo of the light and the approve/reject loop  | Claiming the local model path works when it is a sketch                                       |
+| Privacy-by-design architecture                           | Claiming accuracy numbers from a demo with one user                                           |
 
 A judge should take away this: the architecture enforces data minimization at the protocol level, not as an afterthought. The user controls what is stored and can verify deletion. Inference runs on ASU infrastructure, not a third-party vendor. The consent mechanism makes privacy visible rather than hidden in a policy document.

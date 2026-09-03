@@ -9,17 +9,62 @@ export type ScoredHit = { id: string; rank: number; score: number }
 
 // Query tokenising
 const STOP = new Set([
-  'the', 'and', 'for', 'are', 'any', 'all', 'you', 'what', 'when', 'where', 'which', 'that', 'this',
-  'with', 'from', 'into', 'about', 'some', 'something', 'anything', 'event', 'events', 'asu', 'please',
-  'find', 'show', 'tell', 'going', 'happening', 'there', 'near', 'me', 'is', 'it', 'on', 'at', 'in',
-  'to', 'of', 'a', 'an', 'my', 'do', 'does', 'can', 'i'
+  'the',
+  'and',
+  'for',
+  'are',
+  'any',
+  'all',
+  'you',
+  'what',
+  'when',
+  'where',
+  'which',
+  'that',
+  'this',
+  'with',
+  'from',
+  'into',
+  'about',
+  'some',
+  'something',
+  'anything',
+  'event',
+  'events',
+  'asu',
+  'please',
+  'find',
+  'show',
+  'tell',
+  'going',
+  'happening',
+  'there',
+  'near',
+  'me',
+  'is',
+  'it',
+  'on',
+  'at',
+  'in',
+  'to',
+  'of',
+  'a',
+  'an',
+  'my',
+  'do',
+  'does',
+  'can',
+  'i',
 ])
 
 export function ftsMatchExpression(query: string): string | null {
-  const tokens = query.toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length >= 2 && !STOP.has(t))
+  const tokens = query
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length >= 2 && !STOP.has(t))
   const uniqueTokens = [...new Set(tokens)]
   if (uniqueTokens.length === 0) return null
-  return uniqueTokens.map(t => `"${t}"`).join(' OR ')
+  return uniqueTokens.map((t) => `"${t}"`).join(' OR ')
 }
 
 // STAGE 1: BM25 over FTS5
@@ -51,14 +96,14 @@ export function bm25Stage(query: string, filters: SearchFilters, k = 40): Scored
       startSec,
       endSec,
       ...(filters.type ? [filters.type.toLowerCase()] : []),
-      k
+      k,
     ]
 
     const rows = sqliteDb.prepare(sql).all(boundParams) as { id: string; score: number }[]
     return rows.map((row, i) => ({
       id: row.id,
       rank: i + 1,
-      score: -row.score
+      score: -row.score,
     }))
   } catch (err) {
     console.warn('FTS5 syntax error:', err)
@@ -80,21 +125,22 @@ function loadVectors(): CachedVector[] {
   }
 
   const start = performance.now()
-  const rows = db.select({
-    id: events.id,
-    start: events.start,
-    type: events.type,
-    embedding: events.embedding
-  })
+  const rows = db
+    .select({
+      id: events.id,
+      start: events.start,
+      type: events.type,
+      embedding: events.embedding,
+    })
     .from(events)
     .where(isNotNull(events.embedding))
     .all()
 
-  const vectors = rows.map(row => ({
+  const vectors = rows.map((row) => ({
     id: row.id,
     vec: fromBuffer(row.embedding as Buffer),
     start: row.start.getTime(),
-    type: row.type
+    type: row.type,
   }))
 
   console.log(`Loaded ${vectors.length} vectors in ${Math.round(performance.now() - start)}ms`)
@@ -102,7 +148,11 @@ function loadVectors(): CachedVector[] {
   return vectors
 }
 
-export async function denseStage(query: string, filters: SearchFilters, k = 40): Promise<ScoredHit[]> {
+export async function denseStage(
+  query: string,
+  filters: SearchFilters,
+  k = 40,
+): Promise<ScoredHit[]> {
   const rows = loadVectors()
   if (rows.length === 0) return []
 
@@ -118,36 +168,40 @@ export async function denseStage(query: string, filters: SearchFilters, k = 40):
   // A vector database at this size would be pure operational overhead, so brute-forcing cosine in memory
   // is a deliberate design choice.
   const scored = rows
-    .filter(row => {
+    .filter((row) => {
       // Apply window filter
       const now = DEMO_NOW.getTime()
       const end = windowEnd(filters).getTime()
       if (row.start < now || row.start > end) return false
-      
+
       // Apply type filter if present
       return !filters.type || row.type.toLowerCase() === filters.type.toLowerCase()
     })
-    .map(row => ({
+    .map((row) => ({
       id: row.id,
-      score: cosine(qv, row.vec)
+      score: cosine(qv, row.vec),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, k)
     .map((row, i) => ({
       id: row.id,
       rank: i + 1,
-      score: row.score
+      score: row.score,
     }))
 
   return scored
 }
 
 // STAGE 3: rerank
-export async function rerankStage(query: string, candidates: EventDto[], topN = 20): Promise<Map<string, number>> {
+export async function rerankStage(
+  query: string,
+  candidates: EventDto[],
+  topN = 20,
+): Promise<Map<string, number>> {
   const slice = candidates.slice(0, topN)
   if (slice.length === 0) return new Map()
 
-  const documents = slice.map(c => `${c.title}. ${c.type} hosted by ${c.club}. ${c.blurb}`)
+  const documents = slice.map((c) => `${c.title}. ${c.type} hosted by ${c.club}. ${c.blurb}`)
 
   try {
     const hits = await rerank(query, documents, slice.length)

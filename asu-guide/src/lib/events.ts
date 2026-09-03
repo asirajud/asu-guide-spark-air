@@ -65,8 +65,6 @@ function truncate(s: string, n = 110) {
 /** Titles that read like internal calendar noise rather than something you'd pitch. */
 const JUNK_TITLE = /^(tbd|tba|n\/?a|meeting|weekly meeting|gbm ?\d*|test|open gym|tabling)$/i
 
-
-
 const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, dateStyle: 'short' })
 
 /**
@@ -125,7 +123,5 @@ export async function getDemoEvents(limit = 5): Promise<DemoEvent[]> {
       url: row.url,
     }))
 }
-
-
 
 export { LOCATION_PLACEHOLDER }

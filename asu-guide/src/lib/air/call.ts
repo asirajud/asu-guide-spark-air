@@ -60,7 +60,14 @@ function bench(model: string, service: AirService, reason: string, status?: numb
   const now = new Date()
   const until = new Date(now.getTime() + DISABLE_TTL_MS)
   db.insert(modelHealth)
-    .values({ model, service, reason: reason.slice(0, 300), status, disabledUntil: until, checkedAt: now })
+    .values({
+      model,
+      service,
+      reason: reason.slice(0, 300),
+      status,
+      disabledUntil: until,
+      checkedAt: now,
+    })
     .onConflictDoUpdate({
       target: modelHealth.model,
       set: { service, reason: reason.slice(0, 300), status, disabledUntil: until, checkedAt: now },

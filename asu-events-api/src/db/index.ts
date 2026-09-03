@@ -30,7 +30,7 @@ export function migrate(): void {
       embedding BLOB
     )
   `)
-  
+
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS reservations (
       id TEXT PRIMARY KEY,
@@ -40,11 +40,11 @@ export function migrate(): void {
       FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
     )
   `)
-  
+
   // Create indexes
   sqlite.exec('CREATE INDEX IF NOT EXISTS events_start_idx ON events(start)')
   sqlite.exec('CREATE INDEX IF NOT EXISTS reservations_asurite_idx ON reservations(asurite)')
-  
+
   // Create FTS5 virtual table
   // This is a standalone (not external-content) FTS5 table keyed by event_id,
   // rebuilt wholesale by the seeder, so no sync triggers are needed.
