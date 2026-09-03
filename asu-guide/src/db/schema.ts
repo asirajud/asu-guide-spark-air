@@ -58,3 +58,39 @@ export const modelHealth = sqliteTable('model_health', {
 })
 
 export type ModelHealthRow = typeof modelHealth.$inferSelect
+
+/**
+ * Admin overrides for which AIR model serves each capability.
+ *
+ * A row here is a *preference*, not a lock: the runner still falls back through
+ * the compiled-in list in lib/air/models.ts when the chosen model is refused by
+ * the gateway. An admin picking badly slows a request down; it cannot take the
+ * app offline.
+ */
+export const modelSettings = sqliteTable('model_settings', {
+  /** An AirService name — 'chat', 'vision', 'asr', … */
+  service: text('service').primaryKey(),
+  model: text('model').notNull(),
+  /** ASURITE of the admin who set it, for the audit line in the UI. */
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type ModelSettingRow = typeof modelSettings.$inferSelect
+
+/**
+ * Which registry tools this app exposes to the model.
+ *
+ * Absence means enabled: a tool newly registered in asu-tools-api is available
+ * without anyone visiting the dashboard, and only an explicit "off" is stored.
+ * The registry stays the source of truth for what *exists*; this decides what
+ * Sol is allowed to reach for.
+ */
+export const toolSettings = sqliteTable('tool_settings', {
+  name: text('name').primaryKey(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type ToolSettingRow = typeof toolSettings.$inferSelect
