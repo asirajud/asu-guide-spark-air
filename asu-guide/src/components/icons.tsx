@@ -267,3 +267,17 @@ export function BriefIcon(p: P) {
     </svg>
   )
 }
+
+export function ExternalLink(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" {...p}>
+      <path d="M14 4.5h5.5V10" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M19.5 4.5 11 13" strokeLinecap="round" />
+      <path
+        d="M17.5 14v4.2a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 18.2V8.3a1.8 1.8 0 0 1 1.8-1.8H10"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
