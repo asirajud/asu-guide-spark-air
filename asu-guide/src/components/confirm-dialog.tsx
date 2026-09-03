@@ -55,10 +55,10 @@ export function ConfirmDialog({
         aria-describedby="confirm-body"
         className="w-full max-w-[420px] rounded-3xl border border-white/10 bg-[#141415] p-6 shadow-2xl"
       >
-        <h2 id="confirm-title" className="text-[18px] font-medium tracking-[-0.02em] text-white">
+        <h2 id="confirm-title" className="text-[20px] font-medium tracking-[-0.02em] text-white">
           {title}
         </h2>
-        <p id="confirm-body" className="text-muted mt-2 text-[14.5px] leading-relaxed">
+        <p id="confirm-body" className="text-muted mt-2 text-[16px] leading-relaxed">
           {body}
         </p>
         <div className="mt-6 flex justify-end gap-2">
@@ -67,7 +67,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onCancel}
-            className="text-fg rounded-full border border-white/12 px-4 py-2 text-[14px] transition-colors hover:bg-white/5 disabled:opacity-50"
+            className="text-fg rounded-full border border-white/12 px-5 py-2.5 text-[15.5px] transition-colors hover:bg-white/5 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -75,7 +75,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className="rounded-full bg-[#8c1d40] px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-[#a3234b] disabled:opacity-50"
+            className="rounded-full bg-[#8c1d40] px-5 py-2.5 text-[15.5px] font-medium text-white transition-colors hover:bg-[#a3234b] disabled:opacity-50"
           >
             {busy ? 'Deleting…' : confirmLabel}
           </button>

@@ -25,7 +25,7 @@ function Section({
   return (
     <div className="mt-7">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-muted text-[12px] tracking-[0.06em] uppercase">{title}</h2>
+        <h2 className="text-muted text-[13px] tracking-[0.06em] uppercase">{title}</h2>
         {right}
       </div>
       {children}
@@ -64,12 +64,12 @@ function PageRow({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-fg truncate text-[14.5px]" title={page.imageName}>
+          <p className="text-fg truncate text-[16px]" title={page.imageName}>
             {page.imageName || `Page ${page.position}`}
           </p>
-          <p className="text-muted text-[12px]">Page {page.position}</p>
+          <p className="text-muted text-[13.5px]">Page {page.position}</p>
         </div>
-        <p className="shrink-0 text-[12px] tabular-nums">
+        <p className="shrink-0 text-[13.5px] tabular-nums">
           {page.status === 'queued' && <span className="text-muted">Queued</span>}
           {page.status === 'reading' && (
             <span className="shimmer-text text-[#ffc627]">Reading…</span>
@@ -85,7 +85,7 @@ function PageRow({
         </p>
       </button>
       {expanded && (
-        <div className="text-fg relative mx-2 mb-3 rounded-2xl border border-white/8 bg-black/30 p-4 text-[14px] leading-[1.5] whitespace-pre-wrap">
+        <div className="text-fg relative mx-2 mb-3 rounded-2xl border border-white/8 bg-black/30 p-4 text-[16px] leading-[1.55] whitespace-pre-wrap">
           <button
             type="button"
             onClick={onToggle}
@@ -94,7 +94,7 @@ function PageRow({
           >
             <Close className="size-4" />
           </button>
-          <p className="text-muted text-[12px]">As read on ASU AIR</p>
+          <p className="text-muted text-[13.5px]">As read on ASU AIR</p>
           <p className="mt-2">{page.reading}</p>
         </div>
       )}
@@ -131,10 +131,15 @@ export function NotebookView({
     if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
   }, [nb.asking, nb.turns.length])
 
-  // The server names a "New notebook" from its first digest; tell the shell so the nav updates.
+  // The server names a "New notebook" from its first digest; tell the shell so
+  // the nav updates. The callback lives in a ref: the shell passes a fresh
+  // arrow every render, and keying the effect on it made every nav refresh
+  // re-fire the rename, which refreshed the nav again — an infinite GET loop.
+  const onRenamedRef = useRef(onRenamed)
+  onRenamedRef.current = onRenamed
   useEffect(() => {
-    if (nb.renamedTo) onRenamed?.(nb.renamedTo)
-  }, [nb.renamedTo, onRenamed])
+    if (nb.renamedTo) onRenamedRef.current?.(nb.renamedTo)
+  }, [nb.renamedTo])
 
   async function confirmRemove() {
     setDeleting(true)
@@ -203,9 +208,9 @@ export function NotebookView({
                 }
               }}
               aria-label="Notebook name"
-              className="w-full truncate bg-transparent text-[20px] font-medium tracking-[-0.02em] text-white outline-none"
+              className="w-full truncate bg-transparent text-[22px] font-medium tracking-[-0.02em] text-white outline-none"
             />
-            <p className="text-muted text-[13px]">
+            <p className="text-muted text-[15px]">
               Notebook · {n} {n === 1 ? 'page' : 'pages'}
               {nb.ingesting && nb.progress?.current && (
                 <span className="text-[#ffc627]"> · reading page {nb.progress.current}</span>
@@ -224,8 +229,8 @@ export function NotebookView({
             <TrashIcon className="size-[18px]" />
           </button>
         </div>
-        {deleteError && <p className="mt-3 text-[13.5px] text-red-400">{deleteError}</p>}
-        {nb.error && <p className="mt-3 text-[13.5px] text-red-400">{nb.error}</p>}
+        {deleteError && <p className="mt-3 text-[15px] text-red-400">{deleteError}</p>}
+        {nb.error && <p className="mt-3 text-[15px] text-red-400">{nb.error}</p>}
 
         <Section
           title="Pages"
@@ -235,7 +240,7 @@ export function NotebookView({
               disabled={full}
               title={full ? `This notebook holds at most ${nb.cap} pages` : undefined}
               onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-1.5 text-[13.5px] transition-colors hover:bg-white/5 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-2 text-[15px] transition-colors hover:bg-white/5 disabled:opacity-40"
             >
               <Plus className="size-3.5" />
               Add pages
@@ -264,7 +269,7 @@ export function NotebookView({
             {total === 0 && !nb.ingesting ? (
               <div className="flex flex-col items-center gap-2 py-4">
                 <PhotoStack className="size-8 text-muted" />
-                <p className="text-muted text-center text-[14px]">
+                <p className="text-muted text-center text-[16px]">
                   Drop photos of your notebook pages here, as many as you like. Sol reads them one
                   at a time and builds one understanding of the whole set.
                 </p>
@@ -304,20 +309,20 @@ export function NotebookView({
           title="Understanding"
           right={
             nb.notebook?.digestModel ? (
-              <span className="text-muted text-[12px]">
+              <span className="text-muted text-[13.5px]">
                 rewritten by {nb.notebook.digestModel} on ASU AIR
               </span>
             ) : undefined
           }
         >
           {nb.notebook?.digest ? (
-            <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[15.5px] leading-[1.55] text-fg">
+            <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[17px] leading-[1.55] text-fg">
               <RichText text={headingsToBold(nb.notebook.digest)} />
             </div>
           ) : nb.ingesting ? (
-            <p className="shimmer-text mt-3 text-[15px]">Building an understanding of the pages…</p>
+            <p className="shimmer-text mt-3 text-[17px]">Building an understanding of the pages…</p>
           ) : (
-            <p className="text-muted mt-3 text-[14px]">Nothing read yet. Add pages above.</p>
+            <p className="text-muted mt-3 text-[16px]">Nothing read yet. Add pages above.</p>
           )}
         </Section>
 
@@ -357,7 +362,7 @@ export function NotebookView({
                       key={s}
                       type="button"
                       onClick={() => void nb.ask(s)}
-                      className="text-fg shrink-0 rounded-full border border-[#3c4043] px-4 py-2 text-[13.5px] whitespace-nowrap transition-colors hover:bg-[#1f1f1f] active:scale-95"
+                      className="text-fg shrink-0 rounded-full border border-[#3c4043] px-4 py-2 text-[15px] whitespace-nowrap transition-colors hover:bg-[#1f1f1f] active:scale-95"
                     >
                       {s}
                     </button>
@@ -374,7 +379,7 @@ export function NotebookView({
           <Composer value={draft} onChange={setDraft} onSubmit={submit} inputRef={inputRef} />
         ) : (
           <div className="flex items-center gap-3 rounded-full border border-dashed border-white/12 px-5 py-3.5">
-            <span className="text-muted text-[15px]">
+            <span className="text-muted text-[17px]">
               Add pages first, then ask anything about them
             </span>
           </div>
