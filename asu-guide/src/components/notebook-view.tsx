@@ -1,0 +1,339 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { NotebookIcon, Plus, PhotoStack, Close } from '@/components/icons'
+import { Composer } from '@/components/composer'
+import { RichText } from '@/components/rich-text'
+import { useNotebook } from '@/hooks/use-notebook'
+import type { NotebookPage } from '@/hooks/use-notebook'
+
+/** RichText has no heading syntax; a `## Title` line becomes a bold line so sections still read as sections. */
+function headingsToBold(md: string): string {
+  return md.replace(/^#{1,6}\s+(.+)$/gm, '**$1**')
+}
+
+function Section({
+  title,
+  right,
+  children,
+}: {
+  title: string
+  right?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div className="mt-7">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-muted text-[12px] tracking-[0.06em] uppercase">{title}</h2>
+        {right}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function PageRow({
+  page,
+  expanded,
+  onToggle,
+}: {
+  page: NotebookPage
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const isRead = page.status === 'read'
+  return (
+    <li className="border-b border-white/6 last:border-b-0">
+      <button
+        type="button"
+        onClick={isRead ? onToggle : undefined}
+        aria-expanded={isRead ? expanded : undefined}
+        className={`flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left ${
+          isRead ? 'cursor-pointer transition-colors hover:bg-white/[0.04]' : 'cursor-default'
+        }`}
+      >
+        <div className="size-11 shrink-0 overflow-hidden rounded-lg bg-black/40">
+          {page.previewUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={page.previewUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="text-muted flex h-full items-center justify-center">
+              <NotebookIcon className="size-4" />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-fg truncate text-[14.5px]" title={page.imageName}>
+            {page.imageName || `Page ${page.position}`}
+          </p>
+          <p className="text-muted text-[12px]">Page {page.position}</p>
+        </div>
+        <p className="shrink-0 text-[12px] tabular-nums">
+          {page.status === 'queued' && <span className="text-muted">Queued</span>}
+          {page.status === 'reading' && (
+            <span className="shimmer-text text-[#ffc627]">Reading…</span>
+          )}
+          {page.status === 'read' && (
+            <span className="text-muted">{(page.ms / 1000).toFixed(1)}s</span>
+          )}
+          {page.status === 'failed' && (
+            <span title={page.error} className="text-red-400">
+              Could not read
+            </span>
+          )}
+        </p>
+      </button>
+      {expanded && (
+        <div className="text-fg relative mx-2 mb-3 rounded-2xl border border-white/8 bg-black/30 p-4 text-[14px] leading-[1.5] whitespace-pre-wrap">
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label="Close"
+            className="text-muted hover:text-fg absolute top-3 right-3 transition-colors"
+          >
+            <Close className="size-4" />
+          </button>
+          <p className="text-muted text-[12px]">As read on ASU AIR</p>
+          <p className="mt-2">{page.reading}</p>
+        </div>
+      )}
+    </li>
+  )
+}
+
+export function NotebookView({
+  id,
+  onRenamed,
+}: {
+  id: string
+  onRenamed?: (name: string) => void
+}) {
+  const nb = useNotebook(id)
+  const [draft, setDraft] = useState('')
+  const [expanded, setExpanded] = useState<number | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [nameDraft, setNameDraft] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const n = nb.pages.length
+  const hasRead = nb.pages.some((p) => p.status === 'read')
+
+  useEffect(() => {
+    if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
+  }, [nb.asking, nb.turns.length])
+
+  function submit() {
+    const q = draft.trim()
+    if (!q) return
+    void nb.ask(q)
+    setDraft('')
+  }
+
+  if (nb.loading) {
+    return (
+      <div className="thin-scroll relative z-10 flex w-full flex-1 flex-col overflow-y-auto">
+        <div className="mx-auto w-full max-w-[820px] px-5 pt-6 pb-8">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
+              <NotebookIcon className="size-[22px]" />
+            </span>
+            <span className="shimmer-text text-[20px] font-medium tracking-[-0.02em] text-white">
+              Opening notebook…
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="thin-scroll relative z-10 flex w-full flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto w-full max-w-[820px] px-5 pt-6 pb-8">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
+            <NotebookIcon className="size-[22px]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <input
+              type="text"
+              value={nameDraft ?? nb.notebook?.name ?? ''}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={() => {
+                const next = (nameDraft ?? '').trim()
+                setNameDraft(null)
+                if (next && next !== nb.notebook?.name) {
+                  void nb.rename(next).then((ok) => {
+                    if (ok) onRenamed?.(next)
+                  })
+                }
+              }}
+              onKeyDown={(e) => {
+                // Enter commits through onBlur so the rename runs exactly once.
+                if (e.key === 'Enter') e.currentTarget.blur()
+                if (e.key === 'Escape') {
+                  setNameDraft(null)
+                  e.currentTarget.blur()
+                }
+              }}
+              aria-label="Notebook name"
+              className="w-full truncate bg-transparent text-[20px] font-medium tracking-[-0.02em] text-white outline-none"
+            />
+            <p className="text-muted text-[13px]">
+              Notebook · {n} {n === 1 ? 'page' : 'pages'}
+              {nb.ingesting &&
+                nb.progress &&
+                ` · reading page ${nb.progress.current} of ${nb.progress.total}`}
+            </p>
+          </div>
+        </div>
+        {nb.error && <p className="mt-3 text-[13.5px] text-red-400">{nb.error}</p>}
+
+        <Section
+          title="Pages"
+          right={
+            <button
+              type="button"
+              disabled={nb.ingesting}
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-1.5 text-[13.5px] transition-colors hover:bg-white/5 disabled:opacity-40"
+            >
+              <Plus className="size-3.5" />
+              Add pages
+            </button>
+          }
+        >
+          <div
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragging(true)
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault()
+              setDragging(false)
+              const files = Array.from(e.dataTransfer.files).filter((f) =>
+                f.type.startsWith('image/'),
+              )
+              void nb.addPages(files)
+            }}
+            className={`mt-3 rounded-3xl border border-dashed p-4 transition-colors ${dragging ? 'border-[#ffc627]/60 bg-[#ffc627]/5' : 'border-white/12'}`}
+          >
+            {nb.pages.length === 0 && !nb.ingesting ? (
+              <div className="flex flex-col items-center gap-2 py-4">
+                <PhotoStack className="size-8 text-muted" />
+                <p className="text-muted text-center text-[14px]">
+                  Drop photos of your notebook pages here, as many as you like. Sol reads them one
+                  at a time and builds one understanding of the whole set.
+                </p>
+              </div>
+            ) : (
+              <ul className="flex flex-col">
+                {nb.pages.map((p) => (
+                  <PageRow
+                    key={p.position}
+                    page={p}
+                    expanded={expanded === p.position}
+                    onToggle={() => setExpanded(expanded === p.position ? null : p.position)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </Section>
+
+        <Section
+          title="Understanding"
+          right={
+            nb.notebook?.digestModel ? (
+              <span className="text-muted text-[12px]">
+                rewritten by {nb.notebook.digestModel} on ASU AIR
+              </span>
+            ) : undefined
+          }
+        >
+          {nb.notebook?.digest ? (
+            <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[15.5px] leading-[1.55] text-fg">
+              <RichText text={headingsToBold(nb.notebook.digest)} />
+            </div>
+          ) : nb.ingesting ? (
+            <p className="shimmer-text mt-3 text-[15px]">Building an understanding of the pages…</p>
+          ) : (
+            <p className="text-muted mt-3 text-[14px]">Nothing read yet. Add pages above.</p>
+          )}
+        </Section>
+
+        {hasRead && (
+          <Section title="Ask this notebook">
+            <div className="mt-3 flex flex-col gap-7">
+              {nb.turns.map((t) =>
+                t.role === 'user' ? (
+                  <div key={t.id} className="flex justify-end">
+                    <p className="bg-surface-2 text-fg max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">
+                      {t.content}
+                    </p>
+                  </div>
+                ) : (
+                  <div key={t.id}>
+                    <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
+                      <RichText text={t.content} />
+                    </div>
+                    {t.meta && (
+                      <p className="text-muted mt-4 text-[12.5px]">
+                        Answered by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in{' '}
+                        {(t.meta.ms / 1000).toFixed(1)}s
+                      </p>
+                    )}
+                  </div>
+                ),
+              )}
+              {nb.asking && <p className="shimmer-text text-[17px] font-medium">Thinking…</p>}
+              {nb.turns.length === 0 && !nb.asking && (
+                <div className="no-scroll -mx-4 flex gap-2 overflow-x-auto px-4">
+                  {[
+                    'Summarise what these pages cover',
+                    'What terms are defined here?',
+                    'What is still unclear or unfinished?',
+                  ].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => void nb.ask(s)}
+                      className="text-fg shrink-0 rounded-full border border-[#3c4043] px-4 py-2 text-[13.5px] whitespace-nowrap transition-colors hover:bg-[#1f1f1f] active:scale-95"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
+      </div>
+
+      <div className="mx-auto mt-auto w-full max-w-[820px] shrink-0 px-4 pb-5">
+        {hasRead ? (
+          <Composer value={draft} onChange={setDraft} onSubmit={submit} inputRef={inputRef} />
+        ) : (
+          <div className="flex items-center gap-3 rounded-full border border-dashed border-white/12 px-5 py-3.5">
+            <span className="text-muted text-[15px]">
+              Add pages first, then ask anything about them
+            </span>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = Array.from(e.target.files ?? [])
+          e.target.value = ''
+          void nb.addPages(files)
+        }}
+      />
+    </div>
+  )
+}

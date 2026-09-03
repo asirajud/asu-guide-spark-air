@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat } from '@/components/chat'
 import { Header } from '@/components/header'
-import { SideNav } from '@/components/side-nav'
-import { NOTEBOOKS, NotebookPreview } from '@/components/notebook-preview'
+import { SideNav, type NotebookNavItem } from '@/components/side-nav'
+import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
@@ -62,11 +62,14 @@ export function AppShell({
   events,
   asurite,
   railInitiallyOpen = true,
+  notebooksEnabled = false,
 }: {
   events: DemoEvent[]
   asurite: string | null
   /** Read from a cookie on the server so the first paint matches. */
   railInitiallyOpen?: boolean
+  /** Admin switch from /s/admin. Off hides the section and skips the fetch. */
+  notebooksEnabled?: boolean
 }) {
   const [chats, setChats] = useState<ChatSummary[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -82,6 +85,9 @@ export function AppShell({
   /** Chat just named by an AIR model, so the sidebar can type its title out. */
   const [justTitled, setJustTitled] = useState<string | null>(null)
   const [restoredTurns, setRestoredTurns] = useState<Turn[] | null>(null)
+  const [notebooks, setNotebooks] = useState<NotebookNavItem[]>([])
+  /** Notebook open in the stage. Null means the chat (or a preview) is showing. */
+  const [openNotebook, setOpenNotebook] = useState<string | null>(null)
 
   /**
    * The conversation row is created lazily on the first turn. Turns arrive about
@@ -94,6 +100,11 @@ export function AppShell({
   const refresh = useCallback(async () => {
     const res = await fetch('/api/chats')
     if (res.ok) setChats(((await res.json()) as { chats: ChatSummary[] }).chats)
+  }, [])
+
+  const refreshNotebooks = useCallback(async () => {
+    const res = await fetch('/api/notebooks')
+    if (res.ok) setNotebooks(((await res.json()) as { notebooks: NotebookNavItem[] }).notebooks)
   }, [])
 
   // Load the saved conversation list once, then reopen whatever was last open.
@@ -114,6 +125,9 @@ export function AppShell({
       } else if (last) {
         writeStored(activeKey(asurite), null)
       }
+
+      // Refresh notebooks if asurite is non-null
+      if (asurite && notebooksEnabled) void refreshNotebooks()
     })()
     return () => {
       cancelled = true
@@ -123,6 +137,7 @@ export function AppShell({
 
   function newChat() {
     setPreview(null)
+    setOpenNotebook(null)
     chatIdRef.current = null
     writeStored(activeKey(asurite), null)
     setActiveId(null)
@@ -195,6 +210,7 @@ export function AppShell({
   async function select(id: string) {
     const res = await fetch(`/api/chats/${id}`)
     setPreview(null)
+    setOpenNotebook(null)
     setNavOpen(false)
     if (!res.ok) {
       writeStored(activeKey(asurite), null)
@@ -256,7 +272,23 @@ export function AppShell({
     void refresh()
   }
 
-  const notebook = NOTEBOOKS.find((n) => n.id === preview) ?? null
+  async function newNotebook() {
+    const res = await fetch('/api/notebooks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'New notebook' }),
+    })
+    if (!res.ok) return
+    const { id } = (await res.json()) as { id: string }
+    await refreshNotebooks()
+    openNotebookById(id)
+  }
+
+  function openNotebookById(id: string) {
+    setPreview(null)
+    setOpenNotebook(id)
+    setNavOpen(false)
+  }
 
   return (
     <>
@@ -264,7 +296,7 @@ export function AppShell({
         <SideNav
           open={navOpen}
           chats={chats}
-          activeId={activeId}
+          activeId={openNotebook ? null : activeId}
           onClose={() => setNavOpen(false)}
           onNewChat={newChat}
           onSelect={select}
@@ -278,8 +310,14 @@ export function AppShell({
           openPreview={preview}
           onOpenPreview={(id) => {
             setPreview(id)
+            setOpenNotebook(null)
             setNavOpen(false)
           }}
+          notebooks={notebooks}
+          notebooksEnabled={notebooksEnabled}
+          openNotebook={openNotebook}
+          onOpenNotebook={openNotebookById}
+          onNewNotebook={() => void newNotebook()}
         />
       )}
 
@@ -304,8 +342,12 @@ export function AppShell({
         <div className="relative flex min-h-0 w-full flex-1 flex-col">
           {preview === 'brief' ? (
             <DailyBriefPreview events={events} />
-          ) : notebook ? (
-            <NotebookPreview notebook={notebook} />
+          ) : openNotebook ? (
+            <NotebookView
+              key={openNotebook}
+              id={openNotebook}
+              onRenamed={() => void refreshNotebooks()}
+            />
           ) : (
             <Chat
               key={sessionKey}

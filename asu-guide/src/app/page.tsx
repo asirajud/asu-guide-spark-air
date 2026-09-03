@@ -2,6 +2,7 @@ import { AppShell } from '@/components/app-shell'
 import { getDemoEvents } from '@/lib/events'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/session'
+import { isFeatureEnabled } from '@/lib/features'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export default async function Home() {
         events={events}
         asurite={session?.asurite ?? null}
         railInitiallyOpen={railInitiallyOpen}
+        notebooksEnabled={isFeatureEnabled('notebooks')}
       />
     </div>
   )
