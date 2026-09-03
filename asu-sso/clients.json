@@ -10,7 +10,7 @@
     {
       "client_id": "asu-guide-demo",
       "client_secret": "demo-secret-not-a-real-credential",
-      "name": "ASU Guide (demo)",
+      "name": "Sol (demo)",
       "redirect_uris": [
         "http://localhost:3000/api/auth/callback"
       ],

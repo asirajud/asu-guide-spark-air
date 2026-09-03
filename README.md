@@ -1,6 +1,6 @@
-# ASU Guide — Spark Challenge 2026
+# Sol — Spark Challenge 2026
 
-A campus assistant built on the **ASU AI Research Acceleration Platform (AIR)**.
+**Sol** is a campus assistant built on the **ASU AI Research Acceleration Platform (AIR)** — named after Sol, the ASU supercomputer every one of its answers runs on.
 Team **InnovatAIRs** · ASU AIR Spark Challenge, Sept 2–4 2026.
 
 Every model call in this project runs on ASU's own self-hosted open-weight

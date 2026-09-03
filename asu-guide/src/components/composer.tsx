@@ -87,8 +87,8 @@ export function Composer({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={transcribing}
-          placeholder={recording ? 'Listening…' : 'Ask ASU Guide'}
-          aria-label="Ask ASU Guide"
+          placeholder={recording ? 'Listening…' : 'Ask Sol'}
+          aria-label="Ask Sol"
           autoComplete="off"
           className="text-fg placeholder:text-muted min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.01em] outline-none disabled:opacity-50"
         />

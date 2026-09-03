@@ -2,7 +2,7 @@
 
 import { Chevron, ComposePencil, Hamburger } from '@/components/icons'
 
-/** Mirrors the Gemini app bar: hamburger · "ASU Guide AIR ⌄ •" · compose · avatar. */
+/** Mirrors the Gemini app bar: hamburger · "Sol AIR ⌄ •" · compose · avatar. */
 export function Header({
   onMenu,
   onNewChat,
@@ -28,7 +28,7 @@ export function Header({
 
       <div className="flex flex-1 items-center gap-1.5 pl-1">
         <span className="text-[18px] leading-none font-medium tracking-[-0.02em] text-white">
-          ASU&nbsp;Guide
+          Sol
         </span>
         <span className="text-muted text-[18px] leading-none font-normal tracking-[-0.02em]">
           AIR

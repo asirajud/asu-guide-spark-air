@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { airFetch, callAir } from '@/lib/air/call'
 import { THINKING_OFF } from '@/lib/air/models'
 import { getTools, callTool, extractEvents, summariseForModel, type ToolEvent } from '@/lib/tools'
+import { describeToolCall, summariseOutcome, type TraceEvent } from '@/lib/tool-trace'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -29,7 +30,7 @@ function contextualise(m: Incoming): ChatMessage {
 }
 
 function systemPrompt(asurite: string | null, hasTools: boolean): string {
-  let prompt = `You are ASU Guide, a campus assistant for Arizona State University students, running on the ASU AIR platform.
+  let prompt = `You are Sol, a campus assistant named after Sol, the ASU supercomputer you run on. You are a campus assistant for Arizona State University students, running on the ASU AIR platform.
 Be concise: one to three short sentences unless the student asks for detail. Never use markdown headings or bullet lists.`
   if (asurite) {
     prompt += `\nThe signed-in student's ASURITE is ${asurite}. Greet them by it the first time you speak in a conversation, then stop repeating it.`
@@ -78,114 +79,156 @@ export async function POST(request: Request) {
     ...incoming.slice(-MAX_TURNS).map(contextualise),
   ]
 
+  // The answer is streamed as newline-delimited JSON so the UI can show each
+  // tool call as it happens — including the ones that fail and get retried —
+  // instead of a spinner until the whole loop is done. The last line is always
+  // `done` or `error`; there is no partial-text streaming.
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const emit = (ev: TraceEvent) => controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'))
+      try {
+        emit(await runToolLoop(messages, tools, emit))
+      } catch (err) {
+        emit({
+          type: 'error',
+          error: `No reasoning model on AIR answered (is the ASU VPN up?): ${err instanceof Error ? err.message : 'Unknown error'}`,
+        })
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Accel-Buffering': 'no',
+    },
+  })
+}
+
+async function runToolLoop(
+  messages: ChatMessage[],
+  tools: Awaited<ReturnType<typeof getTools>>,
+  emit: (ev: TraceEvent) => void,
+): Promise<TraceEvent> {
   const collected: ToolEvent[] = []
   let reserved: ToolEvent[] = []
   const toolLog: { name: string; ok: boolean; ms: number }[] = []
   let text = ''
   let usedModel = ''
   let totalMs = 0
+  let step = 0
 
-  try {
-    for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-      const { value, model, ms } = await callAir('chat', async (m) => {
-        const gptOss = m.startsWith('gpt-oss')
-        const res = await airFetch(
-          '/chat/completions',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: m,
-              // gpt-oss spends its budget on hidden reasoning before it writes a word,
-              // so it needs both a bigger ceiling and its reasoning dialled down.
-              max_tokens: gptOss ? 900 : 400,
-              temperature: 0.5,
-              ...(gptOss ? { reasoning_effort: 'low' } : {}),
-              ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
-              messages,
-              // On the last permitted round the tools are withheld, which forces the
-              // model to stop calling and answer in prose.
-              ...(tools.length > 0 && round < MAX_TOOL_ROUNDS
-                ? { tools, tool_choice: 'auto' }
-                : {}),
-            }),
-          },
-          55_000,
-        )
-        const data = (await res.json()) as {
-          choices?: { message?: ChatMessage }[]
-        }
-        const message = data?.choices?.[0]?.message
-        if (!message) throw new Error(`${m} returned no message`)
-        return message
-      })
-
-      usedModel = model
-      totalMs += ms
-
-      const msg = value
-
-      messages.push(msg)
-
-      if (msg.tool_calls && msg.tool_calls.length > 0 && round < MAX_TOOL_ROUNDS) {
-        for (const call of msg.tool_calls) {
-          let args: Record<string, unknown> = {}
-          try {
-            args = JSON.parse(call.function.arguments)
-          } catch {
-            // Invalid JSON, pass empty args
-          }
-
-          const started = Date.now()
-          const r = await callTool(call.function.name, args)
-          toolLog.push({ name: call.function.name, ok: r.ok, ms: Date.now() - started })
-
-          if (r.ok) {
-            const events = extractEvents(r.content)
-            for (const event of events) {
-              if (!collected.some((e) => e.id === event.id)) {
-                collected.push(event)
-              }
-            }
-            // Track reservations separately to avoid showing unrelated events
-            if (call.function.name === 'reserve_spot') {
-              reserved = events
-            }
-          }
-
-          messages.push({
-            role: 'tool',
-            tool_call_id: call.id,
-            content: summariseForModel(r.content, r.ok),
-          })
-        }
-        continue
-      } else {
-        text = (msg.content ?? '').trim()
-        break
+  for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+    const { value, model, ms } = await callAir('chat', async (m) => {
+      const gptOss = m.startsWith('gpt-oss')
+      const res = await airFetch(
+        '/chat/completions',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: m,
+            // gpt-oss spends its budget on hidden reasoning before it writes a word,
+            // so it needs both a bigger ceiling and its reasoning dialled down.
+            max_tokens: gptOss ? 900 : 400,
+            temperature: 0.5,
+            ...(gptOss ? { reasoning_effort: 'low' } : {}),
+            ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
+            messages,
+            // On the last permitted round the tools are withheld, which forces the
+            // model to stop calling and answer in prose.
+            ...(tools.length > 0 && round < MAX_TOOL_ROUNDS ? { tools, tool_choice: 'auto' } : {}),
+          }),
+        },
+        55_000,
+      )
+      const data = (await res.json()) as {
+        choices?: { message?: ChatMessage }[]
       }
-    }
-
-    // Normalize whitespace
-    text = text.replace(/[  ]/g, ' ')
-
-    if (!text) {
-      text = 'I could not get an answer together for that — try asking again.'
-    }
-
-    return NextResponse.json({
-      text,
-      events: reserved.length > 0 ? reserved : collected.slice(0, 5),
-      model: usedModel,
-      ms: totalMs,
-      tools: toolLog,
+      const message = data?.choices?.[0]?.message
+      if (!message) throw new Error(`${m} returned no message`)
+      return message
     })
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error: `No reasoning model on AIR answered (is the ASU VPN up?): ${err instanceof Error ? err.message : 'Unknown error'}`,
-      },
-      { status: 502 },
-    )
+
+    usedModel = model
+    totalMs += ms
+
+    const msg = value
+    messages.push(msg)
+
+    if (msg.tool_calls && msg.tool_calls.length > 0 && round < MAX_TOOL_ROUNDS) {
+      for (const call of msg.tool_calls) {
+        let args: Record<string, unknown> = {}
+        try {
+          args = JSON.parse(call.function.arguments)
+        } catch {
+          // Invalid JSON, pass empty args
+        }
+
+        const id = `s${++step}`
+        emit({
+          type: 'tool_start',
+          id,
+          name: call.function.name,
+          label: describeToolCall(call.function.name, args),
+          round,
+        })
+
+        const started = Date.now()
+        const r = await callTool(call.function.name, args)
+        const took = Date.now() - started
+        toolLog.push({ name: call.function.name, ok: r.ok, ms: took })
+        emit({
+          type: 'tool_end',
+          id,
+          ok: r.ok,
+          ms: took,
+          summary: summariseOutcome(call.function.name, r.ok, r.content),
+        })
+
+        if (r.ok) {
+          const events = extractEvents(r.content)
+          for (const event of events) {
+            if (!collected.some((e) => e.id === event.id)) {
+              collected.push(event)
+            }
+          }
+          // Track reservations separately to avoid showing unrelated events
+          if (call.function.name === 'reserve_spot') {
+            reserved = events
+          }
+        }
+
+        messages.push({
+          role: 'tool',
+          tool_call_id: call.id,
+          content: summariseForModel(r.content, r.ok),
+        })
+      }
+      continue
+    } else {
+      text = (msg.content ?? '').trim()
+      break
+    }
+  }
+
+  // Normalize whitespace
+  text = text.replace(/[  ]/g, ' ')
+
+  if (!text) {
+    text = 'I could not get an answer together for that — try asking again.'
+  }
+
+  return {
+    type: 'done',
+    text,
+    events: reserved.length > 0 ? reserved : collected.slice(0, 5),
+    model: usedModel,
+    ms: totalMs,
+    tools: toolLog,
   }
 }

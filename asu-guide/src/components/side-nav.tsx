@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 import { useEffect, useMemo, useState } from 'react'
 import type { ChatSummary } from '@/lib/chats'
 import {
@@ -9,7 +11,6 @@ import {
   PinIcon,
   RenameIcon,
   SearchIcon,
-  Sparkle,
   TrashIcon,
 } from '@/components/icons'
 
@@ -91,10 +92,8 @@ export function SideNav({
         } ${railOpen ? 'lg:w-[300px] lg:border-r' : 'lg:w-0 lg:border-r-0'}`}
       >
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <Sparkle className="size-[26px]" gradientId="nav-sparkle" />
-          <span className="flex-1 text-[21px] font-medium tracking-[-0.02em] text-white">
-            ASU Guide
-          </span>
+          <Image src="/mark-brain.png" alt="" width={26} height={26} className="size-[26px]" />
+          <span className="flex-1 text-[21px] font-medium tracking-[-0.02em] text-white">Sol</span>
           <button
             type="button"
             onClick={onClose}

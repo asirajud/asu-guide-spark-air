@@ -1,7 +1,7 @@
 {
   "name": "asu-guide-spark-air",
   "private": true,
-  "description": "Root tooling for the ASU Guide monolith: Prettier + git hooks. Services live in asu-*/.",
+  "description": "Root tooling for the Sol monolith: Prettier + git hooks. Services live in asu-*/.",
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",

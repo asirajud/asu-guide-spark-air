@@ -8,7 +8,7 @@ These are deliberate design rules that ensure this is clearly a demo:
 
 - An always-visible amber warning banner sits at the top of the sign-in card and cannot be dismissed.
 - Only the three seeded demo accounts sign in (`admin`/`admin`, `sundevil`/`sundevil`, `asirajud`/`sparkdemo`). Passwords are required and verified; a bad user and a bad password return the same error.
-- No ASU logo, wordmark, Hotline banner, or any ASU imagery is reproduced. The header is plain text: "ASU Guide — Demo Sign In".
+- No ASU logo, wordmark, Hotline banner, or any ASU imagery is reproduced. The header is plain text: "Sol — Demo Sign In".
 - The page `<title>` and the `<h1>` both contain the word "Demo".
 - The dev server binds to `127.0.0.1` only (`next dev --port 4000 --hostname 127.0.0.1`).
 

@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'ASU Guide',
+  title: 'Sol',
   description: 'A campus guide for Sun Devils — demo build.',
 }
 

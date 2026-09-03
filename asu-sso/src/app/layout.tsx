@@ -9,7 +9,7 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'ASU Guide — Demo Sign In',
+  title: 'Sol — Demo Sign In',
   description:
     'Mock OAuth 2.0 identity provider for the ASU AIR Spark Challenge. Not a real ASU login.',
 }
