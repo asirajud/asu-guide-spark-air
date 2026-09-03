@@ -138,6 +138,15 @@ export function NotebookView({
     if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
   }, [nb.asking, nb.turns.length])
 
+  useEffect(() => {
+    if (!notesOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setNotesOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [notesOpen])
+
   // The server names a "New notebook" from its first digest; tell the shell so
   // the nav updates. The callback lives in a ref: the shell passes a fresh
   // arrow every render, and keying the effect on it made every nav refresh
@@ -455,8 +464,9 @@ export function NotebookView({
 
       {/* Far-right rail: the sticky board. Wide screens only; it folds into the column below xl. */}
       {/* Sticky board. Collapsed: one small button at the right edge with the
-          open-note count. Open on wide screens: a rail (only the note list
-          scrolls). Open on phones: a bottom sheet over the page. */}
+          open-note count. Open on wide screens: a floating popover pinned to
+          the right edge with its own scroll, nothing else moves. Open on
+          phones: a bottom sheet over the page. Escape closes either. */}
       {!notesOpen && (
         <button
           type="button"
@@ -475,9 +485,13 @@ export function NotebookView({
       )}
 
       {notesOpen && (
-        <aside className="hidden w-[320px] shrink-0 flex-col border-l border-white/6 px-4 pt-6 pb-4 xl:flex">
+        <div
+          role="dialog"
+          aria-label="Sticky notes"
+          className="animate-rise absolute top-4 right-4 bottom-4 z-30 hidden w-[340px] flex-col rounded-3xl border border-white/10 bg-[#141415]/95 p-4 shadow-2xl backdrop-blur xl:flex"
+        >
           <StickyNotes {...notesProps} onClose={() => setNotesOpen(false)} />
-        </aside>
+        </div>
       )}
 
       {notesOpen && (
