@@ -10,9 +10,14 @@ import {
   Dots,
   PinIcon,
   RenameIcon,
+  BriefIcon,
+  NotebookIcon,
   SearchIcon,
   TrashIcon,
 } from '@/components/icons'
+import { RenameRow } from '@/components/rename-row'
+import { NOTEBOOKS } from '@/components/notebook-preview'
+import { TypedTitle } from '@/components/typed-title'
 
 /** Left drawer: new chat, search, and the saved conversation list. */
 export function SideNav({
@@ -25,6 +30,10 @@ export function SideNav({
   onRename,
   onTogglePin,
   onDelete,
+  onOpenPreview,
+  openPreview = null,
+  justTitled = null,
+  onTitleTyped,
   asurite = null,
   railOpen = true,
 }: {
@@ -34,9 +43,18 @@ export function SideNav({
   onClose: () => void
   onNewChat: () => void
   onSelect: (id: string) => void
-  onRename: (id: string, title: string) => void
+  /** Returns false when the rename failed, so the row can revert and say so. */
+  onRename: (id: string, title: string) => void | boolean | Promise<void | boolean>
   onTogglePin: (id: string, pinned: boolean) => void
   onDelete: (id: string) => void
+  /** Opens a preview of an unbuilt feature; null returns to the chat. */
+  onOpenPreview: (id: string | null) => void
+  /** Which preview is showing: 'brief', a notebook id, or null. */
+  openPreview?: string | null
+  /** Chat whose AIR-generated title should type itself out, once. */
+  justTitled?: string | null
+  /** Clears that flag so a later refresh does not replay the animation. */
+  onTitleTyped: () => void
   /** ASURITE of the signed-in user, or null. */
   asurite?: string | null
   /** Desktop only: whether the permanent rail is expanded. */
@@ -44,20 +62,43 @@ export function SideNav({
 }) {
   const [query, setQuery] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  /** Shown immediately on save; the list itself only catches up after refresh. */
+  const [pending, setPending] = useState<{ id: string; title: string } | null>(null)
+  const [failed, setFailed] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) {
       setMenuFor(null)
+      setRenaming(null)
       setQuery('')
     }
   }, [open])
 
+  // The optimistic title is only a stand-in until the real list carries it.
+  useEffect(() => {
+    if (pending && chats.some((c) => c.id === pending.id && c.title === pending.title))
+      setPending(null)
+  }, [chats, pending])
+
+  async function saveName(id: string, title: string) {
+    setRenaming(null)
+    setFailed(null)
+    setPending({ id, title })
+    const ok = await onRename(id, title)
+    if (ok === false) {
+      setPending(null)
+      setFailed(id)
+      setTimeout(() => setFailed((f) => (f === id ? null : f)), 4000)
+    }
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) =>
-      e.key === 'Escape' && (menuFor ? setMenuFor(null) : onClose())
+      e.key === 'Escape' && !renaming && (menuFor ? setMenuFor(null) : onClose())
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [menuFor, onClose])
+  }, [menuFor, renaming, onClose])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -134,6 +175,62 @@ export function SideNav({
             </p>
           )}
 
+          {/* Neither of these is wired to anything — previews of where Sol is
+              going. See docs/ROADMAP.md. */}
+          <button
+            type="button"
+            onClick={() => onOpenPreview('brief')}
+            className={`mt-3 flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
+              openPreview === 'brief' ? 'bg-[#3a1723]' : 'hover:bg-white/5'
+            }`}
+          >
+            <BriefIcon
+              className={`size-[17px] shrink-0 ${
+                openPreview === 'brief' ? 'text-[#ffc627]' : 'text-muted'
+              }`}
+            />
+            <span
+              className={`min-w-0 flex-1 truncate text-[14.5px] ${
+                openPreview === 'brief' ? 'font-medium text-white' : 'text-fg'
+              }`}
+            >
+              Daily brief
+            </span>
+            <span className="text-muted shrink-0 rounded-full border border-white/12 px-2 py-0.5 text-[10.5px] tracking-[0.04em] uppercase">
+              Soon
+            </span>
+          </button>
+
+          <Section label="Notebooks">
+            {NOTEBOOKS.map((n) => {
+              const open = n.id === openPreview
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => onOpenPreview(n.id)}
+                  className={`flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
+                    open ? 'bg-[#3a1723]' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <NotebookIcon
+                    className={`size-[17px] shrink-0 ${open ? 'text-[#ffc627]' : 'text-muted'}`}
+                  />
+                  <span
+                    className={`min-w-0 flex-1 truncate text-[14.5px] ${
+                      open ? 'font-medium text-white' : 'text-fg'
+                    }`}
+                  >
+                    {n.name}
+                  </span>
+                  <span className="text-muted shrink-0 rounded-full border border-white/12 px-2 py-0.5 text-[10.5px] tracking-[0.04em] uppercase">
+                    Soon
+                  </span>
+                </button>
+              )
+            })}
+          </Section>
+
           {pinned.length > 0 && (
             <Section label="Pinned">
               {pinned.map((c) => (
@@ -193,65 +290,175 @@ export function SideNav({
   }
 
   function Row({ chat }: { chat: ChatSummary }) {
-    const active = chat.id === activeId
+    return (
+      <ChatRow
+        chat={chat}
+        active={chat.id === activeId}
+        renaming={renaming === chat.id}
+        menuOpen={menuFor === chat.id}
+        pendingTitle={pending?.id === chat.id ? pending.title : null}
+        failed={failed === chat.id}
+        typeTitle={justTitled === chat.id}
+        onSelect={onSelect}
+        onStartRename={setRenaming}
+        onCancelRename={() => setRenaming(null)}
+        onSave={saveName}
+        onToggleMenu={(id) => setMenuFor(menuFor === id ? null : id)}
+        onCloseMenu={() => setMenuFor(null)}
+        onTogglePin={onTogglePin}
+        onDelete={onDelete}
+        onTyped={onTitleTyped}
+      />
+    )
+  }
+}
+
+/**
+ * Declared at module scope on purpose. Nested inside SideNav it got a fresh
+ * component identity on every render, so the whole row remounted whenever the
+ * chat list refreshed — restarting the title animation mid-type and tearing
+ * the rename input out from under the cursor.
+ */
+function ChatRow({
+  chat,
+  active,
+  renaming,
+  menuOpen,
+  pendingTitle,
+  failed,
+  typeTitle,
+  onSelect,
+  onStartRename,
+  onCancelRename,
+  onSave,
+  onToggleMenu,
+  onCloseMenu,
+  onTogglePin,
+  onDelete,
+  onTyped,
+}: {
+  chat: ChatSummary
+  active: boolean
+  renaming: boolean
+  menuOpen: boolean
+  /** Optimistic title, shown until the real list catches up. */
+  pendingTitle: string | null
+  failed: boolean
+  typeTitle: boolean
+  onSelect: (id: string) => void
+  onStartRename: (id: string) => void
+  onCancelRename: () => void
+  onSave: (id: string, title: string) => void | Promise<void>
+  onToggleMenu: (id: string) => void
+  onCloseMenu: () => void
+  onTogglePin: (id: string, pinned: boolean) => void
+  onDelete: (id: string) => void
+  onTyped: () => void
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const title = pendingTitle ?? chat.title
+
+  if (renaming)
     return (
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => onSelect(chat.id)}
-          className={`flex w-full items-center gap-2 rounded-full py-2.5 pr-10 pl-4 text-left transition-colors ${
-            active ? 'bg-[#3a1723]' : 'hover:bg-white/5'
-          }`}
-        >
-          <span
-            className={`truncate text-[14.5px] ${active ? 'font-medium text-white' : 'text-fg'}`}
-          >
-            {chat.title}
-          </span>
-        </button>
+        <RenameRow
+          initial={chat.title}
+          onSave={(next) => onSave(chat.id, next)}
+          onCancel={onCancelRename}
+        />
+      </div>
+    )
 
-        <button
-          type="button"
-          aria-label={`Options for ${chat.title}`}
-          onClick={() => setMenuFor(menuFor === chat.id ? null : chat.id)}
-          className="text-muted hover:text-fg absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors"
-        >
-          <Dots className="size-[17px]" />
-        </button>
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => onSelect(chat.id)}
+        onDoubleClick={() => onStartRename(chat.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'F2') {
+            e.preventDefault()
+            onStartRename(chat.id)
+          }
+        }}
+        className={`flex w-full items-center gap-2 rounded-full py-2.5 pr-10 pl-4 text-left transition-colors ${
+          active ? 'bg-[#3a1723]' : 'hover:bg-white/5'
+        }`}
+      >
+        <span className={`truncate text-[14.5px] ${active ? 'font-medium text-white' : 'text-fg'}`}>
+          {typeTitle ? <TypedTitle text={title} onDone={onTyped} /> : title}
+        </span>
+      </button>
 
-        {menuFor === chat.id && (
-          <div className="animate-sheet-in absolute top-9 right-2 z-10 w-[190px] overflow-hidden rounded-2xl bg-[#2b2b2b] py-1.5 shadow-xl shadow-black/60">
-            <MenuItem
-              icon={<PinIcon className="size-[18px]" />}
-              label={chat.pinned ? 'Unpin' : 'Pin'}
-              onClick={() => {
-                onTogglePin(chat.id, !chat.pinned)
-                setMenuFor(null)
-              }}
-            />
-            <MenuItem
-              icon={<RenameIcon className="size-[18px]" />}
-              label="Rename"
-              onClick={() => {
-                const next = window.prompt('Rename chat', chat.title)
-                if (next?.trim()) onRename(chat.id, next.trim())
-                setMenuFor(null)
-              }}
-            />
+      <button
+        type="button"
+        aria-label={`Options for ${title}`}
+        onClick={() => onToggleMenu(chat.id)}
+        className="text-muted hover:text-fg absolute top-1/2 right-2 -translate-y-1/2 rounded-full p-1.5 transition-colors"
+      >
+        <Dots className="size-[17px]" />
+      </button>
+
+      {failed && (
+        <p role="status" className="px-4 pt-1 pb-0.5 text-[12.5px] text-[#ff8f8f]">
+          Could not rename that conversation.
+        </p>
+      )}
+
+      {menuOpen && (
+        <div className="animate-sheet-in absolute top-9 right-2 z-10 w-[190px] overflow-hidden rounded-2xl bg-[#2b2b2b] py-1.5 shadow-xl shadow-black/60">
+          <MenuItem
+            icon={<PinIcon className="size-[18px]" />}
+            label={chat.pinned ? 'Unpin' : 'Pin'}
+            onClick={() => {
+              onTogglePin(chat.id, !chat.pinned)
+              onCloseMenu()
+            }}
+          />
+          <MenuItem
+            icon={<RenameIcon className="size-[18px]" />}
+            label="Rename"
+            onClick={() => {
+              onCloseMenu()
+              onStartRename(chat.id)
+            }}
+          />
+          {/* Deleting is irreversible, so it asks in place rather than through
+              a native confirm() the dark UI cannot style. */}
+          {confirmDelete ? (
+            <div className="flex items-center gap-2 px-4 py-2.5 text-[14.5px]">
+              <span className="text-fg flex-1">Delete?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(chat.id)
+                  setConfirmDelete(false)
+                  onCloseMenu()
+                }}
+                className="rounded-full px-2 py-0.5 text-[#ff8f8f] transition-colors hover:bg-white/6"
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="text-muted hover:text-fg rounded-full px-2 py-0.5 transition-colors"
+              >
+                No
+              </button>
+            </div>
+          ) : (
             <MenuItem
               icon={<TrashIcon className="size-[18px]" />}
               label="Delete"
               destructive
-              onClick={() => {
-                onDelete(chat.id)
-                setMenuFor(null)
-              }}
+              onClick={() => setConfirmDelete(true)}
             />
-          </div>
-        )}
-      </div>
-    )
-  }
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function MenuItem({

@@ -238,3 +238,32 @@ export function SendArrow(p: P) {
     </svg>
   )
 }
+
+export function NotebookIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <path
+        d="M7 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H7z"
+        strokeLinejoin="round"
+      />
+      <path d="M7 3.5a2.5 2.5 0 0 0 0 5h1.5v-5z" strokeLinejoin="round" />
+      <path
+        d="M7 8.5a2.5 2.5 0 0 0 0 5h1.5v-5zM7 13.5a2.5 2.5 0 0 0 0 5h1.5v-5z"
+        strokeLinejoin="round"
+      />
+      <path d="M12 8h4M12 12h4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function BriefIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <path
+        d="M4.5 6.2A1.7 1.7 0 0 1 6.2 4.5h11.6a1.7 1.7 0 0 1 1.7 1.7v11.6a1.7 1.7 0 0 1-1.7 1.7H6.2a1.7 1.7 0 0 1-1.7-1.7z"
+        strokeLinejoin="round"
+      />
+      <path d="M8 9h8M8 12.5h8M8 16h4.5" strokeLinecap="round" />
+    </svg>
+  )
+}
