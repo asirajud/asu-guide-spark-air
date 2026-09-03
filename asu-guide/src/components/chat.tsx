@@ -7,7 +7,7 @@ import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
 import { EventCard } from '@/components/event-card'
 import { RichText } from '@/components/rich-text'
-import { Sparkle } from '@/components/icons'
+import Image from 'next/image'
 import { ToolTrace } from '@/components/tool-trace'
 import type { DemoEvent } from '@/lib/events'
 import type { ToolStep, TraceEvent } from '@/lib/tool-trace'
@@ -365,7 +365,14 @@ export function Chat({
         <div className="mx-auto w-full max-w-[820px] px-5 pb-8">
           {isEmpty ? (
             <div className="flex h-full flex-col items-center justify-center pb-24">
-              <Sparkle className="size-[52px]" />
+              <Image
+                src="/sparky.png"
+                alt=""
+                width={156}
+                height={310}
+                priority
+                className="h-[64px] w-auto drop-shadow-[0_0_18px_rgba(255,198,39,0.25)]"
+              />
               <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
                 {asurite
                   ? 'Where should we start?'
