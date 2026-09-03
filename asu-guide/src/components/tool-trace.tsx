@@ -17,7 +17,7 @@ export function ToolTrace({ steps, live = false }: { steps: ToolStep[]; live?: b
       }`}
     >
       {steps.map((s) => (
-        <li key={s.id} className="animate-rise flex items-baseline gap-2.5">
+        <li key={s.id} className="animate-rise flex items-baseline gap-2">
           <StatusDot status={s.status} />
           <span className={s.status === 'error' ? 'text-fg/70' : 'text-fg/85'}>{s.label}</span>
           {s.status === 'running' ? (
@@ -45,20 +45,42 @@ function StatusDot({ status }: { status: ToolStep['status'] }) {
     return (
       <span
         aria-label="running"
-        className="bg-asu-gold inline-block size-[7px] shrink-0 translate-y-[-1px] animate-pulse rounded-full"
+        className="bg-asu-gold inline-block size-[9px] shrink-0 translate-y-[-1px] animate-pulse rounded-full"
       />
     )
   }
   if (status === 'error') {
     return (
-      <span aria-label="failed" className="text-asu-maroon shrink-0 text-[12px] leading-none">
-        ✕
-      </span>
+      <svg
+        aria-label="failed"
+        viewBox="0 0 16 16"
+        className="fill-asu-maroon size-[15px] shrink-0 translate-y-[2px]"
+      >
+        <circle cx="8" cy="8" r="8" />
+        <path
+          d="M5.2 5.2l5.6 5.6M10.8 5.2l-5.6 5.6"
+          stroke="#fff"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      </svg>
     )
   }
   return (
-    <span aria-label="done" className="shrink-0 text-[12px] leading-none text-[#7fd1a0]">
-      ✓
-    </span>
+    <svg
+      aria-label="done"
+      viewBox="0 0 16 16"
+      className="size-[15px] shrink-0 translate-y-[2px] fill-[#3fb96f]"
+    >
+      <circle cx="8" cy="8" r="8" />
+      <path
+        d="M4.6 8.3l2.3 2.3 4.5-4.9"
+        fill="none"
+        stroke="#0b1a10"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
