@@ -366,7 +366,7 @@ export function Chat({
           {isEmpty ? (
             <div className="flex h-full flex-col items-center justify-center pb-24">
               <Image
-                src="/mark.png"
+                src="/mark-brain.png"
                 alt=""
                 width={64}
                 height={64}

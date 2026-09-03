@@ -10,4 +10,4 @@ image 1.8s · chat 1.7s · titles 0.3s · rerank 0.15s.
 
 ## App mark
 
-`../asu-guide/public/mark.png` — a gold brain struck by a maroon lightning bolt, used in the empty state and side nav. Generated on AIR with `flux-2` (512×512), background keyed out.
+`../asu-guide/public/mark-brain.png` — a gold brain struck by a maroon lightning bolt, used in the empty state and side nav. Generated on AIR with `flux-2` (512×512), background keyed out.

@@ -92,7 +92,7 @@ export function SideNav({
         } ${railOpen ? 'lg:w-[300px] lg:border-r' : 'lg:w-0 lg:border-r-0'}`}
       >
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <Image src="/mark.png" alt="" width={26} height={26} className="size-[26px]" />
+          <Image src="/mark-brain.png" alt="" width={26} height={26} className="size-[26px]" />
           <span className="flex-1 text-[21px] font-medium tracking-[-0.02em] text-white">
             ASU Guide
           </span>
