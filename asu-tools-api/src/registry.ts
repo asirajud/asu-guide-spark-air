@@ -250,8 +250,8 @@ export function reloadRegistry(): void {
 }
 
 /**
- * The three-tool budget lives here as data, not code: SESSION_TOOLS names the tools that are
+ * The session tool budget lives here as data, not code: SESSION_TOOLS names the tools that are
  * exposed to a chat model at session start. Everything else is reachable only through
  * list_capabilities, so the per-turn prompt cost stays flat as the registry grows.
  */
-export const SESSION_TOOLS = ['search_events', 'get_event_details', 'reserve_spot']
+export const SESSION_TOOLS = ['search_events', 'get_event_details', 'reserve_spot', 'web_search']

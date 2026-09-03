@@ -21,5 +21,10 @@
     "typescript-eslint": "^8.69.0"
   },
   "private": true,
-  "type": "module"
+  "type": "module",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
 }

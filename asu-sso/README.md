@@ -1,13 +1,13 @@
 # ASU SSO Demo
 
-> ⚠️ **WARNING**: This is a demo/mock identity provider for the ASU AIR Spark Challenge. It is NOT a real ASU login system. It is not affiliated with, endorsed by, or connected to Arizona State University's real sign-in service. No password is ever checked, stored, logged, or transmitted. Do not enter a real ASURITE password into it or anything that looks like it.
+> ⚠️ **WARNING**: This is a demo/mock identity provider for the ASU AIR Spark Challenge. It is NOT a real ASU login system. It is not affiliated with, endorsed by, or connected to Arizona State University's real sign-in service. Accounts are fictional and seeded locally; passwords are verified against scrypt hashes in a local SQLite file and never leave this process. Do not enter a real ASURITE password into it or anything that looks like it.
 
 ## Safety Constraints
 
 These are deliberate design rules that ensure this is clearly a demo:
 
 - An always-visible amber warning banner sits at the top of the sign-in card and cannot be dismissed.
-- Any ASURITE value is accepted. The password field is decorative — its value is never read by the server.
+- Only the three seeded demo accounts sign in (`admin`/`admin`, `sundevil`/`sundevil`, `asirajud`/`sparkdemo`). Passwords are required and verified; a bad user and a bad password return the same error.
 - No ASU logo, wordmark, Hotline banner, or any ASU imagery is reproduced. The header is plain text: "ASU Guide — Demo Sign In".
 - The page `<title>` and the `<h1>` both contain the word "Demo".
 - The dev server binds to `127.0.0.1` only (`next dev --port 4000 --hostname 127.0.0.1`).
@@ -15,6 +15,7 @@ These are deliberate design rules that ensure this is clearly a demo:
 ## What is Actually Real
 
 The OAuth 2.0 authorization-code flow with PKCE is genuine:
+
 - `code_challenge_method=S256` is required
 - The `code_verifier` is verified with a SHA-256 + constant-time comparison at the token endpoint
 - Authorization codes are single-use and expire after 60 seconds
@@ -48,13 +49,13 @@ The service will be available at http://localhost:4000
 
 ## Endpoints
 
-| Method | Path                        | Purpose                                  |
-|--------|-----------------------------|------------------------------------------|
-| GET    | `/authorize`                | OAuth 2.0 authorization endpoint         |
-| POST   | `/api/login`                | Demo login form submission               |
-| POST   | `/api/token`                | OAuth 2.0 token endpoint                 |
-| GET    | `/api/userinfo`             | User info endpoint                       |
-| GET    | `/api/logout`               | Logout endpoint                          |
+| Method | Path                                | Purpose                               |
+| ------ | ----------------------------------- | ------------------------------------- |
+| GET    | `/authorize`                        | OAuth 2.0 authorization endpoint      |
+| POST   | `/api/login`                        | Demo login form submission            |
+| POST   | `/api/token`                        | OAuth 2.0 token endpoint              |
+| GET    | `/api/userinfo`                     | User info endpoint                    |
+| GET    | `/api/logout`                       | Logout endpoint                       |
 | GET    | `/.well-known/openid-configuration` | OpenID Connect configuration endpoint |
 
 ## Storage

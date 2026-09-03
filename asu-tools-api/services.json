@@ -10,43 +10,135 @@
         {
           "name": "search_events",
           "description": "Search real upcoming ASU campus events by what the student is interested in, in plain language.",
-          "route": { "method": "POST", "path": "/search" },
+          "route": {
+            "method": "POST",
+            "path": "/search"
+          },
           "inputSchema": {
             "type": "object",
             "properties": {
-              "query": { "type": "string", "minLength": 2, "description": "What the student is looking for, in their own words." },
-              "days_ahead": { "type": "integer", "minimum": 1, "maximum": 90, "description": "How many days ahead to look. Defaults to 21." },
-              "type": { "type": "string", "description": "Optional event type filter, e.g. Workshop, Meeting, Social." },
-              "limit": { "type": "integer", "minimum": 1, "maximum": 10, "description": "How many events to return. Defaults to 5." }
+              "query": {
+                "type": "string",
+                "minLength": 2,
+                "description": "What the student is looking for, in their own words."
+              },
+              "days_ahead": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 90,
+                "description": "How many days ahead to look. Defaults to 21."
+              },
+              "type": {
+                "type": "string",
+                "description": "Optional event type filter, e.g. Workshop, Meeting, Social."
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "description": "How many events to return. Defaults to 5."
+              }
             },
-            "required": ["query"],
+            "required": [
+              "query"
+            ],
             "additionalProperties": false
           }
         },
         {
           "name": "get_event_details",
           "description": "Fetch the full details of one ASU event by its id.",
-          "route": { "method": "GET", "path": "/events/:event_id" },
+          "route": {
+            "method": "GET",
+            "path": "/events/:event_id"
+          },
           "inputSchema": {
             "type": "object",
             "properties": {
-              "event_id": { "type": "string", "minLength": 1, "description": "The id returned by search_events." }
+              "event_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The id returned by search_events."
+              }
             },
-            "required": ["event_id"],
+            "required": [
+              "event_id"
+            ],
             "additionalProperties": false
           }
         },
         {
           "name": "reserve_spot",
           "description": "Hold a mock RSVP for one ASU event on behalf of a signed-in student.",
-          "route": { "method": "POST", "path": "/reservations" },
+          "route": {
+            "method": "POST",
+            "path": "/reservations"
+          },
           "inputSchema": {
             "type": "object",
             "properties": {
-              "event_id": { "type": "string", "minLength": 1, "description": "The id of the event to reserve." },
-              "asurite": { "type": "string", "minLength": 2, "description": "The signed-in student's ASURITE." }
+              "event_id": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The id of the event to reserve."
+              },
+              "asurite": {
+                "type": "string",
+                "minLength": 2,
+                "description": "The signed-in student's ASURITE."
+              }
             },
-            "required": ["event_id", "asurite"],
+            "required": [
+              "event_id",
+              "asurite"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "asu-search-api",
+      "description": "Public web search (Brave) for anything not in the campus events data. Optional: reports not-configured without a BRAVE_API_KEY.",
+      "baseUrl": "http://127.0.0.1:5003",
+      "healthPath": "/health",
+      "contractVersion": "1.0.0",
+      "tools": [
+        {
+          "name": "web_search",
+          "description": "Search the public web for current information that is not in the ASU events data \u2014 news, official ASU pages, deadlines, or anything happening off campus. Prefer search_events for campus events.",
+          "route": {
+            "method": "POST",
+            "path": "/search"
+          },
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "minLength": 2,
+                "description": "What to search for, in plain language."
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "description": "How many results to return. Default 5."
+              },
+              "freshness": {
+                "type": "string",
+                "enum": [
+                  "pd",
+                  "pw",
+                  "pm",
+                  "py"
+                ],
+                "description": "Restrict to the past day, week, month or year."
+              }
+            },
+            "required": [
+              "query"
+            ],
             "additionalProperties": false
           }
         }

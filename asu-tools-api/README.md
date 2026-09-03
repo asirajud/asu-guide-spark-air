@@ -6,7 +6,7 @@ asu-tools-api is the tool registry and dispatch engine for the ASU AIR Spark Cha
 
 ```bash
 pnpm install
-pnpm start          # http://127.0.0.1:5000
+pnpm dev            # http://127.0.0.1:5000  (or ../dev.sh for everything)
 curl -s http://127.0.0.1:5000/health
 ```
 
@@ -25,7 +25,7 @@ curl -s -X POST http://127.0.0.1:5000/mcp -H 'Content-Type: application/json' \
 
 ## The tool budget
 
-Exactly three tools are exposed at session start — search_events, get_event_details, reserve_spot — plus list_capabilities. Every tool description is re-sent on every turn, so the descriptions are one sentence each and the schemas are tight. Anything else in the registry is reachable only by calling list_capabilities first, which keeps the per-turn prompt cost flat as the registry grows. list_capabilities is answered inside this process and is not owned by any registered service.
+Four tools are exposed at session start — search_events, get_event_details, reserve_spot, web_search — plus list_capabilities. The list is `SESSION_TOOLS` in `src/registry.ts`. Every tool description is re-sent on every turn, so the descriptions are one sentence each and the schemas are tight. Anything else in the registry is reachable only by calling list_capabilities first, which keeps the per-turn prompt cost flat as the registry grows. list_capabilities is answered inside this process and is not owned by any registered service.
 
 ## Registering a new service
 
@@ -35,7 +35,7 @@ Exactly three tools are exposed at session start — search_events, get_event_de
 4. POST it to /registry/services. A 201 means created, a 200 means an existing id was replaced. A malformed contract comes back 400 with the offending field named, e.g. `{"error":"invalid_contract","message":"tools[0].route.method must be GET or POST"}`.
 5. Alternatively add it to services.json, the checked-in seed, and POST /registry/reload. registry.json is the mutable runtime state and is written by the registry itself.
 6. Confirm with GET /registry/services, which also health-checks every registered service.
-7. Your new tool is immediately callable and immediately visible through list_capabilities, but it is NOT added to the session tool set — that list is deliberately fixed at three. A service is removed with `DELETE /registry/services/:id`.
+7. Your new tool is immediately callable and immediately visible through list_capabilities, but it is NOT added to the session tool set — that list is deliberately fixed in `SESSION_TOOLS`. A service is removed with `DELETE /registry/services/:id`.
 
 ## Argument validation
 

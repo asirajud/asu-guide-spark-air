@@ -1,16 +1,40 @@
 {
   "folders": [
-    { "name": "asu-guide (app)", "path": "asu-guide" },
-    { "name": "asu-sso (demo IdP)", "path": "asu-sso" },
-    { "name": "spark-air (root)", "path": "." }
+    {
+      "name": "asu-guide (app)",
+      "path": "asu-guide",
+    },
+    {
+      "name": "asu-sso (demo IdP)",
+      "path": "asu-sso",
+    },
+    {
+      "name": "asu-events-api",
+      "path": "asu-events-api",
+    },
+    {
+      "name": "asu-tools-api",
+      "path": "asu-tools-api",
+    },
+    {
+      "name": "asu-search-api",
+      "path": "asu-search-api",
+    },
+    {
+      "name": "spark-air (root)",
+      "path": ".",
+    },
   ],
   "settings": {
-    "files.exclude": { "**/node_modules": true, "**/.next": true },
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true,
+    },
     "search.exclude": {
       "**/node_modules": true,
       "**/.next": true,
-      "**/pnpm-lock.yaml": true
+      "**/pnpm-lock.yaml": true,
     },
-    "editor.formatOnSave": true
-  }
+    "editor.formatOnSave": true,
+  },
 }
