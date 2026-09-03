@@ -8,7 +8,9 @@ import { downscaleImage } from '@/lib/image'
 import { EventCard } from '@/components/event-card'
 import { RichText } from '@/components/rich-text'
 import { Sparkle } from '@/components/icons'
+import { ToolTrace } from '@/components/tool-trace'
 import type { DemoEvent } from '@/lib/events'
+import type { ToolStep, TraceEvent } from '@/lib/tool-trace'
 
 export type Turn = {
   id: string
@@ -22,6 +24,8 @@ export type Turn = {
   events?: DemoEvent[]
   /** "Read by X on ASU AIR in 2.1s" footnote for a media reply. */
   meta?: { model: string; ms: number; note?: string } | null
+  /** Tool calls the assistant made on this turn, in order, failures included. */
+  trace?: ToolStep[]
   /** Rehydrated from SQLite — its cited cards were not stored. */
   restored?: boolean
 }
@@ -51,6 +55,8 @@ export function Chat({
   const [turns, setTurns] = useState<Turn[]>(restoredTurns ?? [])
   const [phase, setPhase] = useState<Phase>(restoredTurns?.length ? 'done' : 'idle')
   const [draft, setDraft] = useState('')
+  /** Tool calls of the turn in flight, drawn live under "Thinking…". */
+  const [liveTrace, setLiveTrace] = useState<ToolStep[]>([])
   const [attachment, setAttachment] = useState<{
     file: File
     url: string
@@ -73,10 +79,15 @@ export function Chat({
     kind: 'text' | 'events' | 'vision',
     cards: DemoEvent[] = [],
     meta: Turn['meta'] = null,
+    trace: ToolStep[] = [],
   ) {
     const body = full.trim() || 'Sorry — I did not get an answer that time.'
     const id = uid()
-    setTurns((t) => [...t, { id, role: 'assistant', content: '', kind, events: cards, meta }])
+    setTurns((t) => [
+      ...t,
+      { id, role: 'assistant', content: '', kind, events: cards, meta, trace },
+    ])
+    setLiveTrace([])
     setPhase('streaming')
     // Split on whitespace but KEEP the separators, so newlines and indentation
     // survive the reveal. Joining tokens with ' ' flattens code blocks.
@@ -111,21 +122,74 @@ export function Chat({
     setPhase('thinking')
     onTurn?.({ role: 'user', content: q, kind: 'text' })
 
+    // The route streams newline-delimited JSON: one line per tool call starting
+    // and finishing, then a final `done` (or `error`). Each line updates the
+    // live trace; nothing is written to the thread until `done`.
+    const trace: ToolStep[] = []
+    const applyTrace = (ev: TraceEvent) => {
+      if (ev.type === 'tool_start') {
+        trace.push({
+          id: ev.id,
+          name: ev.name,
+          label: ev.label,
+          status: 'running',
+          round: ev.round,
+        })
+      } else if (ev.type === 'tool_end') {
+        const step = trace.find((s) => s.id === ev.id)
+        if (step) {
+          step.status = ev.ok ? 'ok' : 'error'
+          step.ms = ev.ms
+          step.summary = ev.summary
+        }
+      }
+      setLiveTrace([...trace.map((s) => ({ ...s }))])
+    }
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: next.map((t) => ({ role: t.role, content: t.content, kind: t.kind })),
-          asurite: asurite ?? null,
         }),
       })
-      const data = (await res.json()) as { text?: string; events?: DemoEvent[]; error?: string }
-      if (!res.ok || !data.text) throw new Error(data.error ?? 'No answer came back.')
-      const cards = data.events ?? []
-      appendAssistant(data.text, cards.length ? 'events' : 'text', cards)
+      if (!res.ok || !res.body) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(data.error ?? 'No answer came back.')
+      }
+
+      let final: TraceEvent | null = null
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      for (;;) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let nl: number
+        while ((nl = buffer.indexOf('\n')) >= 0) {
+          const line = buffer.slice(0, nl).trim()
+          buffer = buffer.slice(nl + 1)
+          if (!line) continue
+          const ev = JSON.parse(line) as TraceEvent
+          if (ev.type === 'done' || ev.type === 'error') final = ev
+          else applyTrace(ev)
+        }
+      }
+
+      if (!final) throw new Error('The answer was cut off.')
+      if (final.type === 'error') throw new Error(final.error)
+      const cards = (final.events as DemoEvent[]) ?? []
+      appendAssistant(final.text, cards.length ? 'events' : 'text', cards, null, trace)
     } catch (err) {
-      appendAssistant(err instanceof Error ? err.message : 'Something went wrong.', 'text')
+      appendAssistant(
+        err instanceof Error ? err.message : 'Something went wrong.',
+        'text',
+        [],
+        null,
+        trace,
+      )
     }
   }
 
@@ -341,6 +405,7 @@ export function Chat({
                   </div>
                 ) : (
                   <div key={t.id}>
+                    {t.trace && t.trace.length > 0 && <ToolTrace steps={t.trace} />}
                     <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
                       <RichText text={t.content} />
                       {streamingLast && (
@@ -380,7 +445,12 @@ export function Chat({
                 </div>
               )}
               {phase === 'thinking' && (
-                <p className="shimmer-text text-[17px] font-medium">Thinking…</p>
+                <div className="flex flex-col gap-3">
+                  <ToolTrace steps={liveTrace} live />
+                  <p className="shimmer-text text-[17px] font-medium">
+                    {liveTrace.some((s) => s.status === 'running') ? 'Working…' : 'Thinking…'}
+                  </p>
+                </div>
               )}
             </div>
           )}
