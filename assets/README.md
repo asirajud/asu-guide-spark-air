@@ -10,4 +10,4 @@ image 1.8s · chat 1.7s · titles 0.3s · rerank 0.15s.
 
 ## App mark
 
-`../asu-guide/public/mark.png` — a gold sun disc with a maroon four-point sparkle cut from its centre, used in the empty state and side nav. Generated on AIR with `flux-2` (512×512), background keyed out. Every other candidate from the same session is in `logo-candidates/` (`sheet-defg.png` shows the final four side by side). `pitchfork.png` is ASU's registered athletics mark, kept for reference only; it is not used in the app.
+`../asu-guide/public/mark.png` — a gold brain struck by a maroon lightning bolt, used in the empty state and side nav. Generated on AIR with `flux-2` (512×512), background keyed out. Every other candidate from the same session is in `logo-candidates/` (`sheet-defg.png` shows the final four side by side). `pitchfork.png` is ASU's registered athletics mark, kept for reference only; it is not used in the app.
