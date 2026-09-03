@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ASU Guide — one-shot setup for the whole monolith.
+# Sol — one-shot setup for the whole monolith.
 #
 #   ./install.sh            interactive (asks for anything it cannot find)
 #   ./install.sh --yes      never prompt: skip anything that needs input

@@ -374,9 +374,7 @@ export function Chat({
                 className="size-[64px] drop-shadow-[0_0_18px_rgba(255,198,39,0.25)]"
               />
               <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
-                {asurite
-                  ? 'Where should we start?'
-                  : 'Meet ASU Guide, your personal campus assistant'}
+                {asurite ? 'Where should we start?' : 'Meet Sol, your personal campus assistant'}
               </h1>
             </div>
           ) : (

@@ -1,4 +1,4 @@
-# ASU Guide — the assistant
+# Sol — the assistant
 
 The front end of the ASU AIR Spark Challenge demo: a campus assistant that answers
 in chat, listens, looks at photos and video, and acts on campus events through

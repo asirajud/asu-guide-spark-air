@@ -15,7 +15,7 @@ export default function SignInCard(props: SignInCardProps) {
     <>
       <div className="w-full bg-asu-maroon">
         <h1 className="mx-auto max-w-md px-6 py-5 text-[22px] font-bold tracking-tight text-white">
-          ASU Guide — Demo Sign In
+          Sol — Demo Sign In
         </h1>
       </div>
       <main className="mx-auto w-full max-w-md px-6 py-10">

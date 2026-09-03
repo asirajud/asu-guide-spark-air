@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ASU Guide — Demo Identity Provider',
+  title: 'Sol — Demo Identity Provider',
 }
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
     <>
       <div className="w-full bg-asu-maroon">
         <h1 className="mx-auto max-w-2xl px-6 py-5 text-[22px] font-bold tracking-tight text-white">
-          ASU Guide — Demo Identity Provider
+          Sol — Demo Identity Provider
         </h1>
       </div>
       <main className="mx-auto w-full max-w-2xl px-6 py-10 space-y-6">
@@ -27,8 +27,8 @@ export default function Home() {
           <h2 className="text-[18px] font-bold">What this is</h2>
           <p className="mt-3 text-[14px] leading-snug">
             This implements a real OAuth 2.0 authorization-code flow with PKCE (S256) so the
-            handshake with the demo ASU Guide app at http://localhost:3001 is genuine, while the
-            identity itself is fake — any ASURITE is accepted and the password field is decorative.
+            handshake with the demo Sol app at http://localhost:3001 is genuine, while the identity
+            itself is fake — any ASURITE is accepted and the password field is decorative.
           </p>
         </div>
         <div className="rounded-lg border border-asu-line bg-white p-6 shadow-sm">

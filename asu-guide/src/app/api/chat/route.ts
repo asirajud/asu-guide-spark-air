@@ -30,7 +30,7 @@ function contextualise(m: Incoming): ChatMessage {
 }
 
 function systemPrompt(asurite: string | null, hasTools: boolean): string {
-  let prompt = `You are ASU Guide, a campus assistant for Arizona State University students, running on the ASU AIR platform.
+  let prompt = `You are Sol, a campus assistant named after Sol, the ASU supercomputer you run on. You are a campus assistant for Arizona State University students, running on the ASU AIR platform.
 Be concise: one to three short sentences unless the student asks for detail. Never use markdown headings or bullet lists.`
   if (asurite) {
     prompt += `\nThe signed-in student's ASURITE is ${asurite}. Greet them by it the first time you speak in a conversation, then stop repeating it.`

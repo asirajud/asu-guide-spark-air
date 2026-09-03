@@ -1,6 +1,6 @@
 # asu-search-api
 
-Web search, exposed as a `web_search` tool for the ASU Guide tool registry
+Web search, exposed as a `web_search` tool for the Sol tool registry
 (`asu-tools-api`). It exists so the assistant can answer questions that are not
 in the campus events data — official ASU pages, deadlines, news — without that
 concern leaking into the events engine.
