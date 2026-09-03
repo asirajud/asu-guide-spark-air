@@ -2,7 +2,8 @@ import 'server-only'
 
 import { db } from '@/db'
 import { modelHealth } from '@/db/schema'
-import { AIR_BASE, DISABLE_TTL_MS, MODELS, type AirService } from './models'
+import { AIR_BASE, DISABLE_TTL_MS, type AirService } from './models'
+import { orderFor } from './settings'
 
 /**
  * Raised when a model itself is unusable — the gateway does not know it, it has
@@ -90,7 +91,8 @@ export async function callAir<T>(
   attempt: (model: string) => Promise<T>,
 ): Promise<AirResult<T>> {
   const skip = benched()
-  const configured = MODELS[service] ?? []
+  // An admin's pick from /s/admin goes first, then the compiled-in chain.
+  const configured = orderFor(service)
   const candidates = configured.filter((m) => !skip.has(m))
   // Everything is benched (or nothing configured) — try the primary anyway
   // rather than fail without asking.

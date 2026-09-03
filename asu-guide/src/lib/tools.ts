@@ -1,5 +1,7 @@
 import 'server-only'
 
+import { disabledTools } from '@/lib/tool-settings'
+
 /**
  * asu-guide does not own any tool definitions. It asks asu-tools-api for the OpenAI-shaped tool
  * array once per process and dispatches every tool call back through the same service, so the
@@ -18,11 +20,19 @@ let cached: OpenAiTool[] | null = null
 let cachedAt = 0
 const CACHE_TTL_MS = 60_000
 
+/**
+ * The registry's tools, minus anything an admin has switched off at /s/admin.
+ *
+ * Filtered on the way out rather than on the way in: the cached copy stays a
+ * faithful picture of the registry, so a toggle takes effect on the next turn
+ * without waiting for the 60s cache to expire.
+ */
 export async function getTools(): Promise<OpenAiTool[]> {
+  const off = disabledTools()
+  const enabled = (tools: OpenAiTool[]) => tools.filter((t) => !off.has(t.function.name))
+
   if (cached !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
-    // TypeScript needs explicit narrowing here
-    const result = cached as OpenAiTool[]
-    return result
+    return enabled(cached)
   }
 
   try {
@@ -49,7 +59,7 @@ export async function getTools(): Promise<OpenAiTool[]> {
     const tools = data.tools as OpenAiTool[]
     cached = tools
     cachedAt = Date.now()
-    return tools
+    return enabled(tools)
   } catch (err) {
     if (!process.env.NEXT_PUBLIC_DISABLE_TOOL_WARNINGS) {
       console.warn('Failed to fetch tools from registry:', err)
