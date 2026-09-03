@@ -488,7 +488,7 @@ export function NotebookView({
         <div
           role="dialog"
           aria-label="Sticky notes"
-          className="animate-rise absolute top-4 right-4 bottom-4 z-30 hidden w-[340px] flex-col rounded-3xl border border-white/10 bg-[#141415]/95 p-4 shadow-2xl backdrop-blur xl:flex"
+          className="animate-rise absolute right-5 bottom-6 z-30 hidden max-h-[min(520px,70vh)] w-[320px] flex-col rounded-3xl border border-white/10 bg-[#141415]/95 p-4 shadow-2xl backdrop-blur xl:flex"
         >
           <StickyNotes {...notesProps} onClose={() => setNotesOpen(false)} />
         </div>
