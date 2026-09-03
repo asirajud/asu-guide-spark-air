@@ -14,10 +14,12 @@ import {
   NotebookIcon,
   SearchIcon,
   TrashIcon,
+  Plus,
 } from '@/components/icons'
 import { RenameRow } from '@/components/rename-row'
-import { NOTEBOOKS } from '@/components/notebook-preview'
 import { TypedTitle } from '@/components/typed-title'
+
+export type NotebookNavItem = { id: string; name: string; pageCount: number }
 
 /** Left drawer: new chat, search, and the saved conversation list. */
 export function SideNav({
@@ -36,6 +38,13 @@ export function SideNav({
   onTitleTyped,
   asurite = null,
   railOpen = true,
+  /** Real notebooks owned by the signed-in student, most recent first. */
+  notebooks = [],
+  notebooksEnabled = false,
+  /** Notebook currently open in the stage, or null. */
+  openNotebook = null,
+  onOpenNotebook,
+  onNewNotebook,
 }: {
   open: boolean
   chats: ChatSummary[]
@@ -59,6 +68,14 @@ export function SideNav({
   asurite?: string | null
   /** Desktop only: whether the permanent rail is expanded. */
   railOpen?: boolean
+  /** Real notebooks owned by the signed-in student, most recent first. */
+  notebooks?: NotebookNavItem[]
+  /** Whether the Notebooks section shows at all (admin feature switch). */
+  notebooksEnabled?: boolean
+  /** Notebook currently open in the stage, or null. */
+  openNotebook?: string | null
+  onOpenNotebook: (id: string) => void
+  onNewNotebook: () => void
 }) {
   const [query, setQuery] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -201,35 +218,49 @@ export function SideNav({
             </span>
           </button>
 
-          <Section label="Notebooks">
-            {NOTEBOOKS.map((n) => {
-              const open = n.id === openPreview
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => onOpenPreview(n.id)}
-                  className={`flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
-                    open ? 'bg-[#3a1723]' : 'hover:bg-white/5'
-                  }`}
-                >
-                  <NotebookIcon
-                    className={`size-[17px] shrink-0 ${open ? 'text-[#ffc627]' : 'text-muted'}`}
-                  />
-                  <span
-                    className={`min-w-0 flex-1 truncate text-[14.5px] ${
-                      open ? 'font-medium text-white' : 'text-fg'
+          {notebooksEnabled && (
+            <Section label="Notebooks">
+              <button
+                type="button"
+                onClick={onNewNotebook}
+                className="flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors hover:bg-white/5"
+              >
+                <Plus className="text-muted size-[17px] shrink-0" />
+                <span className="text-muted min-w-0 flex-1 truncate text-[14.5px]">
+                  New notebook
+                </span>
+              </button>
+              {notebooks.map((n) => {
+                const open = n.id === openNotebook
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => onOpenNotebook(n.id)}
+                    className={`flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
+                      open ? 'bg-[#3a1723]' : 'hover:bg-white/5'
                     }`}
                   >
-                    {n.name}
-                  </span>
-                  <span className="text-muted shrink-0 rounded-full border border-white/12 px-2 py-0.5 text-[10.5px] tracking-[0.04em] uppercase">
-                    Soon
-                  </span>
-                </button>
-              )
-            })}
-          </Section>
+                    <NotebookIcon
+                      className={`size-[17px] shrink-0 ${open ? 'text-[#ffc627]' : 'text-muted'}`}
+                    />
+                    <span
+                      className={`min-w-0 flex-1 truncate text-[14.5px] ${
+                        open ? 'font-medium text-white' : 'text-fg'
+                      }`}
+                    >
+                      {n.name}
+                    </span>
+                    {n.pageCount > 0 && (
+                      <span className="text-muted shrink-0 text-[11.5px] tabular-nums">
+                        {n.pageCount}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </Section>
+          )}
 
           {pinned.length > 0 && (
             <Section label="Pinned">

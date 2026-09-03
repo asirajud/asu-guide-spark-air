@@ -235,3 +235,39 @@ reserve, asking the student to sign in first.
 Four tool definitions (`search_events`, `get_event_details`, `reserve_spot`, `list_capabilities`)
 are re-sent on every turn. Anything else registered in `asu-tools-api` is reachable only after the
 model calls `list_capabilities`, so the per-turn prompt cost stays flat as the registry grows.
+
+---
+
+# Session 5 — Notebooks: sequential page ingest + running digest (2026-09-03, 14:10–14:45 MST)
+
+Every application file below was written by an ASU AIR model through `opencode`, one file per
+run at near-pseudocode spec density; the orchestrator wrote specs, ran `tsc`/`eslint`/`vitest`,
+fed errors back, and drove the browser. Hand-edits afterwards (review pass): preview-URL indexing
+in the hook, page cards → rows, the rename input, and the admin feature switch.
+
+| Run    | Model                            | File                                                                         | Outcome                                                                                     | Wall       |
+| ------ | -------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------- |
+| 01     | qwen3-coder-30b-a3b-instruct     | `lib/air/models.ts` + `capabilities.ts` (new `ocr` service)                  | OK first try                                                                                | 74s        |
+| 02     | qwen3-coder-30b                  | `db/schema.ts` (`notebooks`, `notebook_pages`)                               | OK, byte-exact to spec                                                                      | 50s        |
+| 03     | qwen3-coder-30b                  | `lib/notebook-prompts.ts`                                                    | one bug: `'…student's name'` unterminated string                                            | 51s        |
+| 04     | qwen3-coder-30b                  | `lib/notebooks.ts`                                                           | OK first try                                                                                | 66s        |
+| 05     | qwen3-coder-30b                  | `api/notebooks/route.ts`                                                     | bug: `(await req.json()).catch(…)`                                                          | 75s        |
+| 06     | qwen3-coder-30b                  | `api/notebooks/[id]/route.ts`                                                | OK first try                                                                                | 60s        |
+| 07     | qwen3-coder-30b → **qwen36-27b** | `api/notebooks/[id]/ingest/route.ts` (NDJSON, sequential OCR + digest merge) | first run hung at bootstrap; qwen36 wrote it clean first try, improved the failed-read path | 98s        |
+| 08     | qwen3-coder-30b                  | `api/notebooks/[id]/chat/route.ts`                                           | OK first try                                                                                | 147s       |
+| 09, 12 | qwen3-coder-30b                  | fixes for 03 and 05 from the tsc / code-review text                          | OK                                                                                          | 50s, 25s   |
+| 10     | qwen3-coder-30b                  | `lib/notebook-prompts.test.ts` (14 cases)                                    | OK, all green                                                                               | 59s        |
+| 11     | qwen3-coder-30b                  | `hooks/use-notebook.ts`                                                      | ASI bug `let x = false\n(async…)()`, setState-in-effect, an `any`                           | 117s       |
+| 13     | qwen3-coder-30b → **qwen36-27b** | `components/notebook-view.tsx`                                               | 30b idled out mid-write at 60s; qwen36 finished in one go                                   | 121s + ~9m |
+| 14     | qwen3-coder-30b                  | `side-nav.tsx` edit (real notebooks, New notebook row)                       | OK, diff exact                                                                              | 177s       |
+| 15     | qwen3-coder-30b                  | `app-shell.tsx` edit + delete preview                                        | OK; missed one `type` import                                                                | 337s       |
+| 16–21  | qwen3-coder-30b                  | six small fix runs (lint, ASI, spacing, headings)                            | each OK                                                                                     | 25–93s     |
+
+**Measured on the live gateway (3 synthetic CSE 340 pages, 1240×1600):** `qwen3-vl-32b-instruct` read
+a page in 8.4–13.9s; `qwen35-27b` rewrote the digest in ~5s per page; a notebook question answered
+in 1.9–3.6s. Cross-page recall verified: "which language was shown to be not regular, and how does it
+come back later?" → pumping lemma on p. 2, returns as the CFG `S → 0S1 | ε` on p. 3.
+
+**New harness lesson:** a watchdog that kills on _log idle_ truncates long single-file writes —
+the model emits nothing while it composes a 250-line file. For big files use a 150s idle window,
+or better, the sentinel file (`touch .air-done/<run>`) as the run's mandatory last action.
