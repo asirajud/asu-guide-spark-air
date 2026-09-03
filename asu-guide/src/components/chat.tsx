@@ -28,7 +28,11 @@ export type Turn = {
   trace?: ToolStep[]
   /** Rehydrated from SQLite — its cited cards were not stored. */
   restored?: boolean
+  /** Sent to the model but not drawn: what a vision model read off an image. */
+  hidden?: boolean
 }
+
+type ChatDone = Extract<TraceEvent, { type: 'done' }>
 
 let seq = 0
 const uid = () => `t${Date.now().toString(36)}-${seq++}`
@@ -122,10 +126,29 @@ export function Chat({
     setPhase('thinking')
     onTurn?.({ role: 'user', content: q, kind: 'text' })
 
-    // The route streams newline-delimited JSON: one line per tool call starting
-    // and finishing, then a final `done` (or `error`). Each line updates the
-    // live trace; nothing is written to the thread until `done`.
     const trace: ToolStep[] = []
+    try {
+      const final = await runChat(next, trace)
+      const cards = (final.events as DemoEvent[]) ?? []
+      appendAssistant(final.text, cards.length ? 'events' : 'text', cards, null, trace)
+    } catch (err) {
+      appendAssistant(
+        err instanceof Error ? err.message : 'Something went wrong.',
+        'text',
+        [],
+        null,
+        trace,
+      )
+    }
+  }
+
+  /**
+   * Post a thread to /api/chat and read its stream. The route answers with
+   * newline-delimited JSON: one line per tool call starting and finishing, then
+   * a final `done` (or `error`). Each line updates `trace` and the live view;
+   * nothing is written to the thread until `done`, which is returned.
+   */
+  async function runChat(thread: Turn[], trace: ToolStep[]): Promise<ChatDone> {
     const applyTrace = (ev: TraceEvent) => {
       if (ev.type === 'tool_start') {
         trace.push({
@@ -146,51 +169,44 @@ export function Chat({
       setLiveTrace([...trace.map((s) => ({ ...s }))])
     }
 
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: next.map((t) => ({ role: t.role, content: t.content, kind: t.kind })),
-        }),
-      })
-      if (!res.ok || !res.body) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string }
-        throw new Error(data.error ?? 'No answer came back.')
-      }
-
-      let final: TraceEvent | null = null
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      for (;;) {
-        const { value, done } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        let nl: number
-        while ((nl = buffer.indexOf('\n')) >= 0) {
-          const line = buffer.slice(0, nl).trim()
-          buffer = buffer.slice(nl + 1)
-          if (!line) continue
-          const ev = JSON.parse(line) as TraceEvent
-          if (ev.type === 'done' || ev.type === 'error') final = ev
-          else applyTrace(ev)
-        }
-      }
-
-      if (!final) throw new Error('The answer was cut off.')
-      if (final.type === 'error') throw new Error(final.error)
-      const cards = (final.events as DemoEvent[]) ?? []
-      appendAssistant(final.text, cards.length ? 'events' : 'text', cards, null, trace)
-    } catch (err) {
-      appendAssistant(
-        err instanceof Error ? err.message : 'Something went wrong.',
-        'text',
-        [],
-        null,
-        trace,
-      )
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: thread.map((t) => ({
+          role: t.role,
+          content: t.content,
+          kind: t.hidden ? 'media' : t.kind,
+        })),
+      }),
+    })
+    if (!res.ok || !res.body) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      throw new Error(data.error ?? 'No answer came back.')
     }
+
+    let final: TraceEvent | null = null
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let nl: number
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim()
+        buffer = buffer.slice(nl + 1)
+        if (!line) continue
+        const ev = JSON.parse(line) as TraceEvent
+        if (ev.type === 'done' || ev.type === 'error') final = ev
+        else applyTrace(ev)
+      }
+    }
+
+    if (!final) throw new Error('The answer was cut off.')
+    if (final.type === 'error') throw new Error(final.error)
+    return final
   }
 
   // Voice input: records webm/opus, posts to /api/transcribe -> ASU AIR ASR,
@@ -212,27 +228,28 @@ export function Chat({
   })
 
   /**
-   * Image path — this one is NOT scripted. The picture goes to /api/vision,
-   * which asks gemma4-31b-it on ASU AIR to describe it, and we stream the real
-   * answer back.
+   * Image path, two stages. A vision model on AIR (gemma4-31b-it) only READS the
+   * picture — for a flyer: name, club, date, time, place. That reading is folded
+   * into the thread as a hidden turn, and the chat model, which has the tools,
+   * answers the student's actual question: "sign me up for this" becomes
+   * search_events → reserve_spot, live, with the trace on screen.
    */
   async function sendImage(file: File, question: string, previewUrl: string) {
     const q = question || 'What is this?'
-    setTurns((t) => [
-      ...t,
-      {
-        id: uid(),
-        role: 'user',
-        content: q,
-        kind: 'vision',
-        mediaUrl: previewUrl,
-        mediaKind: 'image',
-      },
-    ])
+    const userTurn: Turn = {
+      id: uid(),
+      role: 'user',
+      content: q,
+      kind: 'vision',
+      mediaUrl: previewUrl,
+      mediaKind: 'image',
+    }
+    setTurns((t) => [...t, userTurn])
     setDraft('')
     setPhase('thinking')
     onTurn?.({ role: 'user', content: q, kind: 'vision', imageName: file.name })
 
+    const trace: ToolStep[] = []
     try {
       const body = new FormData()
       body.append('image', await downscaleImage(file))
@@ -247,11 +264,35 @@ export function Chat({
       }
       if (!res.ok || !data.text) throw new Error(data.error ?? 'Could not read that image.')
 
-      appendAssistant(data.text, 'vision', [], { model: data.model ?? 'AIR', ms: data.ms ?? 0 })
+      const reading: Turn = {
+        id: uid(),
+        role: 'assistant',
+        content: data.text,
+        kind: 'vision',
+        hidden: true,
+      }
+      setTurns((t) => [...t, reading])
+      onTurn?.({ role: 'assistant', content: data.text, kind: 'media' })
+
+      // The reading goes in AHEAD of the question so the chat model sees the
+      // flyer before it decides what to do about it.
+      const thread = [...turns, reading, { ...userTurn, kind: 'text' as const }]
+      const final = await runChat(thread, trace)
+      const cards = (final.events as DemoEvent[]) ?? []
+      appendAssistant(
+        final.text,
+        cards.length ? 'events' : 'text',
+        cards,
+        { model: `${data.model ?? 'AIR vision'} + ${final.model}`, ms: (data.ms ?? 0) + final.ms },
+        trace,
+      )
     } catch (err) {
       appendAssistant(
         err instanceof Error ? err.message : 'Something went wrong reading that image.',
         'text',
+        [],
+        null,
+        trace,
       )
     }
   }
@@ -380,6 +421,7 @@ export function Chat({
           ) : (
             <div className="flex flex-col gap-7 pt-2">
               {turns.map((t, i) => {
+                if (t.hidden) return null
                 const streamingLast = phase === 'streaming' && i === turns.length - 1
                 const cards =
                   t.events && t.events.length > 0 ? t.events : t.kind === 'events' ? events : []
@@ -419,7 +461,8 @@ export function Chat({
                     </div>
                     {t.meta && (
                       <p className="animate-rise text-muted mt-4 text-[12.5px]">
-                        Read by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in{' '}
+                        {t.trace && t.trace.length > 0 ? 'Read and answered by' : 'Read by'}{' '}
+                        <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in{' '}
                         {(t.meta.ms / 1000).toFixed(1)}s{t.meta.note ? ` · ${t.meta.note}` : ''}
                       </p>
                     )}

@@ -201,11 +201,13 @@ export function AppShell({
         id: m.id,
         role: m.role,
         content: m.content,
-        kind: (m.kind === 'vision'
+        kind: (m.kind === 'vision' || m.kind === 'media'
           ? 'vision'
           : m.kind === 'events'
             ? 'events'
             : 'text') as Turn['kind'],
+        // What a vision model read off an image: context for the chat model, not a reply.
+        hidden: m.kind === 'media',
         restored: true,
         // Object URLs die with the page, and cited cards are not stored, so a
         // reloaded thread comes back as text. The model still sees every word of it.

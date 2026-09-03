@@ -12,7 +12,17 @@ const MAX_BYTES = 8 * 1024 * 1024
 const AIR_SAFE_BYTES = 2_200_000
 
 const DEFAULT_PROMPT =
-  'Describe this image in 2–3 short sentences. If it is a flyer or poster for an event, pull out the event name, date, time and location.'
+  'Describe this image in 2–3 short sentences. If it is a flyer or poster for an event, pull out the event name, host or club, date, time and location exactly as printed.'
+
+/**
+ * The vision model only READS the image. Whatever the student asked is answered
+ * afterwards by the chat model, which has the tools (event search, RSVP) — so
+ * the question is passed as context for what to look for, never as a task.
+ */
+function readerPrompt(question: string | undefined): string {
+  if (!question) return DEFAULT_PROMPT
+  return `${DEFAULT_PROMPT} The student's question about it is: "${question}". Do not answer the question and do not offer advice; only report what the image shows that is relevant to it.`
+}
 
 /** Real (not scripted) image understanding, with model fallback. */
 export async function POST(req: Request) {
@@ -60,7 +70,7 @@ export async function POST(req: Request) {
               {
                 role: 'user',
                 content: [
-                  { type: 'text', text: question || DEFAULT_PROMPT },
+                  { type: 'text', text: readerPrompt(question) },
                   { type: 'image_url', image_url: { url: dataUrl } },
                 ],
               },
