@@ -297,7 +297,19 @@ export function useNotebook(id: string | null) {
     [id],
   )
 
+  /** Deletes the notebook and its pages. True on success; the caller decides where to go next. */
+  const remove = useCallback(async () => {
+    if (!id) return false
+    try {
+      const res = await fetch(`/api/notebooks/${id}`, { method: 'DELETE' })
+      return res.ok
+    } catch {
+      return false
+    }
+  }, [id])
+
   return {
+    remove,
     notebook,
     pages,
     loading,

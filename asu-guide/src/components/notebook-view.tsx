@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { NotebookIcon, Plus, PhotoStack, Close } from '@/components/icons'
+import { NotebookIcon, Plus, PhotoStack, Close, TrashIcon } from '@/components/icons'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Composer } from '@/components/composer'
 import { RichText } from '@/components/rich-text'
 import { useNotebook } from '@/hooks/use-notebook'
@@ -104,15 +105,21 @@ function PageRow({
 export function NotebookView({
   id,
   onRenamed,
+  onDeleted,
 }: {
   id: string
   onRenamed?: (name: string) => void
+  /** Called after a successful delete so the shell can leave the now-missing notebook. */
+  onDeleted?: () => void
 }) {
   const nb = useNotebook(id)
   const [draft, setDraft] = useState('')
   const [expanded, setExpanded] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
   const [nameDraft, setNameDraft] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const n = nb.pages.length
@@ -121,6 +128,19 @@ export function NotebookView({
   useEffect(() => {
     if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
   }, [nb.asking, nb.turns.length])
+
+  async function confirmRemove() {
+    setDeleting(true)
+    setDeleteError(null)
+    const ok = await nb.remove()
+    setDeleting(false)
+    if (!ok) {
+      setDeleteError('Could not delete this notebook. Try again.')
+      return
+    }
+    setConfirmDelete(false)
+    onDeleted?.()
+  }
 
   function submit() {
     const q = draft.trim()
@@ -185,7 +205,18 @@ export function NotebookView({
                 ` · reading page ${nb.progress.current} of ${nb.progress.total}`}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            disabled={nb.ingesting}
+            aria-label="Delete notebook"
+            title="Delete notebook"
+            className="text-muted hover:text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/5 disabled:opacity-40"
+          >
+            <TrashIcon className="size-[18px]" />
+          </button>
         </div>
+        {deleteError && <p className="mt-3 text-[13.5px] text-red-400">{deleteError}</p>}
         {nb.error && <p className="mt-3 text-[13.5px] text-red-400">{nb.error}</p>}
 
         <Section
@@ -321,6 +352,18 @@ export function NotebookView({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this notebook?"
+        body={`${nb.notebook?.name ?? 'This notebook'} and its ${n} ${n === 1 ? 'page' : 'pages'} go away, along with the understanding built from them. Your chats are not affected.`}
+        confirmLabel="Delete notebook"
+        busy={deleting}
+        onConfirm={() => void confirmRemove()}
+        onCancel={() => {
+          if (!deleting) setConfirmDelete(false)
+        }}
+      />
 
       <input
         ref={fileRef}

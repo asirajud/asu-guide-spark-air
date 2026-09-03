@@ -377,6 +377,10 @@ export function AppShell({
               key={openNotebook}
               id={openNotebook}
               onRenamed={() => void refreshNotebooks()}
+              onDeleted={() => {
+                void refreshNotebooks()
+                newChat()
+              }}
             />
           ) : (
             <Chat
