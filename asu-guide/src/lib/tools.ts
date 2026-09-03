@@ -28,24 +28,24 @@ export async function getTools(): Promise<OpenAiTool[]> {
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 4000)
-    
+
     const res = await fetch(`${TOOLS_BASE}/openai/tools`, {
       cache: 'no-store',
       signal: controller.signal,
     })
-    
+
     clearTimeout(timeoutId)
-    
+
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`)
     }
-    
+
     const data = (await res.json()) as { tools?: unknown }
-    
+
     if (!Array.isArray(data.tools)) {
       throw new Error('Invalid tools response: expected an array')
     }
-    
+
     const tools = data.tools as OpenAiTool[]
     cached = tools
     cachedAt = Date.now()
@@ -65,7 +65,7 @@ export async function callTool(name: string, args: unknown): Promise<ToolOutcome
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 25_000)
-    
+
     const res = await fetch(`${TOOLS_BASE}/mcp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,13 +77,13 @@ export async function callTool(name: string, args: unknown): Promise<ToolOutcome
       }),
       signal: controller.signal,
     })
-    
+
     clearTimeout(timeoutId)
-    
+
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`)
     }
-    
+
     const data = await res.json()
 
     if (data.error) {
@@ -103,14 +103,14 @@ export async function callTool(name: string, args: unknown): Promise<ToolOutcome
     if (!textContent) {
       return { ok: !result.isError, content: '' }
     }
-    
+
     let parsedContent
     try {
       parsedContent = JSON.parse(textContent)
     } catch {
       parsedContent = textContent
     }
-    
+
     return { ok: !result.isError, content: parsedContent }
   } catch (err) {
     return {
@@ -170,13 +170,21 @@ export function extractEvents(content: unknown): ToolEvent[] {
         when: typeof e.when === 'string' ? e.when : '',
         club: typeof e.club === 'string' ? e.club : '',
         type: typeof e.type === 'string' ? e.type : '',
-        blurb: typeof e.blurb === 'string' ? e.blurb.substring(0, 160) + (e.blurb.length > 160 ? '...' : '') : '',
+        blurb:
+          typeof e.blurb === 'string'
+            ? e.blurb.substring(0, 160) + (e.blurb.length > 160 ? '...' : '')
+            : '',
         url: typeof e.url === 'string' ? e.url : '',
       })
     } else {
       return []
     }
-  } else if ('id' in content && typeof content.id === 'string' && 'title' in content && typeof content.title === 'string') {
+  } else if (
+    'id' in content &&
+    typeof content.id === 'string' &&
+    'title' in content &&
+    typeof content.title === 'string'
+  ) {
     // Single event
     if (content && typeof content === 'object' && !Array.isArray(content)) {
       events.push(content)
@@ -195,7 +203,10 @@ export function extractEvents(content: unknown): ToolEvent[] {
       when: typeof event.when === 'string' ? event.when : '',
       club: typeof event.club === 'string' ? event.club : '',
       type: typeof event.type === 'string' ? event.type : '',
-      blurb: typeof event.blurb === 'string' ? event.blurb.substring(0, 160) + (event.blurb.length > 160 ? '...' : '') : '',
+      blurb:
+        typeof event.blurb === 'string'
+          ? event.blurb.substring(0, 160) + (event.blurb.length > 160 ? '...' : '')
+          : '',
       url: typeof event.url === 'string' ? event.url : '',
     }))
 }

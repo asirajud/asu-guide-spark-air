@@ -79,9 +79,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ text: value, model, ms })
   } catch (err) {
     const message = safeError('vision', err, 'Could not read that image. Try again.')
-    return NextResponse.json(
-      { error: message },
-      { status: 502 },
-    )
+    return NextResponse.json({ error: message }, { status: 502 })
   }
 }

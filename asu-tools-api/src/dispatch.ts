@@ -19,11 +19,14 @@ export type DispatchErr = {
 }
 export type DispatchResult = DispatchOk | DispatchErr
 
-export function buildUrl(entry: RegisteredTool, args: Record<string, unknown>): { url: string; body: Record<string, unknown> | null } {
+export function buildUrl(
+  entry: RegisteredTool,
+  args: Record<string, unknown>,
+): { url: string; body: Record<string, unknown> | null } {
   const { tool, service } = entry
   let path = tool.route.path
   const body: Record<string, unknown> = { ...args }
-  
+
   // Handle path parameters
   const pathParamRegex = /:([^/]+)/g
   let match
@@ -35,60 +38,64 @@ export function buildUrl(entry: RegisteredTool, args: Record<string, unknown>): 
       delete body[paramName]
     }
   }
-  
+
   // Construct URL
   let url = service.baseUrl
   if (url.endsWith('/')) {
     url = url.slice(0, -1)
   }
   url += path
-  
+
   // Handle query params or body
-  const finalBody: Record<string, unknown> | null =
-    entry.tool.route.method === 'GET' ? null : body
-  
+  const finalBody: Record<string, unknown> | null = entry.tool.route.method === 'GET' ? null : body
+
   if (entry.tool.route.method === 'GET') {
     // Add remaining params as query string
     const queryParams = Object.entries(body)
       .filter(([, value]) => value !== undefined && value !== null)
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
       .join('&')
-    
+
     if (queryParams) {
       url += `?${queryParams}`
     }
   }
-  
+
   return { url, body: finalBody }
 }
 
-export async function dispatch(entry: RegisteredTool, args: Record<string, unknown>): Promise<DispatchResult> {
+export async function dispatch(
+  entry: RegisteredTool,
+  args: Record<string, unknown>,
+): Promise<DispatchResult> {
   const { url, body } = buildUrl(entry, args)
   const { service } = entry
-  
+
   const start = performance.now()
-  
+
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), DISPATCH_TIMEOUT_MS)
-    
+
     const res = await fetch(url, {
       method: entry.tool.route.method,
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
-      signal: controller.signal
+      signal: controller.signal,
     })
-    
+
     clearTimeout(timeoutId)
-    
+
     const ms = performance.now() - start
-    
+
     if (!res.ok) {
       let errorMessage = ''
       try {
         const parsed = (await res.json()) as unknown
         const upstreamError =
-          parsed && typeof parsed === 'object' && 'error' in parsed &&
+          parsed &&
+          typeof parsed === 'object' &&
+          'error' in parsed &&
           typeof (parsed as { error?: unknown }).error === 'string'
             ? (parsed as { error: string }).error
             : null
@@ -103,17 +110,17 @@ export async function dispatch(entry: RegisteredTool, args: Record<string, unkno
           errorMessage = errorMessage.substring(0, 300)
         }
       }
-      
+
       return {
         ok: false,
         code: 'upstream_error',
         status: res.status,
         message: errorMessage,
         service: entry.service.id,
-        ms
+        ms,
       }
     }
-    
+
     let data: unknown
     try {
       data = await res.json()
@@ -124,19 +131,19 @@ export async function dispatch(entry: RegisteredTool, args: Record<string, unkno
         status: res.status,
         message: 'Response is not valid JSON',
         service: entry.service.id,
-        ms
+        ms,
       }
     }
-    
+
     return {
       ok: true,
       status: res.status,
       data,
-      ms
+      ms,
     }
   } catch (err: unknown) {
     const ms = performance.now() - start
-    
+
     // Parenthesised deliberately: without it this reads as (a && b) || c, and
     // the right side dereferences a possibly-null err, throwing inside catch.
     const name =
@@ -148,50 +155,54 @@ export async function dispatch(entry: RegisteredTool, args: Record<string, unkno
         status: null,
         message: `${entry.service.id} did not answer within ${DISPATCH_TIMEOUT_MS}ms.`,
         service: entry.service.id,
-        ms
+        ms,
       }
     }
-    
+
     return {
       ok: false,
       code: 'unreachable',
       status: null,
       message: `${entry.service.id} is not reachable at ${service.baseUrl} (${err instanceof Error ? err.message : String(err)}).`,
       service: entry.service.id,
-      ms
+      ms,
     }
   }
 }
 
-export async function checkHealth(service: { id: string; baseUrl: string; healthPath: string }): Promise<{ id: string; healthy: boolean; ms: number; detail?: string }> {
+export async function checkHealth(service: {
+  id: string
+  baseUrl: string
+  healthPath: string
+}): Promise<{ id: string; healthy: boolean; ms: number; detail?: string }> {
   const start = performance.now()
-  
+
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000)
-    
+
     const res = await fetch(`${service.baseUrl}${service.healthPath}`, {
-      signal: controller.signal
+      signal: controller.signal,
     })
-    
+
     clearTimeout(timeoutId)
-    
+
     const ms = performance.now() - start
-    
+
     return {
       id: service.id,
       healthy: res.ok,
       ms,
-      detail: res.ok ? undefined : await res.text()
+      detail: res.ok ? undefined : await res.text(),
     }
   } catch (err: unknown) {
     const ms = performance.now() - start
-    
+
     return {
       id: service.id,
       healthy: false,
       ms,
-      detail: err instanceof Error ? err.message : String(err)
+      detail: err instanceof Error ? err.message : String(err),
     }
   }
 }

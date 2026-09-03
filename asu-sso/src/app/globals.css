@@ -1,16 +1,16 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --asu-maroon: #8C1D40;
-  --asu-maroon-dark: #6E1732;
-  --asu-gold: #FFC627;
-  --asu-bg: #F4F4F4;
+  --asu-maroon: #8c1d40;
+  --asu-maroon-dark: #6e1732;
+  --asu-gold: #ffc627;
+  --asu-bg: #f4f4f4;
   --asu-ink: #191919;
-  --asu-muted: #5C5C5C;
-  --asu-line: #D0D0D0;
-  --asu-warn-bg: #FFF4D6;
-  --asu-warn-border: #C77700;
-  --asu-warn-ink: #7A4A00;
+  --asu-muted: #5c5c5c;
+  --asu-line: #d0d0d0;
+  --asu-warn-bg: #fff4d6;
+  --asu-warn-border: #c77700;
+  --asu-warn-ink: #7a4a00;
 }
 
 @theme inline {
@@ -24,7 +24,8 @@
   --font-sans: var(--font-inter);
 }
 
-html, body {
+html,
+body {
   background: var(--asu-bg);
   color: var(--asu-ink);
 }

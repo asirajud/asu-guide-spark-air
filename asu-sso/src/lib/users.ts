@@ -60,7 +60,15 @@ export function createUser(
   db.prepare(
     `INSERT OR REPLACE INTO users (asurite, name, email, affiliation, salt, hash, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).run(user.asurite, user.name, user.email, user.affiliation, salt, hashPassword(password, salt), Date.now())
+  ).run(
+    user.asurite,
+    user.name,
+    user.email,
+    user.affiliation,
+    salt,
+    hashPassword(password, salt),
+    Date.now(),
+  )
 
   return user
 }
@@ -70,7 +78,14 @@ export function verifyUser(asurite: string, password: string): DemoUser | null {
   const row = db
     .prepare('SELECT * FROM users WHERE asurite = ?')
     .get(asurite.trim().toLowerCase()) as
-    | { asurite: string; name: string; email: string; affiliation: string; salt: string; hash: string }
+    | {
+        asurite: string
+        name: string
+        email: string
+        affiliation: string
+        salt: string
+        hash: string
+      }
     | undefined
 
   if (!password) return null

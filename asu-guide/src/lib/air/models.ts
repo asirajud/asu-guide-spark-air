@@ -6,14 +6,7 @@
  * They are NOT tried because a model is slow — see ./call.ts for that
  * distinction. Latencies below were measured against the live gateway.
  */
-export type AirService =
-  | 'title'
-  | 'vision'
-  | 'asr'
-  | 'chat'
-  | 'video'
-  | 'summarize'
-  | 'image'
+export type AirService = 'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image'
 
 export const AIR_BASE = process.env.AIR_BASE_URL ?? 'https://openai.rc.asu.edu/v1'
 

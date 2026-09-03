@@ -46,7 +46,10 @@ function handleOptions(res: ServerResponse) {
 async function handleHealth(req: IncomingMessage, res: ServerResponse) {
   const [eventsCount, embeddedCount] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(events),
-    db.select({ count: sql<number>`count(*)` }).from(events).where(isNotNull(events.embedding)),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(events)
+      .where(isNotNull(events.embedding)),
   ])
   json(res, 200, {
     ok: true,
@@ -121,7 +124,8 @@ async function handleReserve(req: IncomingMessage, res: ServerResponse) {
     event: event,
     status: 'confirmed',
     mock: true,
-    notice: 'This is a mock reservation stored only in this demo database. Nothing was sent to Sun Devil Central and no real seat has been held.',
+    notice:
+      'This is a mock reservation stored only in this demo database. Nothing was sent to Sun Devil Central and no real seat has been held.',
   })
 }
 
@@ -134,7 +138,11 @@ async function handleGetReservations(req: IncomingMessage, res: ServerResponse) 
     return
   }
 
-  const rows = await db.select().from(reservations).where(eq(reservations.asurite, asurite)).orderBy(desc(reservations.createdAt))
+  const rows = await db
+    .select()
+    .from(reservations)
+    .where(eq(reservations.asurite, asurite))
+    .orderBy(desc(reservations.createdAt))
 
   const reservationsWithEvents = await Promise.all(
     rows.map(async (row) => {
@@ -144,7 +152,7 @@ async function handleGetReservations(req: IncomingMessage, res: ServerResponse) 
         created_at: row.createdAt.toISOString(),
         event: event ? event : null,
       }
-    })
+    }),
   )
 
   json(res, 200, {
@@ -175,7 +183,10 @@ async function main() {
         await handleSearch(req, res)
       } else if (method === 'GET' && path.startsWith('/events/')) {
         const id = decodeURIComponent(path.slice('/events/'.length))
-        if (!id) { json(res, 404, { error: 'event not found' }); return }
+        if (!id) {
+          json(res, 404, { error: 'event not found' })
+          return
+        }
         await handleGetEvent(req, res, id)
       } else if (method === 'POST' && path === '/reservations') {
         await handleReserve(req, res)

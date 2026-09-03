@@ -143,7 +143,7 @@ export async function POST(request: Request) {
           if (r.ok) {
             const events = extractEvents(r.content)
             for (const event of events) {
-              if (!collected.some(e => e.id === event.id)) {
+              if (!collected.some((e) => e.id === event.id)) {
                 collected.push(event)
               }
             }
@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     text = text.replace(/[  ]/g, ' ')
 
     if (!text) {
-      text = "I could not get an answer together for that — try asking again."
+      text = 'I could not get an answer together for that — try asking again.'
     }
 
     return NextResponse.json({
@@ -182,8 +182,10 @@ export async function POST(request: Request) {
     })
   } catch (err) {
     return NextResponse.json(
-      { error: `No reasoning model on AIR answered (is the ASU VPN up?): ${err instanceof Error ? err.message : 'Unknown error'}` },
-      { status: 502 }
+      {
+        error: `No reasoning model on AIR answered (is the ASU VPN up?): ${err instanceof Error ? err.message : 'Unknown error'}`,
+      },
+      { status: 502 },
     )
   }
 }

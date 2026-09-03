@@ -57,7 +57,11 @@ export async function POST(req: Request) {
       outgoing.append('file', audio, audio.name || 'clip.webm')
       outgoing.append('model', m)
 
-      const res = await airFetch('/audio/transcriptions', { method: 'POST', body: outgoing }, 45_000)
+      const res = await airFetch(
+        '/audio/transcriptions',
+        { method: 'POST', body: outgoing },
+        45_000,
+      )
       const data = (await res.json()) as { text?: string }
       return (data.text ?? '').trim()
     })
@@ -71,9 +75,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ text, model, ms, noSpeech: text.length === 0 })
   } catch (err) {
     const message = safeError('transcribe', err, 'Could not transcribe that. Try again.')
-    return NextResponse.json(
-      { error: message },
-      { status: 502 },
-    )
+    return NextResponse.json({ error: message }, { status: 502 })
   }
 }

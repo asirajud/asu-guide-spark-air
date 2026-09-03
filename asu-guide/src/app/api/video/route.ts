@@ -104,7 +104,11 @@ export async function POST(req: Request) {
         ? callAir('asr', async (m) => {
             const wav = await readFile(prepared.audioPath as string)
             const body = new FormData()
-            body.append('file', new File([new Uint8Array(wav)], 'audio.wav', { type: 'audio/wav' }), 'audio.wav')
+            body.append(
+              'file',
+              new File([new Uint8Array(wav)], 'audio.wav', { type: 'audio/wav' }),
+              'audio.wav',
+            )
             body.append('model', m)
             const res = await airFetch('/audio/transcriptions', { method: 'POST', body }, 60_000)
             const data = (await res.json()) as { text?: string }
@@ -140,7 +144,9 @@ export async function POST(req: Request) {
                 model: m,
                 max_tokens: 300,
                 temperature: 0.3,
-                ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
+                ...(THINKING_OFF.has(m)
+                  ? { chat_template_kwargs: { enable_thinking: false } }
+                  : {}),
                 messages: [
                   {
                     role: 'system',

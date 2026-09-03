@@ -36,7 +36,11 @@ export function validateServiceSpec(input: unknown): ServiceSpec {
 
   const service = input as Partial<ServiceSpec>
 
-  if (typeof service.id !== 'string' || service.id.length === 0 || !/^[a-z0-9][a-z0-9-]{1,63}$/.test(service.id)) {
+  if (
+    typeof service.id !== 'string' ||
+    service.id.length === 0 ||
+    !/^[a-z0-9][a-z0-9-]{1,63}$/.test(service.id)
+  ) {
     throw new ContractError('id must be a non-empty string matching /^[a-z0-9][a-z0-9-]{1,63}$/')
   }
 
@@ -61,7 +65,10 @@ export function validateServiceSpec(input: unknown): ServiceSpec {
     throw new ContractError('healthPath must be a string starting with "/"')
   }
 
-  if (typeof service.contractVersion !== 'string' || !/^\d+\.\d+\.\d+$/.test(service.contractVersion)) {
+  if (
+    typeof service.contractVersion !== 'string' ||
+    !/^\d+\.\d+\.\d+$/.test(service.contractVersion)
+  ) {
     throw new ContractError('contractVersion must be a semantic version string like "1.0.0"')
   }
 
@@ -93,7 +100,10 @@ export function validateServiceSpec(input: unknown): ServiceSpec {
       throw new ContractError(`tools[${i}].route must be an object`)
     }
 
-    if (typeof tool.route.method !== 'string' || (tool.route.method !== 'GET' && tool.route.method !== 'POST')) {
+    if (
+      typeof tool.route.method !== 'string' ||
+      (tool.route.method !== 'GET' && tool.route.method !== 'POST')
+    ) {
       throw new ContractError(`tools[${i}].route.method must be GET or POST`)
     }
 
@@ -188,7 +198,7 @@ export function listServices(): ServiceSpec[] {
 export function upsertService(input: unknown): { service: ServiceSpec; created: boolean } {
   const service = validateServiceSpec(input)
   const services = loadRegistry()
-  const existingIndex = services.findIndex(s => s.id === service.id)
+  const existingIndex = services.findIndex((s) => s.id === service.id)
 
   if (existingIndex !== -1) {
     services[existingIndex] = service
@@ -204,7 +214,7 @@ export function upsertService(input: unknown): { service: ServiceSpec; created: 
 export function removeService(id: string): boolean {
   const services = loadRegistry()
   const initialLength = services.length
-  const filtered = services.filter(s => s.id !== id)
+  const filtered = services.filter((s) => s.id !== id)
   if (filtered.length === initialLength) {
     return false
   }

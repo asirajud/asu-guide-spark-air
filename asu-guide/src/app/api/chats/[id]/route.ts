@@ -33,11 +33,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const body = (await req.json()) as {
     title?: string
     pinned?: boolean
-    append?: { role: 'user' | 'assistant'; content: string; kind?: string; imageName?: string | null }
+    append?: {
+      role: 'user' | 'assistant'
+      content: string
+      kind?: string
+      imageName?: string | null
+    }
   }
 
   const patch: Record<string, unknown> = { updatedAt: new Date() }
-  if (typeof body.title === 'string' && body.title.trim()) patch.title = body.title.trim().slice(0, 80)
+  if (typeof body.title === 'string' && body.title.trim())
+    patch.title = body.title.trim().slice(0, 80)
   if (typeof body.pinned === 'boolean') patch.pinned = body.pinned
 
   await db.update(conversations).set(patch).where(eq(conversations.id, id))
