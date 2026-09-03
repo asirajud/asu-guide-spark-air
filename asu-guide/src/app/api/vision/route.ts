@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { safeError } from '@/lib/api-error'
 import { airFetch, callAir } from '@/lib/air/call'
 import { THINKING_OFF } from '@/lib/air/models'
 
@@ -77,9 +78,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ text: value, model, ms })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const message = safeError('vision', err, 'Could not read that image. Try again.')
     return NextResponse.json(
-      { error: `Could not read that image (is the ASU VPN up?): ${message}` },
+      { error: message },
       { status: 502 },
     )
   }

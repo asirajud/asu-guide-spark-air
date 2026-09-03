@@ -26,3 +26,14 @@ next-env.d.ts
 
 # the corpus lives with the app (asu-guide/data/); this is the scratch copy
 /asu-events.json
+
+# next dev regenerates these agent pointer files; AGENTS.md is the real one
+CLAUDE.md
+
+# asu-tools-api runtime registry state (services.json is the checked-in seed)
+/asu-tools-api/registry.json
+
+# build-harness scratch files
+.air-sentinel
+*.tsbuildinfo
+.history/

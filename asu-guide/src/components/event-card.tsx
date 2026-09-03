@@ -18,14 +18,14 @@ export function EventCard({ event, index }: { event: DemoEvent; index: number })
           aria-hidden
           className={cn(
             'mt-[9px] size-[7px] shrink-0 rounded-full border transition-colors',
-            registered ? 'border-[#a8c7fa] bg-[#a8c7fa]' : 'border-[#8e9195]',
+            registered ? 'border-asu-gold bg-asu-gold' : 'border-[#8e9195]',
           )}
         />
 
         <div
           className={cn(
             'min-w-0 flex-1 rounded-[18px] px-3.5 py-3 transition-colors duration-300',
-            registered ? 'bg-[#12233f]' : 'bg-[#131314]',
+            registered ? 'bg-asu-maroon-tint' : 'bg-[#131314]',
           )}
         >
           <p className="text-[15.5px] leading-[1.42] font-semibold text-white">{event.title}</p>
@@ -42,10 +42,10 @@ export function EventCard({ event, index }: { event: DemoEvent; index: number })
 
           <p className="text-muted mt-2 text-[13.5px] leading-[1.5]">{event.blurb}</p>
 
-          <div className="mt-3 flex items-center">
+          <div className="mt-3 flex items-center gap-3">
             {registered ? (
-              <span className="animate-pop inline-flex items-center gap-1.5 text-[13px] font-medium text-[#a8c7fa]">
-                <span className="flex size-[18px] items-center justify-center rounded-full bg-[#a8c7fa] text-[#0b1a30]">
+              <span className="text-asu-gold animate-pop inline-flex items-center gap-1.5 text-[13px] font-medium">
+                <span className="bg-asu-gold text-asu-accent-fg flex size-[18px] items-center justify-center rounded-full">
                   <Check className="size-3" />
                 </span>
                 Registered
@@ -55,6 +55,17 @@ export function EventCard({ event, index }: { event: DemoEvent; index: number })
                 Register
               </Button>
             )}
+            {/* Register is a local demo flip and this link is the only route to the real RSVP page */}
+            {event.url ? (
+              <a
+                href={event.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted hover:text-white text-[13px] underline decoration-dotted underline-offset-4 transition-colors"
+              >
+                View event
+              </a>
+            ) : null}
           </div>
         </div>
       </div>

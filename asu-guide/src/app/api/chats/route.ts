@@ -3,15 +3,24 @@ import { randomUUID } from 'node:crypto'
 import { db } from '@/db'
 import { conversations, messages } from '@/db/schema'
 import { listChats } from '@/lib/chats'
+import { getSession } from '@/lib/session'
 
 export const runtime = 'nodejs'
 
 export async function GET() {
-  return NextResponse.json({ chats: await listChats() })
+  const session = await getSession()
+  if (!session) return NextResponse.json({ chats: [] })
+  return NextResponse.json({ chats: await listChats(session.asurite) })
 }
 
 /** Create a conversation and store its first exchange. */
 export async function POST(req: Request) {
+  // Conversations belong to an account; there is nowhere to file one otherwise.
+  const session = await getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Sign in to save conversations.' }, { status: 401 })
+  }
+
   const body = (await req.json()) as {
     title?: string
     prompt?: string
@@ -25,6 +34,7 @@ export async function POST(req: Request) {
 
   await db.insert(conversations).values({
     id,
+    asurite: session.asurite,
     title: (body.title ?? '').trim() || 'New chat',
     createdAt: now,
     updatedAt: now,

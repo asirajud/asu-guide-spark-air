@@ -2,7 +2,7 @@ import * as React from 'react'
 
 type P = React.SVGProps<SVGSVGElement>
 
-/** The 4-point Gemini sparkle, rainbow gradient (blue → green → yellow → red). */
+/** The 4-point sparkle mark, ASU maroon -> gold gradient. */
 export function Sparkle({ gradientId = 'sparkle-grad', ...p }: P & { gradientId?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden {...p}>
@@ -15,12 +15,10 @@ export function Sparkle({ gradientId = 'sparkle-grad', ...p }: P & { gradientId?
           y2="7"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0" stopColor="#F9AB00" />
-          <stop offset="0.2" stopColor="#EA4335" />
-          <stop offset="0.38" stopColor="#FBBC05" />
-          <stop offset="0.56" stopColor="#34A853" />
-          <stop offset="0.78" stopColor="#4285F4" />
-          <stop offset="1" stopColor="#4285F4" />
+          <stop offset="0" stopColor="#5C1229" />
+          <stop offset="0.35" stopColor="#8C1D40" />
+          <stop offset="0.72" stopColor="#D98A2B" />
+          <stop offset="1" stopColor="#FFC627" />
         </linearGradient>
       </defs>
       <path
@@ -216,6 +214,21 @@ export function RenameIcon(p: P) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
       <path d="M4 20h4l10-10a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6z" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** Upward arrow used by the composer's send control. */
+export function SendArrow(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden {...p}>
+      <path
+        d="M12 19V5M12 5l-6 6M12 5l6 6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }

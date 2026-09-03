@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { safeError } from '@/lib/api-error'
 import { readFile } from 'node:fs/promises'
 import { airFetch, callAir } from '@/lib/air/call'
 import { THINKING_OFF } from '@/lib/air/models'
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     prepared = await prepareVideo(upload)
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Could not process that video.' },
+      { error: safeError('video', err, 'Could not process that video.') },
       { status: 422 },
     )
   }
@@ -185,8 +186,8 @@ export async function POST(req: Request) {
       ms: Date.now() - started,
     })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error'
-    return NextResponse.json({ error: `Could not read that video: ${message}` }, { status: 502 })
+    const message = safeError('video', err, 'Could not read that video. Try again.')
+    return NextResponse.json({ error: message }, { status: 502 })
   } finally {
     await prepared.cleanup()
   }

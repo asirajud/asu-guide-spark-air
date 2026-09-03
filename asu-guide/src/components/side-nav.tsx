@@ -24,6 +24,8 @@ export function SideNav({
   onRename,
   onTogglePin,
   onDelete,
+  asurite = null,
+  railOpen = true,
 }: {
   open: boolean
   chats: ChatSummary[]
@@ -34,6 +36,10 @@ export function SideNav({
   onRename: (id: string, title: string) => void
   onTogglePin: (id: string, pinned: boolean) => void
   onDelete: (id: string) => void
+  /** ASURITE of the signed-in user, or null. */
+  asurite?: string | null
+  /** Desktop only: whether the permanent rail is expanded. */
+  railOpen?: boolean
 }) {
   const [query, setQuery] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -61,23 +67,27 @@ export function SideNav({
 
   return (
     <div
-      className={`absolute inset-0 z-40 ${open ? '' : 'pointer-events-none'}`}
-      aria-hidden={!open}
+      // A closed drawer must leave the accessibility tree, or a keyboard user
+      // tabs into an invisible off-canvas menu.
+      inert={!open && !railOpen ? true : undefined}
+      className={`absolute inset-0 z-40 lg:relative lg:inset-auto lg:z-0 lg:h-full lg:shrink-0 lg:pointer-events-auto ${
+        open ? '' : 'pointer-events-none lg:pointer-events-auto'
+      }`}
     >
       <button
         type="button"
         aria-label="Close menu"
         onClick={onClose}
-        className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${
+        className={`absolute inset-0 bg-black/60 transition-opacity duration-200 lg:hidden ${
           open ? 'opacity-100' : 'opacity-0'
         }`}
         tabIndex={open ? 0 : -1}
       />
 
       <aside
-        className={`absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col rounded-r-3xl bg-[#1b1b1b] transition-transform duration-250 ease-out ${
+        className={`absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col rounded-r-3xl bg-[#1b1b1b] transition-transform duration-250 ease-out lg:static lg:h-full lg:max-w-none lg:translate-x-0 lg:overflow-hidden lg:rounded-none lg:border-white/8 lg:transition-[width] lg:duration-200 ${
           open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${railOpen ? 'lg:w-[300px] lg:border-r' : 'lg:w-0 lg:border-r-0'}`}
       >
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <Sparkle className="size-[26px]" gradientId="nav-sparkle" />
@@ -88,7 +98,7 @@ export function SideNav({
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="text-fg rounded-full p-2 transition-colors hover:bg-white/5"
+            className="text-fg rounded-full p-2 transition-colors hover:bg-white/5 lg:hidden"
           >
             <Close className="size-[21px]" />
           </button>
@@ -142,15 +152,32 @@ export function SideNav({
         </div>
 
         <div className="flex items-center gap-3 border-t border-white/8 px-5 py-4">
-          <div className="size-9 rounded-full bg-[linear-gradient(140deg,#8ab4f8,#c58af9_55%,#f28b82)] p-[2px]">
-            <div className="flex size-full items-center justify-center rounded-full bg-[#1b1b1b] text-[13px] font-medium text-white">
-              A
+          <div className="size-9 shrink-0 rounded-full bg-[linear-gradient(140deg,#8c1d40,#c2436a_45%,#ffc627)] p-[2px]">
+            <div className="flex size-full items-center justify-center rounded-full bg-[#1b1b1b] text-[12px] font-medium text-white uppercase">
+              {asurite ? asurite.slice(0, 2) : '—'}
             </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-[14.5px] text-white">Azhar</p>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14.5px] text-white">{asurite ?? 'Not signed in'}</p>
             <p className="text-muted text-[12px]">Demo · ASU AIR</p>
           </div>
+
+          {asurite ? (
+            <a
+              href="/api/auth/logout"
+              className="text-muted hover:text-fg shrink-0 rounded-full px-3 py-2 text-[13.5px] transition-colors hover:bg-white/5"
+            >
+              Sign out
+            </a>
+          ) : (
+            <a
+              href="/api/auth/login"
+              className="bg-asu-maroon shrink-0 rounded-full px-4 py-2 text-[13.5px] font-medium text-white transition-colors hover:bg-[#a52350]"
+            >
+              Sign in
+            </a>
+          )}
         </div>
       </aside>
     </div>
@@ -173,7 +200,7 @@ export function SideNav({
           type="button"
           onClick={() => onSelect(chat.id)}
           className={`flex w-full items-center gap-2 rounded-full py-2.5 pr-10 pl-4 text-left transition-colors ${
-            active ? 'bg-[#2f2f2f]' : 'hover:bg-white/5'
+            active ? 'bg-[#3a1723]' : 'hover:bg-white/5'
           }`}
         >
           <span

@@ -105,3 +105,133 @@ this time — only 2 of 25 runs needed the watchdog kill. One new gotcha found: 
 directory is not a git repo, opencode resolves its instance directory from the launching shell's cwd
 and ignores the spawned process's `cwd`, so files land in the wrong place. Always `chdir` into the
 project before spawning.
+
+---
+
+# Session 3 — ASU brand, a real chat model, mic-only composer (2026-09-03, 00:21–00:55 MST)
+
+Three changes: swap the Google-blue accent layer for ASU maroon/gold, replace the scripted
+`scriptedReply()` with a genuine multi-turn conversation against an AIR reasoning model that keeps
+context across modalities, and reduce the composer to a mic that swaps to a send control. Same rules
+as before: every line of application source written by an ASU AIR model through `opencode`; the
+orchestrator only ran tooling, benchmarked the gateway with `curl`, drove a browser, and wrote the
+prompts and this log.
+
+## opencode invocations
+
+| Time (MST) | Model | Prompt (one-line summary) | Outcome | Duration |
+| --- | --- | --- | --- | --- |
+| 00:21 | asu/qwen3-coder-30b-a3b-instruct | `globals.css`: add `--asu-*` tokens, `@theme` aliases, maroon ambient glow | PARTIAL — only the `:root` tokens landed; the watchdog killed the run after the first edit | 90s |
+| 00:23 | asu/qwen3-coder-30b-a3b-instruct | `globals.css`: the two remaining edits, re-specified | OK | 114s |
+| 00:26 | asu/qwen3-coder-30b-a3b-instruct | `icons.tsx`: Sparkle gradient rainbow → maroon→gold | OK first try | 109s |
+| 00:28 | asu/qwen3-coder-30b-a3b-instruct | `header.tsx`: status dot → gold, avatar ring + Sign-in pill → maroon | OK first try | 178s |
+| 00:28 | asu/qwen3-coder-30b-a3b-instruct | `event-card.tsx`: "Registered" state → gold on maroon tint | OK first try | 187s |
+| 00:28 | asu/qwen3-coder-30b-a3b-instruct | `side-nav.tsx`: active row → maroon, footer avatar ring | OK first try | 78s |
+| 00:32 | asu/qwen3-coder-30b-a3b-instruct | `icons.tsx`: add a `SendArrow` icon | OK first try | 37s |
+| 00:33 | asu/qwen3-coder-30b-a3b-instruct | `models.ts`: reorder the `chat` service list | OK (later corrected — see 00:36) | 52s |
+| 00:33 | asu/qwen3-coder-30b-a3b-instruct | `events.ts`: add `shortlistEvents(query, limit)` — query-relevance ranking over the same window/quality filter as `getDemoEvents` | OK first try, typechecked | 58s |
+| 00:36 | asu/qwen3-coder-30b-a3b-instruct | NEW `src/app/api/chat/route.ts` — full history + event grounding + `EVENTS: n,n` citation parsing | OK first try; one prompt-authoring slip left a line break inside a quoted marker in the system prompt | 57s |
+| 00:36 | asu/qwen3-coder-30b-a3b-instruct | `models.ts`: correct the `chat` order after benchmarking (see below) | OK | 39s |
+| 00:38 | asu/qwen3-coder-30b-a3b-instruct | `composer.tsx`: delete the blue waveform button, mic ⇄ gold send swap | OK first try | 58s |
+| 00:40 | asu/qwen3-coder-30b-a3b-instruct | `chat.tsx`: full rewrite — `Turn[]` thread, real `/api/chat` loop, media turns folded into history, scroll-to-bottom | OK first try; slowest run of the session | 445s |
+| 00:41 | asu/qwen3-coder-30b-a3b-instruct | `app-shell.tsx`: per-turn persistence, lazy conversation creation via a promise ref, whole-thread restore | OK first try | 61s |
+| 00:49 | asu/qwen3-coder-30b-a3b-instruct | FIX: unused `busy`, stray spec comment, empty-reply guard, stale "blue glow" comment | OK | 78s |
+| 00:49 | asu/qwen3-coder-30b-a3b-instruct | FIX: unused `err`, repair the split system-prompt line, add an event-card backstop | OK | 54s |
+| 00:52 | asu/qwen3-coder-30b-a3b-instruct | FIX: backstop must stand down when the model has just said it has nothing | OK | 33s |
+| 00:54 | asu/qwen3-coder-30b-a3b-instruct | FIX: a silent voice clip left the composer stuck behind the transcribing spinner (pre-existing, exposed by the rewrite) | OK | 55s |
+
+## Session 3 totals
+
+- **18 opencode invocations**, all reaching a model, all `asu/qwen3-coder-30b-a3b-instruct`.
+  `devstral2-123b` was not needed — every step was one file, spec'd at near-pseudocode density.
+  `gpt-oss-120b` was not used as a reviewer (it still emits Harmony tokens agentically).
+- Four defects total, all fixed on the first retry: one truncated multi-edit run (watchdog, not the
+  model), two lint-level leftovers, and one latent voice bug the rewrite surfaced.
+- New file, model-written: `src/app/api/chat/route.ts`.
+  Edited by models: `globals.css`, `icons.tsx`, `header.tsx`, `event-card.tsx`, `side-nav.tsx`,
+  `composer.tsx`, `chat.tsx`, `app-shell.tsx`, `lib/air/models.ts`, `lib/events.ts`.
+- Orchestrator actions, none of them authoring app code: `npx tsc --noEmit`, `npx eslint src`,
+  `curl` benchmarks against the gateway, driving Chrome through the whole flow, and writing the
+  prompts + this log.
+
+## Which chat model, and why
+
+Benchmarked with `curl` on a 4-turn cross-modal prompt (a vision-model flyer description followed by
+"what time was that again, and is there anything robotics-y before it?"), 400 output tokens, all
+three cited the right events:
+
+| Model | Latency | Notes |
+| --- | --- | --- |
+| `qwen35-27b` (thinking off) | **1.7s** | clean prose, correct `EVENTS:` line |
+| `gpt-oss-120b` | 7.1s → one word | spent the entire 400-token budget on `reasoning_content`. At `max_tokens: 900` + `reasoning_effort: 'low'` it answers correctly in 3.4s, but emits U+202F narrow no-break spaces that render as tofu |
+| `qwen3-235b-a22b-instruct-2507` | 21.0s | correct, far too slow for a chat turn |
+
+So the brief's suggested order was inverted: `chat: ['qwen35-27b', 'gpt-oss-120b',
+'qwen3-235b-a22b-instruct-2507']`. The route special-cases `gpt-oss*` (bigger ceiling, reasoning
+dialled down) so the fallback is actually usable, and normalises U+202F/U+00A0 out of every reply.
+
+## Cross-modal context retention — how it was tested
+
+The specialist models' output is stored as an assistant message with `kind: 'vision'`, and the chat
+route re-labels it as `[Media the student shared earlier, as read by an ASU AIR vision or speech
+model]: …` on every subsequent turn. Verified end to end in the browser: a generated flyer
+("Midnight Build Night, Friday September 11, 8:30 PM – 1:00 AM, Brickyard Engineering 210") was
+uploaded, read by `gemma4-31b-it` in 3.3s, and two turns later "what time does that one start and
+which room was it in?" was answered from the description by `qwen35-27b` — including an honest "the
+room number isn't visible in the cropped image". All eight turns, vision ones included, came back
+from SQLite with their kinds intact after a reload.
+
+---
+
+# Session 4 — decoupled retrieval + tool-registry services, real tool calling (2026-09-03, 01:00–03:10 MST)
+
+Two new backend services were built alongside this app, each with its own build log:
+`../asu-events-api/AIR-BUILD-LOG.md` (31 runs) and `../asu-tools-api/AIR-BUILD-LOG.md` (21 runs).
+This section covers only the changes made **inside `asu-guide`** to consume them. Same rules as
+before: every line of application source written by an ASU AIR model through `opencode`; the
+orchestrator ran tooling, drove a browser, and wrote the prompts and this log.
+
+The change in substance: the regex `shortlistEvents()` grounding is gone. Events are no longer
+pasted into the system prompt at all. `/api/chat` now fetches an OpenAI-shaped tool array from
+`asu-tools-api` at session start and runs a real tool-calling loop, capped at three rounds per
+user turn, and the event cards render from actual tool results rather than from a keyword
+citation heuristic.
+
+## opencode invocations
+
+| Time | Model | Prompt (one-line summary) | Outcome | Duration |
+| --- | --- | --- | --- | --- |
+| 02:42 | asu/qwen3-coder-30b-a3b-instruct | new `src/lib/tools.ts` (registry client, process-level tool cache, MCP `tools/call` dispatch, result trimming) | OK — one nullable-cache type error | 54s |
+| 02:44 | asu/qwen3-coder-30b-a3b-instruct | FIX: narrow the cache guard so `getTools()` cannot return null | PARTIAL | 80s |
+| 02:45 | asu/qwen3-coder-30b-a3b-instruct | FIX: assign to a local before returning; narrow `res.json()`; drop an `any` | OK | 32s |
+| 02:46 | asu/qwen3-coder-30b-a3b-instruct | FIX: narrow the reservation shape in `extractEvents` | PARTIAL — same class of error moved down the file | 50s |
+| 02:47 | asu/qwen3-coder-30b-a3b-instruct | FIX: type the collected array as `Record<string, unknown>[]` at the point it is built | OK — clean | 56s |
+| 02:49 | asu/qwen3-coder-30b-a3b-instruct | full rewrite of `src/app/api/chat/route.ts` — tool loop, 3-round cap, shortlist and `EVENTS:` heuristic deleted | Logic right, but invented a `callAir(service, {options})` signature and a `gpt-4o` default | 56s |
+| 02:50 | asu/qwen3-coder-30b-a3b-instruct | FIX: use the real `callAir(service, attempt)` callback contract with `airFetch`, fed as literal code | OK — clean | 70s |
+| 02:53 | asu/qwen3-coder-30b-a3b-instruct | delete `shortlistEvents()` from `src/lib/events.ts`, keep `getDemoEvents` and its helpers | OK first try | 160s |
+| 03:06 | asu/qwen3-coder-30b-a3b-instruct | FIX: a confirmation turn redrew the whole search list, and the model promised a confirmation email | OK — cards now show only the reserved event, and the prompt forbids inventing an email, invite or held seat | 58s |
+| 03:09 | asu/qwen3-coder-30b-a3b-instruct | `event-card.tsx`: render `event.url` as a "View event" link — the data carried it but the card never showed it | OK | 32s |
+
+## Session 4 totals (asu-guide only)
+
+- **10 opencode invocations**, all `asu/qwen3-coder-30b-a3b-instruct`.
+- New file, model-written: `src/lib/tools.ts`. Rewritten: `src/app/api/chat/route.ts`.
+  Edited: `src/lib/events.ts`, `src/components/event-card.tsx`.
+- `src/components/chat.tsx` needed no change: it already rendered `data.events` as cards, so
+  swapping the source of that array from a heuristic to real tool results was invisible to it.
+
+## Verified end to end in the browser
+
+Signed in as `admin`, "any robotics or engineering events in the next two weeks?" → one
+`search_events` call → five real cards. Then "reserve me a spot for the first one" → three tool
+calls in one turn: `reserve_spot` fails first because the model guessed an event id, it reads the
+structured `invalid_arguments` / not-found envelope, calls `search_events` to recover the real id,
+and reserves successfully — inside the 3-round cap. The confirmation turn shows only the reserved
+event. Signed out, the same reservation request searches, finds the event, and declines to
+reserve, asking the student to sign in first.
+
+## What the tool budget costs
+
+Four tool definitions (`search_events`, `get_event_details`, `reserve_spot`, `list_capabilities`)
+are re-sent on every turn. Anything else registered in `asu-tools-api` is reachable only after the
+model calls `list_capabilities`, so the per-turn prompt cost stays flat as the registry grows.

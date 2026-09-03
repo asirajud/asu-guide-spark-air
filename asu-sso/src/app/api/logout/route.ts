@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sessions } from "@/lib/store";
+import { isAllowedRedirectOrigin } from "@/lib/clients";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,10 @@ export async function GET(req: NextRequest) {
   
   let res: NextResponse;
   
-  if (
-    redirectUri.startsWith("http://localhost:3001/") ||
-    redirectUri.startsWith("http://localhost:4000/")
-  ) {
+  // Validate against the origins of registered clients rather than a hardcoded
+  // port list — an app that moves ports should not strand the user on JSON,
+  // and an unregistered origin must not be usable as an open redirect.
+  if (redirectUri && isAllowedRedirectOrigin(redirectUri)) {
     res = NextResponse.redirect(redirectUri, 303);
   } else {
     res = NextResponse.json({

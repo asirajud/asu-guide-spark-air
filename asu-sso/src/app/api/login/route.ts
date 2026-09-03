@@ -1,7 +1,12 @@
-// This is a demo IdP that accepts any ASURITE and never validates a password.
+/**
+ * Demo IdP login. Credentials ARE verified now, against a local store of
+ * fictional accounts (see src/lib/users.ts) — but this is still not connected
+ * to ASU's directory, and no real ASURITE password will ever work here.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getClient, isValidRedirectUri } from "@/lib/clients";
 import { issueCode, normalizeAsurite, randomId, sessions } from "@/lib/store";
+import { verifyUser } from "@/lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +14,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData();
   const f = (k: string) => String(form.get(k) ?? "").trim();
 
-  // NEVER read, log, store, or forward the `password` field.
+  const password = f("password");
   const client_id = f("client_id");
   const redirect_uri = f("redirect_uri");
   const state = f("state");
@@ -55,11 +60,19 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedAsurite = normalizeAsurite(asurite);
-  if (!normalizedAsurite) {
-    // Redirect back to authorize page with error
+
+  // One failure message for a bad username and a bad password alike, so the
+  // form cannot be used to enumerate which accounts exist.
+  const user = normalizedAsurite ? verifyUser(normalizedAsurite, password) : null;
+
+  if (!user) {
+    // Redirect back to the sign-in page with an error
     const url = new URL("/authorize", req.url);
-    url.searchParams.set("error", "invalid_asurite");
-    url.searchParams.set("error_description", "Invalid ASURITE");
+    url.searchParams.set("error", "invalid_credentials");
+    url.searchParams.set(
+      "error_description",
+      "That ASURITE and password combination was not recognised.",
+    );
     // Copy all OAuth params back
     url.searchParams.set("client_id", client_id);
     url.searchParams.set("redirect_uri", redirect_uri);

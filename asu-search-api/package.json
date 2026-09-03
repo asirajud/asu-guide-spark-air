@@ -1,0 +1,19 @@
+{
+  "name": "asu-search-api",
+  "version": "1.0.0",
+  "description": "Web search service, registered as a tool with asu-tools-api",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "start": "tsx --env-file=.env src/server.ts",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "private": true,
+  "type": "module"
+}

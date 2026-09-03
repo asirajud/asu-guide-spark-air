@@ -63,17 +63,20 @@ export default function SignInCard(props: SignInCardProps) {
               </div>
               <div>
                 <label htmlFor="password" className="block text-[13px] font-semibold text-asu-ink">
-                  Password <span className="font-normal text-asu-muted">(optional)</span>
+                  Password
                 </label>
                 <input
                   id="password"
                   name="password"
                   type="password"
+                  required
                   autoComplete="off"
                   className="mt-1.5 block w-full rounded border border-asu-line bg-white px-3 py-2.5 text-[15px] outline-none focus:border-asu-maroon focus:ring-2 focus:ring-asu-maroon/25"
                 />
                 <p className="mt-1.5 text-[12px] text-asu-muted">
-                  Not checked — leave blank. The password field is decorative: its value is never validated, stored, logged, or sent anywhere.
+                  Checked against a local store of fictional demo accounts. Try{' '}
+                  <span className="font-semibold">admin</span> /{' '}
+                  <span className="font-semibold">admin</span>. No real ASU password will ever work here.
                 </p>
               </div>
               <button

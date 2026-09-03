@@ -42,3 +42,30 @@ export function checkClientSecret(client: OAuthClient, secret: string): boolean 
     return secret === client.client_secret;
   }
 }
+
+/**
+ * Origins any registered client is allowed to be sent back to.
+ *
+ * Post-logout redirects are validated against this rather than a hardcoded port
+ * list, so moving an app between ports cannot silently strand the user on a
+ * JSON page — and an unregistered origin still cannot be used as an open
+ * redirect.
+ */
+export function isAllowedRedirectOrigin(redirectUri: string): boolean {
+  let origin: string;
+  try {
+    origin = new URL(redirectUri).origin;
+  } catch {
+    return false;
+  }
+
+  return clientsJson.clients.some((c: OAuthClient) =>
+    c.redirect_uris.some((u) => {
+      try {
+        return new URL(u).origin === origin;
+      } catch {
+        return false;
+      }
+    }),
+  );
+}

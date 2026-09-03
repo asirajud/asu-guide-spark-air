@@ -4,7 +4,16 @@ import { db } from '@/db'
 import { events } from '@/db/schema'
 
 /** The demo is pinned to this "today" so the scripted response always looks fresh. */
-export const DEMO_NOW = new Date('2026-09-02T12:00:00Z')
+/**
+ * "Now" for the demo. Pinned so the shortlist is reproducible, but never behind
+ * the real clock — a pinned past date surfaces events that already happened,
+ * which reads as a bug the moment someone checks the date on a card.
+ */
+export const DEMO_NOW = (() => {
+  const pinned = new Date('2026-09-02T12:00:00Z')
+  const now = new Date()
+  return now > pinned ? now : pinned
+})()
 const WINDOW_END = new Date('2026-09-17T00:00:00Z')
 
 /** ~84% of the feed has this placeholder instead of a real location. Never show it. */
@@ -56,31 +65,17 @@ function truncate(s: string, n = 110) {
 /** Titles that read like internal calendar noise rather than something you'd pitch. */
 const JUNK_TITLE = /^(tbd|tba|n\/?a|meeting|weekly meeting|gbm ?\d*|test|open gym|tabling)$/i
 
-/** Stand-in for the personalization story: what the demo "knows" Azhar is into. */
-const INTEREST = [
-  /\bai\b|artificial intelligence|machine learning/i,
-  /hack|coding|code|software|developer|acm|robot/i,
-  /research|data|startup|entrepreneur/i,
-  /game|board game|climb|music|film|food|festival/i,
-  /international|social|night/i,
-]
 
-function score(title: string, blurb: string) {
-  let n = 0
-  INTEREST.forEach((re, i) => {
-    if (re.test(title)) n += 10 - i
-    else if (re.test(blurb)) n += (10 - i) / 4
-  })
-  if (blurb.length > 140) n += 1
-  return n
-}
 
 const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, dateStyle: 'short' })
 
 /**
- * Curated shortlist for the scripted demo response: real upcoming events in the
- * next ~2 weeks with an interesting title and a usable description, one per club
- * and (where possible) one per day, ranked by a stand-in "interest" score.
+ * The opening suggestion cards only.
+ *
+ * Relevance ranking used to live here as a keyword heuristic; it now belongs to
+ * asu-events-api, reached through the search_events tool. What is left is a
+ * spread: soonest first, one per club and where possible one per day, filtered
+ * to events with a real title and a usable description.
  */
 export async function getDemoEvents(limit = 5): Promise<DemoEvent[]> {
   const rows = await db
@@ -97,8 +92,7 @@ export async function getDemoEvents(limit = 5): Promise<DemoEvent[]> {
       if (blurb.length < 90) return false
       return Boolean(row.org?.trim())
     })
-    .map((c) => ({ ...c, score: score(c.row.title, c.blurb) }))
-    .sort((a, b) => b.score - a.score || a.row.start.getTime() - b.row.start.getTime())
+    .sort((a, b) => a.row.start.getTime() - b.row.start.getTime())
 
   const seenClub = new Set<string>()
   const seenDay = new Set<string>()
@@ -131,5 +125,7 @@ export async function getDemoEvents(limit = 5): Promise<DemoEvent[]> {
       url: row.url,
     }))
 }
+
+
 
 export { LOCATION_PLACEHOLDER }

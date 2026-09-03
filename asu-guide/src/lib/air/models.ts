@@ -39,7 +39,12 @@ export const MODELS: Record<AirService, string[]> = {
   // short utterances; whisper is the fallback and adds timestamps.
   asr: ['qwen3-asr-1p7b', 'whisper-large-v3'],
 
-  // General reasoning, if the scripted demo is ever replaced with a live model.
+  // The reasoning model that owns the /api/chat conversation. Measured on a
+  // 4-turn cross-modal prompt against the live gateway: qwen35-27b with
+  // thinking off answered in 1.7s, gpt-oss-120b in 3.4s (and only once its
+  // reasoning budget was raised — at 400 tokens it spent the lot thinking and
+  // returned one word), qwen3-235b in 21s. All three cited events correctly, so
+  // the fastest wins and the other two are fallbacks.
   chat: ['qwen35-27b', 'gpt-oss-120b', 'qwen3-235b-a22b-instruct-2507'],
 
   // Watching a clip. qwen3-vl is the only family on AIR that accepts a

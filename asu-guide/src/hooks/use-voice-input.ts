@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export type VoiceState = 'idle' | 'recording' | 'transcribing' | 'error'
 
 const MAX_CLIP_MS = 30_000
+/** Hard deadline on the upload+transcribe round trip. */
+const TRANSCRIBE_TIMEOUT_MS = 30_000
+/** Peak amplitude (0-127 from the analyser) below which the clip is silence. */
+const SILENCE_PEAK = 6
 
 /**
  * Tap-to-start / tap-to-stop microphone capture.
@@ -30,6 +34,11 @@ export function useVoiceInput({
   const audioCtxRef = useRef<AudioContext | null>(null)
   const rafRef = useRef<number | null>(null)
   const capRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Loudest sample seen while recording, so silence never reaches the gateway. */
+  const peakRef = useRef(0)
+  /** Whether the analyser produced any samples — rAF is throttled to 0 Hz in a
+   *  background tab, and skipped entirely if the AudioContext failed to start. */
+  const sampledRef = useRef(false)
 
   const teardown = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -72,6 +81,8 @@ export function useVoiceInput({
         analyser.getByteTimeDomainData(bins)
         let peak = 0
         for (const b of bins) peak = Math.max(peak, Math.abs(b - 128))
+        sampledRef.current = true
+        if (peak > peakRef.current) peakRef.current = peak
         setLevel(Math.min(1, peak / 48))
         rafRef.current = requestAnimationFrame(tick)
       }
@@ -86,6 +97,8 @@ export function useVoiceInput({
       recorderRef.current = recorder
       chunksRef.current = []
 
+      peakRef.current = 0
+      sampledRef.current = false
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data)
       }
@@ -93,8 +106,17 @@ export function useVoiceInput({
       recorder.onstop = async () => {
         teardown()
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        // Only a measured silence counts as silence. If the meter never ran,
+        // send the clip and let the server decide.
+        if (sampledRef.current && peakRef.current < SILENCE_PEAK) {
+          setState('error')
+          setError("I didn't hear anything — check your mic and try again.")
+          return
+        }
         if (blob.size < 1200) {
-          setState('idle')
+          // Too short to contain anything — usually a mis-tap.
+          setState('error')
+          setError('That was too short to hear. Hold the mic a moment longer.')
           return
         }
 
@@ -103,16 +125,36 @@ export function useVoiceInput({
         try {
           const body = new FormData()
           body.append('audio', blob, 'clip.webm')
-          const res = await fetch('/api/transcribe', { method: 'POST', body })
+
+          // Without a deadline a stalled request leaves the UI spinning
+          // forever: the promise never settles, so nothing can reset the state.
+          const res = await fetch('/api/transcribe', {
+            method: 'POST',
+            body,
+            signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
+          })
           const data = (await res.json()) as { text?: string; error?: string }
           if (!res.ok) throw new Error(data.error ?? `Transcription failed (${res.status})`)
 
           const text = (data.text ?? '').trim()
-          setState('idle')
-          if (text) onTranscript(text)
+          if (text) {
+            setState('idle')
+            onTranscript(text)
+          } else {
+            // Silence, or the model heard nothing it was willing to commit to.
+            setState('error')
+            setError("I didn't catch that — try again a little closer to the mic.")
+          }
         } catch (err) {
           setState('error')
-          setError(err instanceof Error ? err.message : 'Transcription failed.')
+          const timedOut = err instanceof DOMException && err.name === 'TimeoutError'
+          setError(
+            timedOut
+              ? 'Transcription timed out. Check the ASU VPN and try again.'
+              : err instanceof Error
+                ? err.message
+                : 'Transcription failed.',
+          )
         }
       }
 

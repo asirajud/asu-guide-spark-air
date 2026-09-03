@@ -12,6 +12,12 @@
   --muted: #9aa0a6;
   --blue: #4285f4;
   --blue-solid: #1a73e8;
+  --asu-maroon: #8c1d40;
+  --asu-maroon-deep: #5c1229;
+  --asu-gold: #ffc627;
+  --asu-gold-soft: #ffd97a;
+  --asu-accent-fg: #1a0a11;
+  --asu-maroon-tint: #2a1119;
 }
 
 @theme inline {
@@ -24,6 +30,12 @@
   --color-muted: var(--muted);
   --color-blue: var(--blue);
   --color-blue-solid: var(--blue-solid);
+  --color-asu-maroon: var(--asu-maroon);
+  --color-asu-maroon-deep: var(--asu-maroon-deep);
+  --color-asu-gold: var(--asu-gold);
+  --color-asu-gold-soft: var(--asu-gold-soft);
+  --color-asu-accent-fg: var(--asu-accent-fg);
+  --color-asu-maroon-tint: var(--asu-maroon-tint);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -40,13 +52,13 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* The deep-blue glow rising from behind the input bar on the empty state. */
+/* The warm ASU-maroon glow rising from behind the input bar on the empty state. */
 .ambient-glow {
   background: radial-gradient(
     120% 68% at 50% 116%,
-    #172e57 0%,
-    #0e1a33 40%,
-    rgba(11, 21, 43, 0.62) 62%,
+    #4a1526 0%,
+    #2a0f1a 40%,
+    rgba(30, 12, 20, 0.6) 62%,
     rgba(0, 0, 0, 0) 88%
   );
 }

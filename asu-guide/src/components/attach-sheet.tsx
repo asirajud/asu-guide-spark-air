@@ -11,10 +11,13 @@ export function AttachSheet({
   open,
   onClose,
   onPick,
+  locked = false,
 }: {
   open: boolean
   onClose: () => void
   onPick: (source: 'files' | 'photos' | 'camera') => void
+  /** Signed out: sharing media is gated behind an ASURITE. */
+  locked?: boolean
 }) {
   useEffect(() => {
     if (!open) return
@@ -43,6 +46,23 @@ export function AttachSheet({
       <div className="animate-sheet-in relative mx-3 mb-[92px] w-full rounded-3xl bg-[#1e1f20] p-4 shadow-2xl shadow-black/60">
         <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" />
 
+        {locked ? (
+          <div className="px-3 pt-1 pb-2 text-center">
+            <p className="text-fg text-[16px] leading-snug font-medium">
+              Sign in to share photos and video
+            </p>
+            <p className="text-muted mx-auto mt-2 max-w-[36ch] text-[13.5px] leading-relaxed">
+              Media you share is read by models running on ASU&apos;s own hardware and kept with
+              your account, so it needs an ASURITE.
+            </p>
+            <a
+              href="/api/auth/login"
+              className="bg-asu-maroon mt-4 inline-flex h-11 items-center rounded-full px-6 text-[15px] font-medium text-white transition-colors hover:bg-[#a52350] active:scale-95"
+            >
+              Sign in
+            </a>
+          </div>
+        ) : (
         <div className="flex justify-center gap-3">
           {actions.map(({ id, label, Icon }) => (
             <button
@@ -59,11 +79,15 @@ export function AttachSheet({
           ))}
         </div>
 
+        )}
+
+        {!locked && (
         <p className="text-muted mt-3 px-1 text-center text-[12px] leading-snug">
           Images and video are read on ASU AIR — <span className="text-fg/80">gemma4-31b-it</span>,{' '}
           <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
           <span className="text-fg/80">qwen3-asr</span>.
         </p>
+        )}
       </div>
     </div>
   )

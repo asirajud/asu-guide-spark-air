@@ -1,6 +1,6 @@
 'use client'
 
-import { Close, Mic, Plus, Waveform } from '@/components/icons'
+import { Close, Mic, Plus, SendArrow } from '@/components/icons'
 import type { VoiceState } from '@/hooks/use-voice-input'
 
 export function Composer({
@@ -30,6 +30,13 @@ export function Composer({
 }) {
   const recording = voiceState === 'recording'
   const transcribing = voiceState === 'transcribing'
+
+  // The mic is the resting control. The moment there is text or a staged
+  // attachment it becomes a send button, so there is always one obvious way to
+  // send — Enter still submits either way. The old blue "live speak" waveform
+  // button is deferred; it is not rendered at all.
+  const canSend = value.trim().length > 0 || Boolean(attachment)
+  const showSend = canSend && !recording && !transcribing
 
   return (
     <div className="flex flex-col gap-2">
@@ -66,7 +73,7 @@ export function Composer({
         e.preventDefault()
         onSubmit()
       }}
-      className="bg-surface-2 flex h-16 items-center gap-3 rounded-full pr-2 pl-4"
+      className="bg-surface-2 flex h-16 items-center gap-3 rounded-full pr-5 pl-4"
     >
       <button
         type="button"
@@ -90,38 +97,40 @@ export function Composer({
         className="text-fg placeholder:text-muted min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.01em] outline-none disabled:opacity-50"
       />
 
-      <button
-        type="button"
-        onClick={onMicToggle}
-        disabled={transcribing}
-        aria-label={recording ? 'Stop recording' : 'Voice input'}
-        aria-pressed={recording}
-        className={
-          recording
-            ? 'relative flex size-9 items-center justify-center rounded-full bg-red-500/90 text-white transition-colors'
-            : 'text-fg/90 p-1 transition-colors disabled:opacity-40'
-        }
-      >
-        {recording && (
-          <span
-            aria-hidden
-            className="absolute inset-0 rounded-full bg-red-500/40"
-            style={{
-              transform: `scale(${1 + Math.min(voiceLevel, 1) * 0.55})`,
-              transition: 'transform 90ms linear',
-            }}
-          />
-        )}
-        <Mic className="relative size-[23px]" />
-      </button>
-
-      <button
-        type="submit"
-        aria-label="Send"
-        className="bg-blue-solid flex size-12 items-center justify-center rounded-full text-white transition-transform active:scale-95"
-      >
-        <Waveform className="size-[22px]" />
-      </button>
+      {showSend ? (
+        <button
+          type="submit"
+          aria-label="Send"
+          className="bg-asu-gold text-asu-accent-fg flex size-9 items-center justify-center rounded-full transition-transform active:scale-95"
+        >
+          <SendArrow className="size-[19px]" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onMicToggle}
+          disabled={transcribing}
+          aria-label={recording ? 'Stop recording' : 'Voice input'}
+          aria-pressed={recording}
+          className={
+            recording
+              ? 'relative flex size-9 items-center justify-center rounded-full bg-red-500/90 text-white transition-colors'
+              : 'text-fg/90 p-1 transition-colors disabled:opacity-40'
+          }
+        >
+          {recording && (
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-red-500/40"
+              style={{
+                transform: `scale(${1 + Math.min(voiceLevel, 1) * 0.55})`,
+                transition: 'transform 90ms linear',
+              }}
+            />
+          )}
+          <Mic className="relative size-[23px]" />
+        </button>
+      )}
       </form>
     </div>
   )

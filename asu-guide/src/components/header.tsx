@@ -15,14 +15,16 @@ export function Header({
 }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 px-4">
+      {onMenu && (
       <button
         type="button"
-        aria-label="Open menu"
+        aria-label="Toggle menu"
         onClick={onMenu}
         className="bg-surface text-fg flex size-12 items-center justify-center rounded-full transition-colors hover:bg-[#2a2a2a] active:scale-95"
       >
         <Hamburger className="size-6" />
       </button>
+      )}
 
       <div className="flex flex-1 items-center gap-1.5 pl-1">
         <span className="text-[18px] leading-none font-medium tracking-[-0.02em] text-white">
@@ -32,7 +34,7 @@ export function Header({
           AIR
         </span>
         <Chevron className="text-fg mt-[1px] size-[18px]" />
-        <span className="bg-blue ml-1.5 size-[7px] rounded-full" />
+        <span className="bg-asu-gold ml-1.5 size-[7px] rounded-full" />
       </div>
 
       <button
@@ -45,20 +47,20 @@ export function Header({
       </button>
 
       {asurite ? (
-        <a
-          href="/api/auth/logout"
-          title={`${asurite} · sign out`}
-          aria-label={`Signed in as ${asurite}. Sign out.`}
-          className="size-12 shrink-0 rounded-full bg-[linear-gradient(140deg,#8ab4f8,#c58af9_55%,#f28b82)] p-[2px]"
+        /* Not interactive — sign out lives in the side nav. */
+        <div
+          title={asurite}
+          aria-label={`Signed in as ${asurite}`}
+          className="size-12 shrink-0 rounded-full bg-[linear-gradient(140deg,#8c1d40,#c2436a_45%,#ffc627)] p-[2px]"
         >
           <span className="bg-surface flex size-full items-center justify-center rounded-full text-[13px] font-medium tracking-[-0.02em] text-white uppercase">
             {asurite.slice(0, 2)}
           </span>
-        </a>
+        </div>
       ) : (
         <a
           href="/api/auth/login"
-          className="flex h-11 shrink-0 items-center rounded-full bg-[#1f3a5f] px-5 text-[15px] font-medium text-white transition-colors hover:bg-[#264872] active:scale-95"
+          className="bg-asu-maroon flex h-11 shrink-0 items-center rounded-full px-5 text-[15px] font-medium text-white transition-colors hover:bg-[#a52350] active:scale-95"
         >
           Sign in
         </a>
