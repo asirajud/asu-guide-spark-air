@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+:root {
+  --asu-maroon: #8C1D40;
+  --asu-maroon-dark: #6E1732;
+  --asu-gold: #FFC627;
+  --asu-bg: #F4F4F4;
+  --asu-ink: #191919;
+  --asu-muted: #5C5C5C;
+  --asu-line: #D0D0D0;
+  --asu-warn-bg: #FFF4D6;
+  --asu-warn-border: #C77700;
+  --asu-warn-ink: #7A4A00;
+}
+
+@theme inline {
+  --color-asu-maroon: var(--asu-maroon);
+  --color-asu-maroon-dark: var(--asu-maroon-dark);
+  --color-asu-gold: var(--asu-gold);
+  --color-asu-bg: var(--asu-bg);
+  --color-asu-ink: var(--asu-ink);
+  --color-asu-muted: var(--asu-muted);
+  --color-asu-line: var(--asu-line);
+  --font-sans: var(--font-inter);
+}
+
+html, body {
+  background: var(--asu-bg);
+  color: var(--asu-ink);
+}

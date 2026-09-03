@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next
+.next/
+out/
+build/
+next-env.d.ts
+
+# env / secrets — never commit the AIR key
+.env
+.env.*
+!.env.example
+
+# local databases (regenerate with `pnpm db:seed`)
+*.db
+*.db-shm
+*.db-wal
+
+# misc
+.DS_Store
+*.log
+.vercel
+.idea/
+
+# the corpus lives with the app (asu-guide/data/); this is the scratch copy
+/asu-events.json

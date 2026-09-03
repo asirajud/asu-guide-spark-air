@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "DEMO CLIENT REGISTRY \u2014 ASU AIR Spark Challenge mock identity provider.",
+    "These credentials are FAKE and are committed on purpose.",
+    "'demo-secret-not-a-real-credential' is not, and never was, a real ASU secret.",
+    "This file exists so the OAuth handshake between the two demo apps is a real one.",
+    "Do not copy this pattern into anything that touches real users."
+  ],
+  "clients": [
+    {
+      "client_id": "asu-guide-demo",
+      "client_secret": "demo-secret-not-a-real-credential",
+      "name": "ASU Guide (demo)",
+      "redirect_uris": [
+        "http://localhost:3000/api/auth/callback"
+      ],
+      "scopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    }
+  ]
+}
