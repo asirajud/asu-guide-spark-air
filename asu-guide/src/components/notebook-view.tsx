@@ -407,6 +407,7 @@ export function NotebookView({
                         <p className="text-muted mt-4 text-[12.5px]">
                           Answered by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR
                           in {(t.meta.ms / 1000).toFixed(1)}s
+                          {t.meta.searched && ' · searched the web'}
                         </p>
                       )}
                     </div>

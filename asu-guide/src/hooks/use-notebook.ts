@@ -31,7 +31,7 @@ export type NotebookTurn = {
   id: string
   role: 'user' | 'assistant'
   content: string
-  meta?: { model: string; ms: number }
+  meta?: { model: string; ms: number; searched?: boolean }
   /** 'sticky' when the turn was nudged in from the sticky board, so the UI can say so. */
   source?: 'sticky'
   /** For a sticky turn: the note as written, without the framing sent to the model. */
@@ -42,6 +42,10 @@ export type QueuedPage = { imageName: string; previewUrl: string }
 
 /** Until the server says otherwise. Mirrors NOTEBOOK_PAGE_CAP_DEFAULT in lib/app-settings.ts. */
 const DEFAULT_CAP = 10
+
+function toQueued(...lists: { file: File; previewUrl: string }[][]): QueuedPage[] {
+  return lists.flat().map((i) => ({ imageName: i.file.name, previewUrl: i.previewUrl }))
+}
 
 type IngestEvent =
   | { type: 'page_start'; position: number; name: string }
@@ -73,6 +77,8 @@ export function useNotebook(id: string | null) {
   /** Waiting for the running batch to finish; shown as 'queued' rows. */
   const [queued, setQueued] = useState<QueuedPage[]>([])
   const queueRef = useRef<{ file: File; previewUrl: string }[]>([])
+  /** Pages of the running batch the server has not started yet; shown as queued too. */
+  const pendingRef = useRef<{ file: File; previewUrl: string }[]>([])
   /** Set when a rename arrived from the server (auto-title), so the shell can refresh its list. */
   const [renamedTo, setRenamedTo] = useState<string | null>(null)
 
@@ -122,7 +128,8 @@ export function useNotebook(id: string | null) {
   const runBatch = useCallback(
     async (items: { file: File; previewUrl: string }[]) => {
       if (!id || items.length === 0) return
-      setQueued([])
+      pendingRef.current = items.slice()
+      setQueued(toQueued(pendingRef.current, queueRef.current))
       setIngesting(true)
       setProgress({ done: 0, total: items.length, current: null })
 
@@ -162,6 +169,9 @@ export function useNotebook(id: string | null) {
             const ev = JSON.parse(line) as IngestEvent
 
             if (ev.type === 'page_start') {
+              // This page has left the queue for the reading slot.
+              pendingRef.current = pendingRef.current.slice(1)
+              setQueued(toQueued(pendingRef.current, queueRef.current))
               const page: NotebookPage = {
                 position: ev.position,
                 imageName: ev.name,
@@ -210,6 +220,8 @@ export function useNotebook(id: string | null) {
       } catch {
         setError('Upload failed. Check the ASU VPN and try again.')
       } finally {
+        pendingRef.current = []
+        setQueued(toQueued([], queueRef.current))
         setIngesting(false)
         setProgress((p) => (p ? { ...p, current: null } : null))
         // Object URLs are kept so the thumbnails stay visible for the session.
@@ -230,7 +242,7 @@ export function useNotebook(id: string | null) {
       if (!id) return
       const images = files.filter((f) => f.type.startsWith('image/'))
       if (images.length === 0) return
-      const room = cap - pages.length - queueRef.current.length
+      const room = cap - pages.length - pendingRef.current.length - queueRef.current.length
       if (room <= 0) {
         setError(`This notebook holds at most ${cap} pages.`)
         return
@@ -246,7 +258,7 @@ export function useNotebook(id: string | null) {
       queueRef.current.push(
         ...accepted.map((file) => ({ file, previewUrl: URL.createObjectURL(file) })),
       )
-      setQueued(queueRef.current.map((i) => ({ imageName: i.file.name, previewUrl: i.previewUrl })))
+      setQueued(toQueued(pendingRef.current, queueRef.current))
     },
     [id, cap, pages.length],
   )
@@ -296,12 +308,20 @@ export function useNotebook(id: string | null) {
           return
         }
 
-        const data = (await res.json()) as { text: string; model?: string; ms?: number }
+        const data = (await res.json()) as {
+          text: string
+          model?: string
+          ms?: number
+          searched?: boolean
+        }
         const assistantTurn: NotebookTurn = {
           id: crypto.randomUUID(),
           role: 'assistant',
           content: data.text,
-          meta: data.model && data.ms ? { model: data.model, ms: data.ms } : undefined,
+          meta:
+            data.model && data.ms
+              ? { model: data.model, ms: data.ms, searched: data.searched }
+              : undefined,
         }
         setTurns((prev) => [...prev, assistantTurn])
       } catch {
