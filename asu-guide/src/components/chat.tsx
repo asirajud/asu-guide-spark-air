@@ -7,6 +7,7 @@ import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
 import { EventList } from '@/components/event-list'
 import { RichText } from '@/components/rich-text'
+import { capitaliseReply } from '@/lib/capitalise'
 import Image from 'next/image'
 import { ToolTrace } from '@/components/tool-trace'
 import type { DemoEvent } from '@/lib/events'
@@ -456,7 +457,9 @@ export function Chat({
                   <div key={t.id}>
                     {t.trace && t.trace.length > 0 && <ToolTrace steps={t.trace} />}
                     <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
-                      <RichText text={t.content} />
+                      {/* Normalised at render, not on receipt, so conversations
+                          already stored lowercase come back looking right. */}
+                      <RichText text={capitaliseReply(t.content)} />
                       {streamingLast && (
                         <span className="bg-fg/80 ml-0.5 inline-block h-[17px] w-[2px] translate-y-[2px] animate-pulse" />
                       )}
