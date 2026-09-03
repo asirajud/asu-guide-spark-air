@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NotebookIcon, Plus, PhotoStack, Close, TrashIcon } from '@/components/icons'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { StickyNotes, NUDGE_PREFIX } from '@/components/sticky-notes'
+import { useStickyNotes, type StickyNote } from '@/hooks/use-sticky-notes'
 import { Composer } from '@/components/composer'
 import { RichText } from '@/components/rich-text'
 import { useNotebook } from '@/hooks/use-notebook'
@@ -113,6 +115,7 @@ export function NotebookView({
   onDeleted?: () => void
 }) {
   const nb = useNotebook(id)
+  const sticky = useStickyNotes(id)
   const [draft, setDraft] = useState('')
   const [expanded, setExpanded] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
@@ -156,6 +159,13 @@ export function NotebookView({
     onDeleted?.()
   }
 
+  /** A nudged note becomes the student's next chat turn, framed the way they asked, and is struck through. */
+  function nudge(note: StickyNote) {
+    if (!hasRead || nb.asking) return
+    void nb.ask(`${NUDGE_PREFIX}\n\n${note.text}`)
+    sticky.markDone(note.id)
+  }
+
   function submit() {
     const q = draft.trim()
     if (!q) return
@@ -180,213 +190,234 @@ export function NotebookView({
     )
   }
 
-  return (
-    <div className="thin-scroll relative z-10 flex w-full flex-1 flex-col overflow-y-auto">
-      <div className="mx-auto w-full max-w-[820px] px-5 pt-6 pb-8">
-        <div className="flex items-center gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
-            <NotebookIcon className="size-[22px]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <input
-              type="text"
-              value={nameDraft ?? nb.notebook?.name ?? ''}
-              onChange={(e) => setNameDraft(e.target.value)}
-              onBlur={() => {
-                const next = (nameDraft ?? '').trim()
-                setNameDraft(null)
-                if (next && next !== nb.notebook?.name) {
-                  void nb.rename(next).then((ok) => {
-                    if (ok) onRenamed?.(next)
-                  })
-                }
-              }}
-              onKeyDown={(e) => {
-                // Enter commits through onBlur so the rename runs exactly once.
-                if (e.key === 'Enter') e.currentTarget.blur()
-                if (e.key === 'Escape') {
-                  setNameDraft(null)
-                  e.currentTarget.blur()
-                }
-              }}
-              aria-label="Notebook name"
-              className="w-full truncate bg-transparent text-[22px] font-medium tracking-[-0.02em] text-white outline-none"
-            />
-            <p className="text-muted text-[15px]">
-              Notebook · {n} {n === 1 ? 'page' : 'pages'}
-              {nb.ingesting && nb.progress?.current && (
-                <span className="text-[#ffc627]"> · reading page {nb.progress.current}</span>
-              )}
-              {nb.queued.length > 0 && ` · ${nb.queued.length} queued`}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            disabled={nb.ingesting}
-            aria-label="Delete notebook"
-            title="Delete notebook"
-            className="text-muted hover:text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/5 disabled:opacity-40"
-          >
-            <TrashIcon className="size-[18px]" />
-          </button>
-        </div>
-        {deleteError && <p className="mt-3 text-[15px] text-red-400">{deleteError}</p>}
-        {nb.error && <p className="mt-3 text-[15px] text-red-400">{nb.error}</p>}
+  const notesProps = {
+    notes: sticky.notes,
+    canNudge: hasRead && !nb.asking,
+    onAdd: sticky.add,
+    onNudge: nudge,
+    onRemove: sticky.remove,
+  }
 
-        <Section
-          title="Pages"
-          right={
+  return (
+    <div className="relative z-10 flex min-h-0 w-full flex-1 flex-row">
+      <div className="thin-scroll relative flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="mx-auto w-full max-w-[820px] px-5 pt-6 pb-8">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
+              <NotebookIcon className="size-[22px]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <input
+                type="text"
+                value={nameDraft ?? nb.notebook?.name ?? ''}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onBlur={() => {
+                  const next = (nameDraft ?? '').trim()
+                  setNameDraft(null)
+                  if (next && next !== nb.notebook?.name) {
+                    void nb.rename(next).then((ok) => {
+                      if (ok) onRenamed?.(next)
+                    })
+                  }
+                }}
+                onKeyDown={(e) => {
+                  // Enter commits through onBlur so the rename runs exactly once.
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') {
+                    setNameDraft(null)
+                    e.currentTarget.blur()
+                  }
+                }}
+                aria-label="Notebook name"
+                className="w-full truncate bg-transparent text-[22px] font-medium tracking-[-0.02em] text-white outline-none"
+              />
+              <p className="text-muted text-[15px]">
+                Notebook · {n} {n === 1 ? 'page' : 'pages'}
+                {nb.ingesting && nb.progress?.current && (
+                  <span className="text-[#ffc627]"> · reading page {nb.progress.current}</span>
+                )}
+                {nb.queued.length > 0 && ` · ${nb.queued.length} queued`}
+              </p>
+            </div>
             <button
               type="button"
-              disabled={full}
-              title={full ? `This notebook holds at most ${nb.cap} pages` : undefined}
-              onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-2 text-[15px] transition-colors hover:bg-white/5 disabled:opacity-40"
+              onClick={() => setConfirmDelete(true)}
+              disabled={nb.ingesting}
+              aria-label="Delete notebook"
+              title="Delete notebook"
+              className="text-muted hover:text-fg flex size-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/5 disabled:opacity-40"
             >
-              <Plus className="size-3.5" />
-              Add pages
-              <span className="text-muted tabular-nums">
-                {total}/{nb.cap}
-              </span>
+              <TrashIcon className="size-[18px]" />
             </button>
-          }
-        >
-          <div
-            onDragOver={(e) => {
-              e.preventDefault()
-              setDragging(true)
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault()
-              setDragging(false)
-              const files = Array.from(e.dataTransfer.files).filter((f) =>
-                f.type.startsWith('image/'),
-              )
-              void nb.addPages(files)
-            }}
-            className={`mt-3 rounded-3xl border border-dashed p-4 transition-colors ${dragging ? 'border-[#ffc627]/60 bg-[#ffc627]/5' : 'border-white/12'}`}
-          >
-            {total === 0 && !nb.ingesting ? (
-              <div className="flex flex-col items-center gap-2 py-4">
-                <PhotoStack className="size-8 text-muted" />
-                <p className="text-muted text-center text-[16px]">
-                  Drop photos of your notebook pages here, as many as you like. Sol reads them one
-                  at a time and builds one understanding of the whole set.
-                </p>
-              </div>
-            ) : (
-              <ul className="flex flex-col">
-                {nb.pages.map((p) => (
-                  <PageRow
-                    key={p.position}
-                    page={p}
-                    expanded={expanded === p.position}
-                    onToggle={() => setExpanded(expanded === p.position ? null : p.position)}
-                  />
-                ))}
-                {nb.queued.map((q, i) => (
-                  <PageRow
-                    key={`queued-${n + i + 1}`}
-                    page={{
-                      position: n + i + 1,
-                      imageName: q.imageName,
-                      reading: '',
-                      status: 'queued',
-                      model: '',
-                      ms: 0,
-                      previewUrl: q.previewUrl,
-                    }}
-                    expanded={false}
-                    onToggle={() => {}}
-                  />
-                ))}
-              </ul>
-            )}
           </div>
-        </Section>
+          {deleteError && <p className="mt-3 text-[15px] text-red-400">{deleteError}</p>}
+          {nb.error && <p className="mt-3 text-[15px] text-red-400">{nb.error}</p>}
 
-        <Section
-          title="Understanding"
-          right={
-            nb.notebook?.digestModel ? (
-              <span className="text-muted text-[13.5px]">
-                rewritten by {nb.notebook.digestModel} on ASU AIR
-              </span>
-            ) : undefined
-          }
-        >
-          {nb.notebook?.digest ? (
-            <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[17px] leading-[1.55] text-fg">
-              <RichText text={headingsToBold(nb.notebook.digest)} />
-            </div>
-          ) : nb.ingesting ? (
-            <p className="shimmer-text mt-3 text-[17px]">Building an understanding of the pages…</p>
-          ) : (
-            <p className="text-muted mt-3 text-[16px]">Nothing read yet. Add pages above.</p>
-          )}
-        </Section>
-
-        {hasRead && (
-          <Section title="Ask this notebook">
-            <div className="mt-3 flex flex-col gap-7">
-              {nb.turns.map((t) =>
-                t.role === 'user' ? (
-                  <div key={t.id} className="flex justify-end">
-                    <p className="bg-surface-2 text-fg max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">
-                      {t.content}
-                    </p>
-                  </div>
-                ) : (
-                  <div key={t.id}>
-                    <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
-                      <RichText text={t.content} />
-                    </div>
-                    {t.meta && (
-                      <p className="text-muted mt-4 text-[12.5px]">
-                        Answered by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR in{' '}
-                        {(t.meta.ms / 1000).toFixed(1)}s
-                      </p>
-                    )}
-                  </div>
-                ),
-              )}
-              {nb.asking && <p className="shimmer-text text-[17px] font-medium">Thinking…</p>}
-              {nb.turns.length === 0 && !nb.asking && (
-                <div className="no-scroll -mx-4 flex gap-2 overflow-x-auto px-4">
-                  {[
-                    'Summarise what these pages cover',
-                    'What terms are defined here?',
-                    'What is still unclear or unfinished?',
-                  ].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => void nb.ask(s)}
-                      className="text-fg shrink-0 rounded-full border border-[#3c4043] px-4 py-2 text-[15px] whitespace-nowrap transition-colors hover:bg-[#1f1f1f] active:scale-95"
-                    >
-                      {s}
-                    </button>
-                  ))}
+          <Section
+            title="Pages"
+            right={
+              <button
+                type="button"
+                disabled={full}
+                title={full ? `This notebook holds at most ${nb.cap} pages` : undefined}
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-1.5 rounded-full border border-white/12 px-4 py-2 text-[15px] transition-colors hover:bg-white/5 disabled:opacity-40"
+              >
+                <Plus className="size-3.5" />
+                Add pages
+                <span className="text-muted tabular-nums">
+                  {total}/{nb.cap}
+                </span>
+              </button>
+            }
+          >
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+                setDragging(true)
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragging(false)
+                const files = Array.from(e.dataTransfer.files).filter((f) =>
+                  f.type.startsWith('image/'),
+                )
+                void nb.addPages(files)
+              }}
+              className={`mt-3 rounded-3xl border border-dashed p-4 transition-colors ${dragging ? 'border-[#ffc627]/60 bg-[#ffc627]/5' : 'border-white/12'}`}
+            >
+              {total === 0 && !nb.ingesting ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <PhotoStack className="size-8 text-muted" />
+                  <p className="text-muted text-center text-[16px]">
+                    Drop photos of your notebook pages here, as many as you like. Sol reads them one
+                    at a time and builds one understanding of the whole set.
+                  </p>
                 </div>
+              ) : (
+                <ul className="flex flex-col">
+                  {nb.pages.map((p) => (
+                    <PageRow
+                      key={p.position}
+                      page={p}
+                      expanded={expanded === p.position}
+                      onToggle={() => setExpanded(expanded === p.position ? null : p.position)}
+                    />
+                  ))}
+                  {nb.queued.map((q, i) => (
+                    <PageRow
+                      key={`queued-${n + i + 1}`}
+                      page={{
+                        position: n + i + 1,
+                        imageName: q.imageName,
+                        reading: '',
+                        status: 'queued',
+                        model: '',
+                        ms: 0,
+                        previewUrl: q.previewUrl,
+                      }}
+                      expanded={false}
+                      onToggle={() => {}}
+                    />
+                  ))}
+                </ul>
               )}
             </div>
           </Section>
-        )}
+
+          <Section
+            title="Understanding"
+            right={
+              nb.notebook?.digestModel ? (
+                <span className="text-muted text-[13.5px]">
+                  rewritten by {nb.notebook.digestModel} on ASU AIR
+                </span>
+              ) : undefined
+            }
+          >
+            {nb.notebook?.digest ? (
+              <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[17px] leading-[1.55] text-fg">
+                <RichText text={headingsToBold(nb.notebook.digest)} />
+              </div>
+            ) : nb.ingesting ? (
+              <p className="shimmer-text mt-3 text-[17px]">
+                Building an understanding of the pages…
+              </p>
+            ) : (
+              <p className="text-muted mt-3 text-[16px]">Nothing read yet. Add pages above.</p>
+            )}
+          </Section>
+
+          {hasRead && (
+            <Section title="Ask this notebook">
+              <div className="mt-3 flex flex-col gap-7">
+                {nb.turns.map((t) =>
+                  t.role === 'user' ? (
+                    <div key={t.id} className="flex justify-end">
+                      <p className="bg-surface-2 text-fg max-w-[85%] rounded-3xl px-5 py-3.5 text-[17px] leading-[1.4] tracking-[-0.01em]">
+                        {t.content}
+                      </p>
+                    </div>
+                  ) : (
+                    <div key={t.id}>
+                      <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
+                        <RichText text={t.content} />
+                      </div>
+                      {t.meta && (
+                        <p className="text-muted mt-4 text-[12.5px]">
+                          Answered by <span className="text-fg/80">{t.meta.model}</span> on ASU AIR
+                          in {(t.meta.ms / 1000).toFixed(1)}s
+                        </p>
+                      )}
+                    </div>
+                  ),
+                )}
+                {nb.asking && <p className="shimmer-text text-[17px] font-medium">Thinking…</p>}
+                {nb.turns.length === 0 && !nb.asking && (
+                  <div className="no-scroll -mx-4 flex gap-2 overflow-x-auto px-4">
+                    {[
+                      'Summarise what these pages cover',
+                      'What terms are defined here?',
+                      'What is still unclear or unfinished?',
+                    ].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => void nb.ask(s)}
+                        className="text-fg shrink-0 rounded-full border border-[#3c4043] px-4 py-2 text-[15px] whitespace-nowrap transition-colors hover:bg-[#1f1f1f] active:scale-95"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+          {/* Narrow screens: the board folds into the column instead of a rail. */}
+          <div className="mt-7 xl:hidden">
+            <StickyNotes {...notesProps} />
+          </div>
+        </div>
+
+        <div className="mx-auto mt-auto w-full max-w-[820px] shrink-0 px-4 pb-5">
+          {hasRead ? (
+            <Composer value={draft} onChange={setDraft} onSubmit={submit} inputRef={inputRef} />
+          ) : (
+            <div className="flex items-center gap-3 rounded-full border border-dashed border-white/12 px-5 py-3.5">
+              <span className="text-muted text-[17px]">
+                Add pages first, then ask anything about them
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mx-auto mt-auto w-full max-w-[820px] shrink-0 px-4 pb-5">
-        {hasRead ? (
-          <Composer value={draft} onChange={setDraft} onSubmit={submit} inputRef={inputRef} />
-        ) : (
-          <div className="flex items-center gap-3 rounded-full border border-dashed border-white/12 px-5 py-3.5">
-            <span className="text-muted text-[17px]">
-              Add pages first, then ask anything about them
-            </span>
-          </div>
-        )}
-      </div>
+      {/* Far-right rail: the sticky board. Wide screens only; it folds into the column below xl. */}
+      <aside className="thin-scroll hidden w-[300px] shrink-0 overflow-y-auto border-l border-white/6 px-4 pt-6 pb-8 xl:block">
+        <StickyNotes {...notesProps} />
+      </aside>
 
       <ConfirmDialog
         open={confirmDelete}
