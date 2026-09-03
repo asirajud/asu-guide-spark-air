@@ -403,7 +403,9 @@ export function Chat({
       <div ref={scrollRef} className="thin-scroll relative z-10 w-full flex-1 overflow-y-auto">
         {/* Scroller spans the full width so its bar sits at the window edge;
             the thread itself stays a centred, readable column. */}
-        <div className="mx-auto w-full max-w-[820px] px-5 pb-8">
+        {/* h-full only while empty: the hero centres in the scroller, but a real
+            thread has to be free to grow past it. */}
+        <div className={`mx-auto w-full max-w-[820px] px-5 pb-8 ${isEmpty ? 'h-full' : ''}`}>
           {isEmpty ? (
             <div className="flex h-full flex-col items-center justify-center pb-24">
               <Image
