@@ -17,6 +17,102 @@ external AI vendor is used at runtime.
 | `asu-events-api/` | 5001 | Hybrid BM25 + dense retrieval over the events, mock RSVPs                            |
 | `asu-search-api/` | 5003 | Optional Brave web search. Without a key it answers "not configured", nothing breaks |
 
+## Architecture
+
+```mermaid
+flowchart TB
+  subgraph Browser["Browser · asu-guide UI"]
+    UI["Chat thread\nmarkdown + event cards"]
+    MIC["Mic\nwebm/opus, loudness gate"]
+    IMG["Image upload\ndownscale to 1536px JPEG"]
+    VID["Video upload"]
+  end
+
+  subgraph Guide["asu-guide · Next.js 16 · :3000"]
+    CHAT["/api/chat\n3-round tool loop"]
+    ASR["/api/transcribe"]
+    VIS["/api/vision"]
+    VIDEO["/api/video\nffmpeg split → vision ∥ ASR → fuse"]
+    TITLE["/api/title"]
+    CHATS["/api/chats\nownership-checked"]
+    AUTH["/api/auth\nPKCE client, cookie session"]
+    FALLBACK["src/lib/air\nordered model list per job\nrefused model benched 24h"]
+    TOOLS["src/lib/tools.ts\npull tools array (60s cache)\ndispatch via registry"]
+    GDB[("local.db\nchats, messages, events")]
+  end
+
+  subgraph SSO["asu-sso · demo IdP · :4000"]
+    OIDC["/.well-known · /authorize · /token\nauthorization code + PKCE"]
+    SDB[("sso.db\n3 fictional accounts\nscrypt + per-user salt")]
+  end
+
+  subgraph Registry["asu-tools-api · MCP registry · 127.0.0.1:5000"]
+    MCP["POST /mcp · JSON-RPC 2.0\ninitialize · ping · tools/list · tools/call"]
+    OAI["GET /openai/tools\nsame registry as OpenAI tools[]"]
+    REG["services.json seed → registry.json\najv validation per call\nerror envelope: unreachable · timeout · upstream_error · bad_response"]
+    SESSION["SESSION_TOOLS\nsearch_events · get_event_details\nreserve_spot · web_search\n(+ list_capabilities)"]
+  end
+
+  subgraph Events["asu-events-api · :5001"]
+    SEARCH["POST /search\nBM25 (FTS5) + dense cosine\nRRF k=60 → rerank → dedupe\nper-stage trace"]
+    RSVP["POST /reservations\nmock, says so"]
+    EDB[("events.db\n1,962 events · float32 embeddings\nsha256-gated re-embed")]
+  end
+
+  subgraph Search["asu-search-api · :5003"]
+    WEB["POST /search → Brave\nno key: 503 not configured"]
+  end
+
+  subgraph AIR["ASU AIR gateway · openai.rc.asu.edu/v1 · VPN only"]
+    M_CHAT["qwen35-27b\nchat + tool calls · ~1.7s"]
+    M_TITLE["qwen3-30b-a3b-instruct-2507\ntitles · ~0.3s"]
+    M_ASR["qwen3-asr-1p7b\nspeech→text · ~0.4s"]
+    M_VIS["gemma4-31b-it\nimage · ~1.8s"]
+    M_VID["qwen3-vl-32b-instruct\nvideo · 5–12s"]
+    M_EMB["qwen3-embedding-4b\nembed + /rerank · ~0.3s"]
+  end
+
+  ICAL["Sun Devil Central\npublic iCal feed"] -. "seed: data/asu-events.json" .-> GDB
+  ICAL -. "seed + embed" .-> EDB
+
+  UI --> CHAT
+  MIC --> ASR
+  IMG --> VIS
+  VID --> VIDEO
+  UI --> CHATS
+  UI --> AUTH
+
+  AUTH <--> OIDC
+  OIDC --> SDB
+  CHATS --> GDB
+
+  CHAT --> FALLBACK
+  ASR --> FALLBACK
+  VIS --> FALLBACK
+  VIDEO --> FALLBACK
+  TITLE --> FALLBACK
+  FALLBACK --> M_CHAT
+  FALLBACK --> M_TITLE
+  FALLBACK --> M_ASR
+  FALLBACK --> M_VIS
+  FALLBACK --> M_VID
+
+  CHAT --> TOOLS
+  TOOLS --> OAI
+  TOOLS --> MCP
+  MCP --> REG
+  OAI --> SESSION
+  REG --> SEARCH
+  REG --> RSVP
+  REG --> WEB
+  SEARCH --> EDB
+  RSVP --> EDB
+  SEARCH -- "embed query, rerank top 20" --> M_EMB
+  WEB --> BRAVE["Brave Search API"]
+```
+
+**One turn, end to end.** A signed-in student types _"reserve me a spot for the first one"_. `/api/chat` reads the ASURITE from the server session, pulls the four session tools from the registry, and sends the thread to `qwen35-27b`. The model calls `reserve_spot` with a guessed id; the registry validates the arguments, dispatches to `asu-events-api`, and returns a structured error. The model reads it, calls `search_events` to recover the real id, then `reserve_spot` again — three tool calls in one turn, all through the same validation layer. Specialist outputs (a flyer photo, a voice note) are folded back into the thread as text, so the chat model can answer "what time was that again?" several turns later.
+
 ## What it does
 
 - **Campus events** — 1,962 real upcoming events from the public Sun Devil
