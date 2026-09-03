@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NotebookIcon, Plus, PhotoStack, Close, TrashIcon } from '@/components/icons'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { StickyNotes, NUDGE_PREFIX } from '@/components/sticky-notes'
+import { StickyNotes, StickyIcon, NUDGE_PREFIX } from '@/components/sticky-notes'
 import { useStickyNotes, type StickyNote } from '@/hooks/use-sticky-notes'
 import { Composer } from '@/components/composer'
 import { RichText } from '@/components/rich-text'
@@ -123,6 +123,8 @@ export function NotebookView({
   const [confirmDelete, setConfirmDelete] = useState(false)
   /** The digest is long by design; it opens on demand so pages and chat stay in view. */
   const [digestOpen, setDigestOpen] = useState(false)
+  /** The sticky board is out of the way until asked for: a rail on wide screens, a bottom sheet on phones. */
+  const [notesOpen, setNotesOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -192,6 +194,7 @@ export function NotebookView({
     )
   }
 
+  const openNotes = sticky.notes.filter((n) => !n.done).length
   const notesProps = {
     notes: sticky.notes,
     canNudge: hasRead && !nb.asking,
@@ -435,10 +438,6 @@ export function NotebookView({
               </div>
             </Section>
           )}
-          {/* Narrow screens: the board folds into the column instead of a rail. */}
-          <div className="mt-7 xl:hidden">
-            <StickyNotes {...notesProps} />
-          </div>
         </div>
 
         <div className="mx-auto mt-auto w-full max-w-[820px] shrink-0 px-4 pb-5">
@@ -455,9 +454,51 @@ export function NotebookView({
       </div>
 
       {/* Far-right rail: the sticky board. Wide screens only; it folds into the column below xl. */}
-      <aside className="thin-scroll hidden w-[300px] shrink-0 overflow-y-auto border-l border-white/6 px-4 pt-6 pb-8 xl:block">
-        <StickyNotes {...notesProps} />
-      </aside>
+      {/* Sticky board. Collapsed: one small button at the right edge with the
+          open-note count. Open on wide screens: a rail (only the note list
+          scrolls). Open on phones: a bottom sheet over the page. */}
+      {!notesOpen && (
+        <button
+          type="button"
+          onClick={() => setNotesOpen(true)}
+          aria-label="Open sticky notes"
+          title="Sticky notes"
+          className="absolute right-4 bottom-24 z-20 flex size-11 items-center justify-center rounded-full border border-[#ffc627]/30 bg-[#141415]/90 text-[#ffc627] shadow-lg backdrop-blur transition-colors hover:bg-[#ffc627]/10 xl:right-5 xl:bottom-6"
+        >
+          <StickyIcon className="size-5" />
+          {openNotes > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#ffc627] px-1 text-[11px] font-medium text-black tabular-nums">
+              {openNotes}
+            </span>
+          )}
+        </button>
+      )}
+
+      {notesOpen && (
+        <aside className="hidden w-[320px] shrink-0 flex-col border-l border-white/6 px-4 pt-6 pb-4 xl:flex">
+          <StickyNotes {...notesProps} onClose={() => setNotesOpen(false)} />
+        </aside>
+      )}
+
+      {notesOpen && (
+        <div className="fixed inset-0 z-40 xl:hidden">
+          <button
+            type="button"
+            aria-label="Close sticky notes"
+            onClick={() => setNotesOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Sticky notes"
+            className="animate-rise absolute inset-x-0 bottom-0 flex max-h-[85svh] flex-col rounded-t-3xl border-t border-white/10 bg-[#141415] px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          >
+            <div aria-hidden className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+            <StickyNotes {...notesProps} onClose={() => setNotesOpen(false)} />
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={confirmDelete}

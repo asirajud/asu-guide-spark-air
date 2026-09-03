@@ -4,6 +4,16 @@ import { useState } from 'react'
 import { Close, SendArrow } from '@/components/icons'
 import type { StickyNote } from '@/hooks/use-sticky-notes'
 
+export function StickyIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <path d="M5 4h14a1 1 0 0 1 1 1v9.5L14.5 20H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
+      <path d="M14.5 20v-4.5a1 1 0 0 1 1-1H20" />
+      <path d="M8 9h8M8 13h5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /** What a nudged note is wrapped in before it reaches Sol, verbatim as the student asked for it. */
 export const NUDGE_PREFIX = "I'm pasting this from my sticky notes, can you help answer?"
 
@@ -18,6 +28,7 @@ export function StickyNotes({
   onAdd,
   onNudge,
   onRemove,
+  onClose,
 }: {
   notes: StickyNote[]
   /** False until at least one page has been read; Sol has nothing to answer against before that. */
@@ -25,6 +36,8 @@ export function StickyNotes({
   onAdd: (text: string) => void
   onNudge: (note: StickyNote) => void
   onRemove: (id: string) => void
+  /** Collapses the board (rail or sheet). */
+  onClose?: () => void
 }) {
   const [draft, setDraft] = useState('')
 
@@ -38,10 +51,21 @@ export function StickyNotes({
   const done = notes.filter((n) => n.done)
 
   return (
-    <div className="flex h-full flex-col gap-3">
-      <div className="flex items-baseline justify-between px-1">
-        <h2 className="text-muted text-[13px] tracking-[0.06em] uppercase">Sticky notes</h2>
-        <span className="text-muted text-[12.5px]">this device only</span>
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-muted text-[13px] tracking-[0.06em] uppercase">
+          Sticky notes <span className="ml-1 normal-case tracking-normal">· this device only</span>
+        </h2>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Collapse sticky notes"
+            className="text-muted hover:text-fg -mr-1 rounded-full p-1.5 transition-colors hover:bg-white/5"
+          >
+            <Close className="size-4" />
+          </button>
+        )}
       </div>
 
       <div className="rounded-2xl border border-[#ffc627]/25 bg-[#ffc627]/[0.07] p-3">
@@ -78,7 +102,7 @@ export function StickyNotes({
         </p>
       )}
 
-      <ul className="flex flex-col gap-2">
+      <ul className="thin-scroll -mx-1 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-1 pb-1">
         {[...open, ...done].map((n) => (
           <li
             key={n.id}
