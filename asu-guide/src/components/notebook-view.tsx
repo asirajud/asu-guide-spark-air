@@ -136,7 +136,9 @@ export function NotebookView({
   // arrow every render, and keying the effect on it made every nav refresh
   // re-fire the rename, which refreshed the nav again — an infinite GET loop.
   const onRenamedRef = useRef(onRenamed)
-  onRenamedRef.current = onRenamed
+  useEffect(() => {
+    onRenamedRef.current = onRenamed
+  })
   useEffect(() => {
     if (nb.renamedTo) onRenamedRef.current?.(nb.renamedTo)
   }, [nb.renamedTo])
