@@ -1,10 +1,11 @@
 'use client'
 
 import { Fragment } from 'react'
+import { tokenizeInline } from '@/lib/inline'
 
 /**
  * The small slice of markdown a chat model actually emits: fenced code blocks,
- * inline code, bold, and bullet lists. Deliberately not a full markdown parser —
+ * inline code, bold, italic, and bullet lists. Deliberately not a full markdown parser —
  * the assistant answers in short prose, and a dependency here would drag in
  * styling that fights the rest of the UI.
  */
@@ -86,22 +87,30 @@ function Prose({ text }: { text: string }) {
   )
 }
 
-/** Bold and inline code inside a single line. */
+/** Bold, italic and inline code inside a single line. */
 function Inline({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
-
   return (
     <>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      {tokenizeInline(text).map((part, i) => {
+        if (part.kind === 'bold') {
           return (
             <strong key={i} className="font-semibold text-white">
-              {part.slice(2, -2)}
+              {part.text}
             </strong>
           )
         }
-        if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
-          const body = part.slice(1, -1)
+        if (part.kind === 'italic') {
+          return <em key={i}>{part.text}</em>
+        }
+        if (part.kind === 'bolditalic') {
+          return (
+            <strong key={i} className="font-semibold text-white">
+              <em>{part.text}</em>
+            </strong>
+          )
+        }
+        if (part.kind === 'code') {
+          const body = part.text
 
           // Models sometimes cram a whole function into single backticks. Long
           // or brace-bearing spans read as code blocks, not as inline snippets,
@@ -127,7 +136,7 @@ function Inline({ text }: { text: string }) {
             </code>
           )
         }
-        return <Fragment key={i}>{part}</Fragment>
+        return <Fragment key={i}>{part.text}</Fragment>
       })}
     </>
   )

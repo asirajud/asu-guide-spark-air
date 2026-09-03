@@ -29,11 +29,18 @@ function contextualise(m: Incoming): ChatMessage {
   return { role: m.role, content: m.content }
 }
 
-function systemPrompt(asurite: string | null, hasTools: boolean): string {
+function systemPrompt(asurite: string | null, name: string | null, hasTools: boolean): string {
   let prompt = `You are Sol, a campus assistant named after Sol, the ASU supercomputer you run on. You are a campus assistant for Arizona State University students, running on the ASU AIR platform.
-Be concise: one to three short sentences unless the student asks for detail. Never use markdown headings or bullet lists.`
+Be concise: one to three short sentences unless the student asks for detail. Never use markdown headings or bullet lists.
+Start every reply with a capital letter, and never open with the student's login id. Do not use asterisks or underscores for emphasis; plain text, or **bold** when something really must stand out.`
   if (asurite) {
-    prompt += `\nThe signed-in student's ASURITE is ${asurite}. Greet them by it the first time you speak in a conversation, then stop repeating it.`
+    // Greeting by ASURITE opened every first reply with a lowercase login id
+    // ("admin, HPC stands for…"). The display name is the thing to say out
+    // loud; the id stays available for tool calls but is never spoken.
+    prompt += name
+      ? `\nThe signed-in student's first name is ${name}. Greet them by it once at the start of a conversation, then stop repeating it.`
+      : `\nThe signed-in student has no display name, so do not greet them by name at all — just answer. Never greet them by a login id.`
+    prompt += `\nTheir ASURITE, for tool calls only, is ${asurite}. Never say it back to them.`
   } else {
     prompt += `\nNobody is signed in, so do not guess the student's name, and if they ask to reserve a spot, tell them they need to sign in first.`
   }
@@ -73,10 +80,12 @@ export async function POST(request: Request) {
   // behalf of, another student.
   const session = await getSession()
   const asurite = session?.asurite ?? null
+  // Falls back to no greeting rather than to the ASURITE.
+  const firstName = session?.name?.trim().split(/\s+/)[0] || null
 
   const tools = await getTools()
   const messages: ChatMessage[] = [
-    { role: 'system', content: systemPrompt(asurite, tools.length > 0) },
+    { role: 'system', content: systemPrompt(asurite, firstName, tools.length > 0) },
     ...incoming.slice(-MAX_TURNS).map(contextualise),
   ]
 

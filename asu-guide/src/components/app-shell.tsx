@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat } from '@/components/chat'
 import { Header } from '@/components/header'
 import { SideNav } from '@/components/side-nav'
+import { NOTEBOOKS, NotebookPreview } from '@/components/notebook-preview'
+import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
@@ -72,6 +74,13 @@ export function AppShell({
   /** Desktop rail: shown by default, collapsible from the same hamburger. */
   const [railOpen, setRailOpen] = useState(railInitiallyOpen)
   const [sessionKey, setSessionKey] = useState(0)
+  /**
+   * Which unbuilt feature is being previewed instead of the chat: 'brief', or a
+   * notebook id. Null is the normal chat.
+   */
+  const [preview, setPreview] = useState<string | null>(null)
+  /** Chat just named by an AIR model, so the sidebar can type its title out. */
+  const [justTitled, setJustTitled] = useState<string | null>(null)
   const [restoredTurns, setRestoredTurns] = useState<Turn[] | null>(null)
 
   /**
@@ -113,6 +122,7 @@ export function AppShell({
   }, [asurite])
 
   function newChat() {
+    setPreview(null)
     chatIdRef.current = null
     writeStored(activeKey(asurite), null)
     setActiveId(null)
@@ -157,6 +167,8 @@ export function AppShell({
           }
           writeStored(activeKey(asurite), id)
           setActiveId(id)
+          // Only a title generated in this session animates; restores do not.
+          setJustTitled(id)
           return id
         })()
       }
@@ -182,6 +194,7 @@ export function AppShell({
 
   async function select(id: string) {
     const res = await fetch(`/api/chats/${id}`)
+    setPreview(null)
     setNavOpen(false)
     if (!res.ok) {
       writeStored(activeKey(asurite), null)
@@ -217,13 +230,22 @@ export function AppShell({
     )
   }
 
+  /** Reports whether the write landed so the caller can revert an optimistic UI. */
   async function patch(id: string, body: Record<string, unknown>) {
-    await fetch(`/api/chats/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    let ok = false
+    try {
+      ok = (
+        await fetch(`/api/chats/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      ).ok
+    } catch {
+      /* offline or the server went away — reported as a failed write */
+    }
     void refresh()
+    return ok
   }
 
   async function remove(id: string) {
@@ -233,6 +255,8 @@ export function AppShell({
     if (id === activeId) newChat()
     void refresh()
   }
+
+  const notebook = NOTEBOOKS.find((n) => n.id === preview) ?? null
 
   return (
     <>
@@ -249,6 +273,13 @@ export function AppShell({
           onDelete={remove}
           asurite={asurite}
           railOpen={railOpen}
+          justTitled={justTitled}
+          onTitleTyped={() => setJustTitled(null)}
+          openPreview={preview}
+          onOpenPreview={(id) => {
+            setPreview(id)
+            setNavOpen(false)
+          }}
         />
       )}
 
@@ -271,13 +302,19 @@ export function AppShell({
         {/* Full-width stage — the thread centres itself inside it, so the
             ambient glow spans the whole area instead of ending mid-screen. */}
         <div className="relative flex min-h-0 w-full flex-1 flex-col">
-          <Chat
-            key={sessionKey}
-            events={events}
-            asurite={asurite}
-            onTurn={persist}
-            restoredTurns={restoredTurns}
-          />
+          {preview === 'brief' ? (
+            <DailyBriefPreview events={events} />
+          ) : notebook ? (
+            <NotebookPreview notebook={notebook} />
+          ) : (
+            <Chat
+              key={sessionKey}
+              events={events}
+              asurite={asurite}
+              onTurn={persist}
+              restoredTurns={restoredTurns}
+            />
+          )}
         </div>
       </div>
     </>
