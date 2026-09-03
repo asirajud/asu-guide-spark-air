@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Formats staged files with Prettier before every commit. Installed by
+# ./install.sh (git config core.hooksPath .githooks). Bypass once: git commit -n
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+files="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|mjs|cjs|css|md|json|ya?ml)$' || true)"
+[ -n "$files" ] || exit 0
+
+if [ -x node_modules/.bin/prettier ]; then
+  prettier=node_modules/.bin/prettier
+else
+  echo "pre-commit: root node_modules missing — run ./install.sh (falling back to npx prettier)"
+  prettier="npx --yes prettier@3"
+fi
+
+# --ignore-unknown so .prettierignore'd files (json, lockfiles) are skipped, not errors
+echo "$files" | tr '\n' '\0' | xargs -0 $prettier --write --ignore-unknown --log-level warn
+echo "$files" | tr '\n' '\0' | xargs -0 git add --

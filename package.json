@@ -1,0 +1,14 @@
+{
+  "name": "asu-guide-spark-air",
+  "private": true,
+  "description": "Root tooling for the ASU Guide monolith: Prettier + git hooks. Services live in asu-*/.",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

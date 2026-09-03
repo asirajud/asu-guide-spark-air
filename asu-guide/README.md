@@ -1,61 +1,82 @@
-# ASU Guide — AIR demo
+# ASU Guide — the assistant
 
-A pitch demo for the ASU AIR Spark Challenge: a campus events assistant styled as a
-near-pixel replica of the Google Gemini mobile app (dark theme). Ask anything, and it
-surfaces real upcoming ASU club events you can register for in one tap.
-
-> **The responses are scripted.** There is no LLM and no API call anywhere in this app.
-> Whatever you type, the assistant replies with the same fixed line and the same
-> server-rendered shortlist of events. The events themselves are real; the "reasoning"
-> is theatre for the pitch.
+The front end of the ASU AIR Spark Challenge demo: a campus assistant that answers
+in chat, listens, looks at photos and video, and acts on campus events through
+tools. Every model call goes to ASU's own AIR gateway (`openai.rc.asu.edu`); no
+external AI vendor is used at runtime.
 
 ## Run it
 
+From the repo root, `./install.sh` then `./dev.sh` brings up this app and the
+four services it talks to. On its own:
+
 ```bash
 pnpm install
-pnpm db:seed     # builds local.db from data/asu-events.json
-pnpm dev         # http://localhost:3000
+cp .env.example .env.local     # add RC_OPENAI_API_KEY (ASU VPN required)
+pnpm db:push && pnpm db:seed   # builds local.db from data/asu-events.json
+pnpm dev                       # http://localhost:3000
 ```
 
-That's it — no env file, no API keys, no accounts.
+Sign-in needs `asu-sso` on :4000; tools need `asu-tools-api` on 127.0.0.1:5000,
+which in turn dispatches to `asu-events-api` (:5001) and `asu-search-api` (:5003).
 
-## What you'll see
+## What it does
 
-1. Empty state: the rainbow sparkle, "Where should we start?", and tappable suggestion chips.
-2. Type anything (or tap a chip) → your message appears as a right-aligned bubble.
-3. A ~600ms shimmer, then the reply streams in word by word.
-4. Five real upcoming events render as cards — title, day + time (America/Phoenix),
-   organizing club, a type pill, a one-line blurb, and a **Register** button.
-5. Register flips the card to a confirmed state. Local state only; nothing is written anywhere.
-6. A quiet footnote hints at the learn-over-time story.
+- **Chat** — `qwen35-27b` (thinking off, ~1.7s) owns the whole thread. `/api/chat`
+  runs up to three rounds of native OpenAI tool calls against the registry
+  (`src/lib/tools.ts`): `search_events`, `get_event_details`, `reserve_spot`,
+  `web_search`. Nothing is scripted. The model reads structured JSON-Schema
+  errors from the registry and recovers — a guessed event id fails, it searches
+  for the real one, then reserves.
+- **Voice** — tap to record, webm/opus straight to `qwen3-asr-1p7b` (~0.4s), no
+  transcode. Audio is checked for loudness first; ASR models invent text from
+  silence.
+- **Images** — downscaled client-side to 1536px JPEG (the gateway 413s above
+  ~3MB of base64), then `gemma4-31b-it` (~1.8s).
+- **Video** — ffmpeg splits the clip; `qwen3-vl-32b-instruct` watches while
+  `qwen3-asr-1p7b` listens, in parallel, and a third call fuses them.
+- **Cross-modal memory** — specialist outputs fold back into the thread as
+  `[Media the student shared earlier…]` turns, so "what time was that again?"
+  works several turns later.
+- **Saved chats** — per ASURITE, titled by `qwen3-30b-a3b-instruct-2507`
+  (~0.3s), restored on reload. Every `/api/chats` route is ownership-checked.
+- **Sign in** — real authorization-code + PKCE round trip against `asu-sso`.
+  The signed-in ASURITE comes from the server session, never from the client.
+- **Fallback layer** — `src/lib/air/` holds an ordered model list per job. A
+  model the gateway refuses is benched for 24h; a slow one is not.
+
+Signed out, chat/voice/image still work; reserving a spot and image upload
+require sign-in. `/api/*` model routes are unauthenticated on purpose so the
+signed-out demo works — fine on localhost, not for a public host.
 
 ## Data
 
-`data/asu-events.json` — 1,962 upcoming events scraped from the **public Sun Devil Central
-iCal feed** (`sundevilcentral.eoss.asu.edu`). No authentication, no scraping behind a login,
-no personal or student data: club name, event title, time, type, and public description only.
+`data/asu-events.json` — 1,962 upcoming events from the **public Sun Devil
+Central iCal feed** (`sundevilcentral.eoss.asu.edu`). No authentication, no
+scraping behind a login, no personal or student data: club, title, time, type,
+public description only.
 
 Two quirks the app handles:
 
-- Times arrive as iCal UTC stamps (`20260902T000000Z`) and are rendered in `America/Phoenix`.
-- `location` is the literal string `"Sign in to download the location"` for ~84% of records,
-  so the UI **never** shows location — it shows the organizing club instead.
+- Times arrive as iCal UTC stamps (`20260902T000000Z`) and render in `America/Phoenix`.
+- `location` is the literal string `"Sign in to download the location"` for
+  ~84% of records, so the UI **never** shows location — it shows the club.
 
-The demo pins "today" to **Sept 2, 2026** (`DEMO_NOW` in `src/lib/events.ts`) and picks from
-the next two weeks, preferring events with real titles, usable descriptions, one per club and
-one per day, ranked by a stand-in interest score.
+"Today" is `max(DEMO_NOW, now)` in `src/lib/events.ts`: the snapshot stays
+plausible after the event dates pass, and never sits in the past.
 
 ## Stack
 
-Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · shadcn/ui · Drizzle ORM over local
-SQLite (better-sqlite3) · Inter via `next/font`.
+Next.js 16 (App Router, TypeScript) · Tailwind CSS v4 · shadcn/ui · Drizzle ORM
+over SQLite (better-sqlite3) · ASU maroon/gold on near-black.
 
-- `src/db/` — Drizzle schema, client, and the seed script
-- `src/lib/events.ts` — the curation query and date formatting
-- `src/components/chat.tsx` — the scripted interaction (thinking → stream → cards)
+- `src/app/api/` — `chat`, `transcribe`, `vision`, `video`, `title`, `chats`, `auth`, `air-health`
+- `src/lib/air/` — gateway client, model preference lists, ffmpeg video split
+- `src/lib/tools.ts` — pulls the OpenAI-shaped tool array from the registry (60s cache), dispatches calls back through it
+- `src/lib/sso.ts`, `src/lib/session.ts` — PKCE client and cookie session
+- `src/components/chat.tsx` — the thread, tool loop rendering, media folding
 
 ## Known limitation
 
-`pnpm build` currently fails prerendering Next.js 16's built-in `/_global-error` route — an
-upstream Next 16.3.4 issue unrelated to this app's code. Run it with `pnpm dev`, which is all
-the demo needs.
+`pnpm build` fails prerendering Next.js 16's built-in `/_global-error` route — an
+upstream Next 16.3.4 issue unrelated to this app. Run with `pnpm dev`.

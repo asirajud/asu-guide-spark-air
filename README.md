@@ -9,10 +9,13 @@ external AI vendor is used at runtime.
 
 ## Apps
 
-| Path         | Port | What it is                                                                    |
-| ------------ | ---- | ----------------------------------------------------------------------------- |
-| `asu-guide/` | 3000 | The assistant — chat, voice, image, video, saved conversations                |
-| `asu-sso/`   | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake |
+| Path              | Port | What it is                                                                           |
+| ----------------- | ---- | ------------------------------------------------------------------------------------ |
+| `asu-guide/`      | 3000 | The assistant — chat with a tool loop, voice, image, video, saved conversations      |
+| `asu-sso/`        | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake        |
+| `asu-tools-api/`  | 5000 | MCP tool registry + dispatch; also renders the registry as an OpenAI `tools` array   |
+| `asu-events-api/` | 5001 | Hybrid BM25 + dense retrieval over the events, mock RSVPs                            |
+| `asu-search-api/` | 5003 | Optional Brave web search. Without a key it answers "not configured", nothing breaks |
 
 ## What it does
 
@@ -37,25 +40,33 @@ Requires the **ASU VPN** (the AIR gateway is not reachable off-network) and an
 API key from `voyager.rc.asu.edu` → AI LLM → Create Key.
 
 ```bash
-# terminal 1
-cd asu-sso && pnpm install && pnpm dev        # :4000
-
-# terminal 2
-cd asu-guide && pnpm install
-cp .env.example .env.local                     # add RC_OPENAI_API_KEY
-pnpm db:push && pnpm db:seed
-pnpm dev                                       # :3000
+./install.sh   # checks node/pnpm/ffmpeg, asks for the key, tests the VPN, installs, seeds
+./dev.sh       # starts all five services in one terminal; Ctrl-C stops them
 ```
 
-`ffmpeg` must be on PATH for video (`brew install ffmpeg`).
+`install.sh` is interactive and idempotent. It reuses `RC_OPENAI_API_KEY` and
+`BRAVE_API_KEY` if they are already in your shell, writes `./.env`,
+`asu-guide/.env.local` and `asu-search-api/.env` (all gitignored), installs with
+pnpm (npm if pnpm is missing), then seeds both SQLite databases. The events
+embedding pass needs the VPN; off-VPN it seeds BM25-only and says so. Brave is
+optional — skip it and web search reports "not configured". `./install.sh --yes`
+never prompts.
+
+Manual equivalent, per service: `pnpm install` then `pnpm dev` in each folder;
+`pnpm db:push && pnpm db:seed` in `asu-guide`, `pnpm seed` in `asu-events-api`.
+
+`ffmpeg` must be on PATH for video (`brew install ffmpeg`); everything else
+works without it.
 
 ## Notes
 
-- The event shortlist is scripted for the demo; image, video, voice and title
-  generation are real model calls. See `asu-guide/README.md`.
-- `asu-sso` is a **demo** identity provider. It accepts any ASURITE and never
-  reads the password field. Its client credentials are fake and committed on
-  purpose. It is not, and must not become, an ASU login.
+- Chat is a real model (`qwen35-27b`) calling real tools through `asu-tools-api`
+  — `search_events`, `get_event_details`, `reserve_spot`, `web_search`. Nothing
+  is scripted. Reservations are mock and say so in the response.
+- `asu-sso` is a **demo** identity provider with three fictional, locally seeded
+  accounts (`admin`/`admin`, `sundevil`/`sundevil`, `asirajud`/`sparkdemo`).
+  Passwords are verified (scrypt). Its client credentials are fake and committed
+  on purpose. It is not, and must not become, an ASU login.
 - Data: public event listings only. No student records — ASU AIR's terms forbid
   sending regulated data or PII to the gateway. See `docs/PRIVACY-AND-MEMORY.md`
   for the memory/personalisation design and where that line sits.
