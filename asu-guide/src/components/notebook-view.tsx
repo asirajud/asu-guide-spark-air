@@ -342,7 +342,7 @@ export function NotebookView({
               <div className="relative mt-3 rounded-3xl border border-white/8 bg-white/[0.02]">
                 <div
                   className={`text-fg thin-scroll px-5 py-4 text-[17px] leading-[1.55] ${
-                    digestOpen ? 'max-h-[70vh] overflow-y-auto' : 'max-h-[220px] overflow-hidden'
+                    digestOpen ? 'max-h-[70vh] overflow-y-auto' : 'max-h-[420px] overflow-hidden'
                   }`}
                 >
                   <RichText text={headingsToBold(nb.notebook.digest)} />
