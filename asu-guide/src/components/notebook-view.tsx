@@ -121,6 +121,8 @@ export function NotebookView({
   const [dragging, setDragging] = useState(false)
   const [nameDraft, setNameDraft] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  /** The digest is long by design; it opens on demand so pages and chat stay in view. */
+  const [digestOpen, setDigestOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -337,8 +339,33 @@ export function NotebookView({
             }
           >
             {nb.notebook?.digest ? (
-              <div className="mt-3 rounded-3xl border border-white/8 bg-white/[0.02] px-5 py-4 text-[17px] leading-[1.55] text-fg">
-                <RichText text={headingsToBold(nb.notebook.digest)} />
+              <div className="relative mt-3 rounded-3xl border border-white/8 bg-white/[0.02]">
+                <div
+                  className={`text-fg thin-scroll px-5 py-4 text-[17px] leading-[1.55] ${
+                    digestOpen ? 'max-h-[70vh] overflow-y-auto' : 'max-h-[220px] overflow-hidden'
+                  }`}
+                >
+                  <RichText text={headingsToBold(nb.notebook.digest)} />
+                </div>
+                {/* Collapsed: a blurred fade over the cut-off so the text visibly
+                    continues, with the toggle sitting on it. Open: the toggle
+                    stays pinned at the bottom of the scroller. */}
+                <div
+                  className={`pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center rounded-b-3xl pb-3 ${
+                    digestOpen
+                      ? 'h-14'
+                      : 'h-24 bg-gradient-to-t from-[#0a0a0b] via-[#0a0a0b]/85 to-transparent backdrop-blur-[2px] [mask-image:linear-gradient(to_top,black_55%,transparent)]'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setDigestOpen((v) => !v)}
+                    aria-expanded={digestOpen}
+                    className="text-fg pointer-events-auto rounded-full border border-white/12 bg-[#141415]/90 px-3.5 py-1.5 text-[13.5px] backdrop-blur transition-colors hover:bg-white/10"
+                  >
+                    {digestOpen ? 'Show less' : 'Show more'}
+                  </button>
+                </div>
               </div>
             ) : nb.ingesting ? (
               <p className="shimmer-text mt-3 text-[17px]">
