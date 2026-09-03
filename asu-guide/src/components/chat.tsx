@@ -5,7 +5,7 @@ import { AttachSheet } from '@/components/attach-sheet'
 import { Composer } from '@/components/composer'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
-import { EventCard } from '@/components/event-card'
+import { EventList } from '@/components/event-list'
 import { RichText } from '@/components/rich-text'
 import Image from 'next/image'
 import { ToolTrace } from '@/components/tool-trace'
@@ -423,18 +423,7 @@ export function Chat({
                         {(t.meta.ms / 1000).toFixed(1)}s{t.meta.note ? ` · ${t.meta.note}` : ''}
                       </p>
                     )}
-                    {cards.length > 0 && (
-                      <>
-                        <h2 className="animate-rise mt-6 text-[17px] font-bold text-white">
-                          Coming up near you
-                        </h2>
-                        <ul className="mt-3 flex flex-col gap-3">
-                          {cards.map((e, i) => (
-                            <EventCard key={e.id} event={e} index={i} />
-                          ))}
-                        </ul>
-                      </>
-                    )}
+                    {cards.length > 0 && <EventList events={cards} />}
                   </div>
                 )
               })}
