@@ -1,6 +1,7 @@
 type SignInCardProps = {
   clientId: string
   redirectUri: string
+  responseType: string
   state: string
   codeChallenge: string
   codeChallengeMethod: string
@@ -42,6 +43,7 @@ export default function SignInCard(props: SignInCardProps) {
             <form method="post" action="/api/login" className="mt-6 space-y-5">
               <input type="hidden" name="client_id" value={props.clientId} />
               <input type="hidden" name="redirect_uri" value={props.redirectUri} />
+              <input type="hidden" name="response_type" value={props.responseType} />
               <input type="hidden" name="state" value={props.state} />
               <input type="hidden" name="code_challenge" value={props.codeChallenge} />
               <input type="hidden" name="code_challenge_method" value={props.codeChallengeMethod} />
