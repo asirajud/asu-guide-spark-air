@@ -58,8 +58,48 @@ export function AttachSheet({
         className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
       />
 
-      <div className="animate-sheet-in relative mx-3 mb-[92px] w-full rounded-3xl bg-[#1e1f20] p-4 shadow-2xl shadow-black/60">
-        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" />
+      <div className="animate-sheet-in relative mx-3 mb-[92px] w-full rounded-3xl bg-[#1e1f20] p-3 shadow-2xl shadow-black/60">
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-white/20" />
+
+        {onToggleDeep && !locked && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={deep}
+            onClick={() => onToggleDeep(!deep)}
+            className={`mb-3 flex w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition-colors ${
+              deep
+                ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.08]'
+                : 'border-white/8 bg-white/[0.02] hover:bg-white/5'
+            }`}
+          >
+            <span
+              className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                deep ? 'bg-[#ffc627] text-black' : 'bg-[#2a2b2c] text-fg'
+              }`}
+            >
+              <DeepIcon className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1 leading-tight">
+              <span className="text-fg block text-[15px]">Deep thinking</span>
+              <span className="text-muted block truncate text-[12.5px]">
+                Slower, more careful · reasoning model on AIR
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className={`relative h-[22px] w-[38px] shrink-0 rounded-full border transition-colors ${
+                deep ? 'border-[#ffc627]/50 bg-[#ffc627]/30' : 'border-white/12 bg-white/6'
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] size-4 rounded-full transition-all ${
+                  deep ? 'left-[18px] bg-[#ffc627]' : 'left-[2px] bg-[#8e9195]'
+                }`}
+              />
+            </span>
+          </button>
+        )}
 
         {locked ? (
           <div className="px-3 pt-1 pb-2 text-center">
@@ -84,10 +124,10 @@ export function AttachSheet({
                 key={id}
                 type="button"
                 onClick={() => onPick(id)}
-                className="flex w-[92px] flex-col items-center gap-2 rounded-2xl py-3 transition-colors hover:bg-white/5 active:scale-95"
+                className="flex w-[84px] flex-col items-center gap-1.5 rounded-2xl py-2 transition-colors hover:bg-white/5 active:scale-95"
               >
-                <span className="flex size-14 items-center justify-center rounded-full bg-[#2a2b2c]">
-                  <Icon className="text-fg size-[22px]" />
+                <span className="flex size-12 items-center justify-center rounded-full bg-[#2a2b2c]">
+                  <Icon className="text-fg size-5" />
                 </span>
                 <span className="text-fg text-[13px]">{label}</span>
               </button>
@@ -95,49 +135,8 @@ export function AttachSheet({
           </div>
         )}
 
-        {onToggleDeep && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={deep}
-            onClick={() => onToggleDeep(!deep)}
-            className={`mt-4 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
-              deep
-                ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.08]'
-                : 'border-white/8 bg-white/[0.02] hover:bg-white/5'
-            }`}
-          >
-            <span
-              className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
-                deep ? 'bg-[#ffc627] text-black' : 'bg-[#2a2b2c] text-fg'
-              }`}
-            >
-              <DeepIcon className="size-[18px]" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="text-fg block text-[15px] font-medium">Deep thinking</span>
-              <span className="text-muted block text-[12.5px] leading-snug">
-                Slower, more careful answers from a reasoning model on AIR. Stays on until you turn
-                it off.
-              </span>
-            </span>
-            <span
-              aria-hidden
-              className={`relative h-[22px] w-[38px] shrink-0 rounded-full border transition-colors ${
-                deep ? 'border-[#ffc627]/50 bg-[#ffc627]/30' : 'border-white/12 bg-white/6'
-              }`}
-            >
-              <span
-                className={`absolute top-[2px] size-4 rounded-full transition-all ${
-                  deep ? 'left-[18px] bg-[#ffc627]' : 'left-[2px] bg-[#8e9195]'
-                }`}
-              />
-            </span>
-          </button>
-        )}
-
         {!locked && (
-          <p className="text-muted mt-3 px-1 text-center text-[12px] leading-snug">
+          <p className="text-muted mt-2 px-1 text-center text-[12px] leading-snug">
             Images and video are read on ASU AIR — <span className="text-fg/80">gemma4-31b-it</span>
             , <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
             <span className="text-fg/80">qwen3-asr</span>.
