@@ -83,7 +83,7 @@ export function Header({
           <span className="text-[18px] leading-none font-medium tracking-[-0.02em] text-white">
             Sol
           </span>
-          <span className="text-muted text-[18px] leading-none font-normal tracking-[-0.02em]">
+          <span className="text-muted mt-[3px] text-[11.5px] leading-none font-medium tracking-[0.08em] uppercase">
             AIR
           </span>
           {mode !== 'fast' && (
