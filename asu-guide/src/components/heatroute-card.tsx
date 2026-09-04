@@ -6,6 +6,7 @@ import { SunIcon } from '@/components/icons'
 import type { LandmarkId } from '@/lib/heatroute-data'
 import { routesForJourney } from '@/lib/heatroute-engine'
 import type { HeatRoutePlan } from '@/lib/tools'
+import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 
 const RISK = {
   low: 'text-emerald-300',
@@ -53,12 +54,14 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
             Leaving {when} · estimated exposure, pilot data
           </p>
         </div>
-        <a
-          href="/heat"
-          className="text-muted hover:text-fg shrink-0 rounded-full border border-white/12 px-3 py-1.5 text-[13px] transition-colors hover:bg-white/5"
-        >
-          Open HeatRoute
-        </a>
+        {SHOW_HEATROUTE_PAGE && (
+          <a
+            href="/heat"
+            className="text-muted hover:text-fg shrink-0 rounded-full border border-white/12 px-3 py-1.5 text-[13px] transition-colors hover:bg-white/5"
+          >
+            Open HeatRoute
+          </a>
+        )}
       </div>
 
       {/* The real basemap when a map style is configured, the SVG pilot map
