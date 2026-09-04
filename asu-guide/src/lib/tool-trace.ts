@@ -25,6 +25,8 @@ export type TraceEvent =
       type: 'done'
       text: string
       events: unknown[]
+      /** A HeatRoute plan the assistant obtained on this turn, drawn as a card. */
+      heatroute?: unknown
       model: string
       ms: number
       tools: { name: string; ok: boolean; ms: number }[]
@@ -48,6 +50,8 @@ export function describeToolCall(name: string, args: Record<string, unknown>): s
       return 'Reserving a spot'
     case 'web_search':
       return `Searching the web ${quote(args.query)}`.trim()
+    case 'plan_heat_route':
+      return `Planning a cooler route ${quote(args.start, 24)} → ${quote(args.destination, 24)}`.trim()
     case 'list_capabilities':
       return 'Checking what tools are available'
     default:
@@ -71,6 +75,15 @@ export function summariseOutcome(name: string, ok: boolean, content: unknown): s
   if (name === 'web_search') {
     const n = Array.isArray(obj?.results) ? obj!.results.length : 0
     return n === 1 ? '1 result' : `${n} results`
+  }
+  if (name === 'plan_heat_route') {
+    const routes = Array.isArray(obj?.routes)
+      ? (obj!.routes as { id?: string; label?: string }[])
+      : []
+    const rec = routes.find((r) => r.id === (obj as { recommendedId?: string })?.recommendedId)
+    return routes.length
+      ? `${routes.length} ${routes.length === 1 ? 'option' : 'options'}${rec?.label ? `, ${rec.label.toLowerCase()} recommended` : ''}`
+      : 'no route'
   }
   if (name === 'reserve_spot') return 'RSVP noted (demo)'
   if (name === 'get_event_details') return 'got it'

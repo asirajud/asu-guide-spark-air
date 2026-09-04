@@ -1,4 +1,5 @@
 import 'server-only'
+import { isFeatureEnabled } from '@/lib/features'
 
 import { disabledTools } from '@/lib/tool-settings'
 
@@ -29,6 +30,9 @@ const CACHE_TTL_MS = 60_000
  */
 export async function getTools(): Promise<OpenAiTool[]> {
   const off = disabledTools()
+  // Feature switches hide their tools too: HeatRoute off means the model never
+  // sees plan_heat_route, not just that the page is gone.
+  if (!isFeatureEnabled('heatroute')) off.add('plan_heat_route')
   const enabled = (tools: OpenAiTool[]) => tools.filter((t) => !off.has(t.function.name))
 
   if (cached !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
@@ -219,6 +223,64 @@ export function extractEvents(content: unknown): ToolEvent[] {
           : '',
       url: typeof event.url === 'string' ? event.url : '',
     }))
+}
+
+/** The plan a `plan_heat_route` call returned, enough for the chat to draw it. */
+export type HeatRoutePlan = {
+  kind: 'heatroute'
+  start: { id: string; label: string }
+  destination: { id: string; label: string }
+  departureIso: string
+  mobilityMode: boolean
+  includeShuttle: boolean
+  recommendedId: string | null
+  routes: {
+    id: string
+    label: string
+    strategy: string
+    durationMinutes: number
+    exposurePercent: number
+    protectedMinutes: number
+    waterStops: number
+    heatRisk: string
+  }[]
+}
+
+export function extractHeatRoute(content: unknown): HeatRoutePlan | null {
+  if (!content || typeof content !== 'object') return null
+  const c = content as Record<string, unknown>
+  if (c.kind !== 'heatroute' || !Array.isArray(c.routes)) return null
+  const place = (v: unknown) => {
+    const o = v as { id?: unknown; label?: unknown } | null
+    return o && typeof o.id === 'string' && typeof o.label === 'string'
+      ? { id: o.id, label: o.label }
+      : null
+  }
+  const start = place(c.start)
+  const destination = place(c.destination)
+  if (!start || !destination) return null
+  return {
+    kind: 'heatroute',
+    start,
+    destination,
+    departureIso: typeof c.departureIso === 'string' ? c.departureIso : new Date().toISOString(),
+    mobilityMode: c.mobilityMode === true,
+    includeShuttle: c.includeShuttle !== false,
+    recommendedId: typeof c.recommendedId === 'string' ? c.recommendedId : null,
+    routes: (c.routes as Record<string, unknown>[])
+      .filter((r) => r && typeof r.id === 'string' && typeof r.label === 'string')
+      .slice(0, 5)
+      .map((r) => ({
+        id: r.id as string,
+        label: r.label as string,
+        strategy: typeof r.strategy === 'string' ? r.strategy : '',
+        durationMinutes: Number(r.durationMinutes) || 0,
+        exposurePercent: Number(r.exposurePercent) || 0,
+        protectedMinutes: Number(r.protectedMinutes) || 0,
+        waterStops: Number(r.waterStops) || 0,
+        heatRisk: typeof r.heatRisk === 'string' ? r.heatRisk : '',
+      })),
+  }
 }
 
 export function summariseForModel(content: unknown, ok: boolean): string {

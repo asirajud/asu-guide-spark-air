@@ -393,7 +393,7 @@ function ApproximateRouteNotice() {
   )
 }
 
-function HeatRouteSvgMap({
+export function HeatRouteSvgMap({
   routes,
   selectedRoute,
   recommended,

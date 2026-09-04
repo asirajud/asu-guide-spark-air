@@ -20,7 +20,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 AIR_BASE_URL="${AIR_BASE_URL:-https://openai.rc.asu.edu/v1}"
-SERVICES=(asu-sso asu-guide asu-events-api asu-tools-api asu-search-api)
+SERVICES=(asu-sso asu-guide asu-events-api asu-tools-api asu-search-api asu-heatroute-api)
 YES=0
 for arg in "$@"; do
   case "$arg" in
@@ -270,7 +270,7 @@ cat <<EOF
     admin / admin · sundevil / sundevil
 
   Services:  asu-guide :3000 · asu-sso :4000 · asu-tools-api :5000
-             asu-events-api :5001 · asu-search-api :5003
+             asu-events-api :5001 · asu-search-api :5003 · asu-heatroute-api :5004
 EOF
 [ "$VPN_OK" = 1 ] || printf '  %s!%s VPN was not verified. Connect it before ./dev.sh or every model call fails.\n' "$YEL" "$RST"
 command -v ffmpeg >/dev/null || printf '  %s!%s ffmpeg missing: video upload disabled.\n' "$YEL" "$RST"

@@ -6,6 +6,8 @@ import { Composer } from '@/components/composer'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
 import { EventList } from '@/components/event-list'
+import { HeatRouteCard } from '@/components/heatroute-card'
+import type { HeatRoutePlan } from '@/lib/tools'
 import { RichText } from '@/components/rich-text'
 import { capitaliseReply } from '@/lib/capitalise'
 import Image from 'next/image'
@@ -23,6 +25,8 @@ export type Turn = {
   mediaKind?: 'image' | 'video' | null
   /** Event cards the assistant cited on this turn. */
   events?: DemoEvent[]
+  /** A HeatRoute plan the assistant obtained on this turn, drawn as a map card. */
+  heatroute?: HeatRoutePlan | null
   /** "Read by X on ASU AIR in 2.1s" footnote for a media reply. */
   meta?: { model: string; ms: number; note?: string } | null
   /** Tool calls the assistant made on this turn, in order, failures included. */
@@ -88,12 +92,13 @@ export function Chat({
     cards: DemoEvent[] = [],
     meta: Turn['meta'] = null,
     trace: ToolStep[] = [],
+    heatroute: HeatRoutePlan | null = null,
   ) {
     const body = full.trim() || 'Sorry — I did not get an answer that time.'
     const id = uid()
     setTurns((t) => [
       ...t,
-      { id, role: 'assistant', content: '', kind, events: cards, meta, trace },
+      { id, role: 'assistant', content: '', kind, events: cards, meta, trace, heatroute },
     ])
     setLiveTrace([])
     setPhase('streaming')
@@ -134,7 +139,14 @@ export function Chat({
     try {
       const final = await runChat(next, trace)
       const cards = (final.events as DemoEvent[]) ?? []
-      appendAssistant(final.text, cards.length ? 'events' : 'text', cards, null, trace)
+      appendAssistant(
+        final.text,
+        cards.length ? 'events' : 'text',
+        cards,
+        null,
+        trace,
+        (final.heatroute as HeatRoutePlan | undefined) ?? null,
+      )
     } catch (err) {
       appendAssistant(
         err instanceof Error ? err.message : 'Something went wrong.',
@@ -290,6 +302,7 @@ export function Chat({
         cards,
         { model: `${data.model ?? 'AIR vision'} + ${final.model}`, ms: (data.ms ?? 0) + final.ms },
         trace,
+        (final.heatroute as HeatRoutePlan | undefined) ?? null,
       )
     } catch (err) {
       appendAssistant(
@@ -476,6 +489,7 @@ export function Chat({
                       </p>
                     )}
                     {cards.length > 0 && <EventList events={cards} />}
+                    {t.heatroute && <HeatRouteCard plan={t.heatroute} />}
                   </div>
                 )
               })}

@@ -254,4 +254,10 @@ export function reloadRegistry(): void {
  * exposed to a chat model at session start. Everything else is reachable only through
  * list_capabilities, so the per-turn prompt cost stays flat as the registry grows.
  */
-export const SESSION_TOOLS = ['search_events', 'get_event_details', 'reserve_spot', 'web_search']
+export const SESSION_TOOLS = [
+  'search_events',
+  'get_event_details',
+  'reserve_spot',
+  'web_search',
+  'plan_heat_route',
+]
