@@ -33,7 +33,7 @@ export const FEATURES: FeatureInfo[] = [
     id: 'weather',
     name: 'Weather',
     summary:
-      'Current conditions and an hourly forecast for the Tempe campus from Open-Meteo, drawn as a card when a student asks about the weather or the heat.',
+      'Current conditions and an hourly forecast from Open-Meteo, drawn as a card when a student asks about the weather or the heat. Defaults to the Tempe campus; any named place is geocoded.',
     defaultEnabled: true,
   },
 ]
