@@ -438,6 +438,9 @@ export function HeatRouteSvgMap({
   fit?: boolean
 }) {
   const viewBox = fit ? fitViewBox(routes) : '0 0 100 100'
+  // Markers and labels are sized in viewBox units, so zooming in would balloon
+  // them; scale them down by the same factor the view zoomed in.
+  const k = Number(viewBox.split(' ')[2]) / 100
   return (
     <div className="absolute inset-0 p-4 lg:p-6">
       <div className="flex h-full min-h-0 flex-col rounded-3xl border border-white/8 bg-white/[0.02]">
@@ -493,7 +496,7 @@ export function HeatRouteSvgMap({
                         d={pathToSvg(segment.path)}
                         fill="none"
                         stroke={style.stroke}
-                        strokeWidth={active ? 1.9 + segment.exposurePercent / 70 : 1.4}
+                        strokeWidth={(active ? 1.9 + segment.exposurePercent / 70 : 1.4) * k}
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeDasharray={segment.kind === 'shuttle' ? '1.8 1.4' : undefined}
@@ -508,11 +511,12 @@ export function HeatRouteSvgMap({
               const projected = projectPoint(point)
               return (
                 <g key={point.id}>
-                  <circle cx={projected.x} cy={projected.y} r="1.25" fill="#38bdf8" />
+                  <circle cx={projected.x} cy={projected.y} r={1.25 * k} fill="#38bdf8" />
                   <text
-                    x={projected.x + 1.9}
-                    y={projected.y + 0.8}
-                    className="fill-[#a5f3fc] text-[2.2px]"
+                    x={projected.x + 1.9 * k}
+                    y={projected.y + 0.8 * k}
+                    fontSize={2.2 * k}
+                    className="fill-[#a5f3fc]"
                   >
                     Water
                   </text>
@@ -525,17 +529,18 @@ export function HeatRouteSvgMap({
               return (
                 <g key={stop.id}>
                   <rect
-                    x={projected.x - 1.1}
-                    y={projected.y - 1.1}
-                    width="2.2"
-                    height="2.2"
-                    rx="0.35"
+                    x={projected.x - 1.1 * k}
+                    y={projected.y - 1.1 * k}
+                    width={2.2 * k}
+                    height={2.2 * k}
+                    rx={0.35 * k}
                     fill="#ffc627"
                   />
                   <text
-                    x={projected.x + 1.8}
-                    y={projected.y + 0.8}
-                    className="fill-[#ffe8a3] text-[2.2px]"
+                    x={projected.x + 1.8 * k}
+                    y={projected.y + 0.8 * k}
+                    fontSize={2.2 * k}
+                    className="fill-[#ffe8a3]"
                   >
                     Shuttle
                   </text>
@@ -553,14 +558,15 @@ export function HeatRouteSvgMap({
                   <circle
                     cx={projected.x}
                     cy={projected.y}
-                    r={involved ? 1.9 : 1.35}
+                    r={(involved ? 1.9 : 1.35) * k}
                     fill={involved ? '#ffc627' : '#e5e7eb'}
                   />
                   <text
                     x={projected.x}
-                    y={projected.y - 2.8}
+                    y={projected.y - 2.8 * k}
                     textAnchor="middle"
-                    className="fill-white text-[2.5px] font-semibold"
+                    fontSize={2.5 * k}
+                    className="fill-white font-semibold"
                   >
                     {landmark.shortLabel}
                   </text>
