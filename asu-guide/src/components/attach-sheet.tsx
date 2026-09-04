@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { CameraIcon, Paperclip, PhotoStack } from '@/components/icons'
 
 /**
@@ -19,11 +19,28 @@ export function AttachSheet({
   /** Signed out: sharing media is gated behind an ASURITE. */
   locked?: boolean
 }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // The backdrop only covers the chat stage, so a click on the header, the
+  // side nav or the composer's own + button landed outside it and left the
+  // sheet open. Listen at the window instead: any pointerdown outside the
+  // panel closes it. pointerdown, not click, so the trigger's own onClick
+  // cannot reopen what this just closed.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element | null
+      // The + button toggles on its own click; closing here too would reopen it.
+      if (t?.closest('[data-attach-trigger]')) return
+      if (!panelRef.current?.contains(t)) onClose()
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('pointerdown', onDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onDown)
+    }
   }, [open, onClose])
 
   if (!open) return null
@@ -43,7 +60,10 @@ export function AttachSheet({
         className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
       />
 
-      <div className="animate-sheet-in relative mx-auto mb-[92px] w-[calc(100%-24px)] max-w-[440px] rounded-3xl bg-[#1e1f20] p-3 shadow-2xl shadow-black/60">
+      <div
+        ref={panelRef}
+        className="animate-sheet-in relative mx-auto mb-[92px] w-[calc(100%-24px)] max-w-[440px] rounded-3xl bg-[#1e1f20] p-3 shadow-2xl shadow-black/60"
+      >
         <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-white/20" />
 
         {locked ? (
