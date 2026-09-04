@@ -39,9 +39,7 @@
                 "description": "How many events to return. Defaults to 5."
               }
             },
-            "required": [
-              "query"
-            ],
+            "required": ["query"],
             "additionalProperties": false
           }
         },
@@ -61,9 +59,7 @@
                 "description": "The id returned by search_events."
               }
             },
-            "required": [
-              "event_id"
-            ],
+            "required": ["event_id"],
             "additionalProperties": false
           }
         },
@@ -88,10 +84,7 @@
                 "description": "The signed-in student's ASURITE."
               }
             },
-            "required": [
-              "event_id",
-              "asurite"
-            ],
+            "required": ["event_id", "asurite"],
             "additionalProperties": false
           }
         }
@@ -127,18 +120,57 @@
               },
               "freshness": {
                 "type": "string",
-                "enum": [
-                  "pd",
-                  "pw",
-                  "pm",
-                  "py"
-                ],
+                "enum": ["pd", "pw", "pm", "py"],
                 "description": "Restrict to the past day, week, month or year."
               }
             },
-            "required": [
-              "query"
-            ],
+            "required": ["query"],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "asu-heatroute-api",
+      "description": "HeatRoute: heat-aware campus route planning over curated Tempe pilot data. Deterministic scoring; no model inside.",
+      "baseUrl": "http://127.0.0.1:5004",
+      "healthPath": "/health",
+      "contractVersion": "1.0.0",
+      "tools": [
+        {
+          "name": "plan_heat_route",
+          "description": "Plan a heat-aware walking route between two Tempe campus landmarks (Memorial Union, Hayden Library, Tooker House, Coor Hall, Noble Library, Student Services, Sun Devil Fitness Complex, Lot 59). Returns ranked route options scored on estimated sun exposure, shade, water stops and shuttle use for the departure time. Call it whenever a student asks how to get somewhere on campus, how to avoid the heat or sun on a walk, or where shade or water is on the way. Estimates from pilot data, not turn-by-turn navigation. Pilot coverage today: Memorial Union \u2194 Hayden Library, Tooker House \u2192 Coor Hall, Lot 59 \u2192 Memorial Union, Student Services \u2192 Noble Library, Noble Library \u2192 Sun Devil Fitness; other pairs return a structured 'no route yet' error listing what is reachable.",
+          "route": {
+            "method": "POST",
+            "path": "/route"
+          },
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "start": {
+                "type": "string",
+                "minLength": 2,
+                "description": "Where the student starts, in their words \u2014 e.g. 'the MU', 'Hayden'."
+              },
+              "destination": {
+                "type": "string",
+                "minLength": 2,
+                "description": "Where they are going, in their words."
+              },
+              "departure": {
+                "type": "string",
+                "description": "When they leave: an ISO datetime or 'HH:MM' today. Defaults to now."
+              },
+              "mobility": {
+                "type": "boolean",
+                "description": "True if the student needs step-free / indoor or covered segments."
+              },
+              "shuttle": {
+                "type": "boolean",
+                "description": "Whether shuttle routes may be included. Defaults to true."
+              }
+            },
+            "required": ["start", "destination"],
             "additionalProperties": false
           }
         }

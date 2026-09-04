@@ -9,13 +9,14 @@ external AI vendor is used at runtime.
 
 ## Apps
 
-| Path              | Port | What it is                                                                           |
-| ----------------- | ---- | ------------------------------------------------------------------------------------ |
-| `asu-guide/`      | 3000 | The assistant — chat with a tool loop, voice, image, video, saved conversations      |
-| `asu-sso/`        | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake        |
-| `asu-tools-api/`  | 5000 | MCP tool registry + dispatch; also renders the registry as an OpenAI `tools` array   |
-| `asu-events-api/` | 5001 | Hybrid BM25 + dense retrieval over the events, mock RSVPs                            |
-| `asu-search-api/` | 5003 | Optional Brave web search. Without a key it answers "not configured", nothing breaks |
+| Path                 | Port | What it is                                                                               |
+| -------------------- | ---- | ---------------------------------------------------------------------------------------- |
+| `asu-guide/`         | 3000 | The assistant — chat with a tool loop, voice, image, video, saved conversations          |
+| `asu-sso/`           | 4000 | A **mock** OAuth 2.0 + PKCE identity provider, so sign-in is a real handshake            |
+| `asu-tools-api/`     | 5000 | MCP tool registry + dispatch; also renders the registry as an OpenAI `tools` array       |
+| `asu-events-api/`    | 5001 | Hybrid BM25 + dense retrieval over the events, mock RSVPs                                |
+| `asu-search-api/`    | 5003 | Optional Brave web search. Without a key it answers "not configured", nothing breaks     |
+| `asu-heatroute-api/` | 5004 | HeatRoute as a tool: heat-scored campus routes over pilot data, drawn inline in the chat |
 
 ## Architecture
 
