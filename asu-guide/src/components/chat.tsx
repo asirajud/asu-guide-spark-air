@@ -68,6 +68,8 @@ export function Chat({
     kind: 'image' | 'video'
   } | null>(null)
   const [attachOpen, setAttachOpen] = useState(false)
+  /** Deep thinking, from the + menu. Per session, not persisted. */
+  const [deep, setDeep] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -179,6 +181,7 @@ export function Chat({
           content: t.content,
           kind: t.hidden ? 'media' : t.kind,
         })),
+        deep,
       }),
     })
     if (!res.ok || !res.body) {
@@ -490,7 +493,11 @@ export function Chat({
                 <div className="flex flex-col gap-3">
                   <ToolTrace steps={liveTrace} live />
                   <p className="shimmer-text text-[17px] font-medium">
-                    {liveTrace.some((s) => s.status === 'running') ? 'Working…' : 'Thinking…'}
+                    {liveTrace.some((s) => s.status === 'running')
+                      ? 'Working…'
+                      : deep
+                        ? 'Thinking deeply…'
+                        : 'Thinking…'}
                   </p>
                 </div>
               )}
@@ -520,6 +527,19 @@ export function Chat({
           </div>
         )}
 
+        {deep && (
+          <div className="mb-2 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setDeep(false)}
+              title="Turn deep thinking off"
+              className="flex items-center gap-1.5 rounded-full border border-[#ffc627]/40 bg-[#ffc627]/[0.08] px-3 py-1 text-[12.5px] text-[#ffc627] transition-colors hover:bg-[#ffc627]/15"
+            >
+              <span aria-hidden className="size-1.5 rounded-full bg-[#ffc627]" />
+              Deep thinking on · slower, reasoning model
+            </button>
+          </div>
+        )}
         <Composer
           value={draft}
           onChange={setDraft}
@@ -564,6 +584,11 @@ export function Chat({
           open={attachOpen}
           onClose={() => setAttachOpen(false)}
           onPick={pickFile}
+          deep={deep}
+          onToggleDeep={(next) => {
+            setDeep(next)
+            setAttachOpen(false)
+          }}
           locked={!asurite}
         />
 

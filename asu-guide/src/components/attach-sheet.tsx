@@ -3,6 +3,16 @@
 import { useEffect } from 'react'
 import { CameraIcon, Paperclip, PhotoStack } from '@/components/icons'
 
+function DeepIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V17h5v-1.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z" />
+      <path d="M10 20h4" strokeLinecap="round" />
+      <path d="M12 7v3l2 1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /**
  * Bottom sheet raised by the composer's + button. Only the image paths are
  * wired — everything here routes to the same file picker, filtered to images.
@@ -12,12 +22,17 @@ export function AttachSheet({
   onClose,
   onPick,
   locked = false,
+  deep = false,
+  onToggleDeep,
 }: {
   open: boolean
   onClose: () => void
   onPick: (source: 'files' | 'photos' | 'camera') => void
   /** Signed out: sharing media is gated behind an ASURITE. */
   locked?: boolean
+  /** Deep thinking: the next turns run on the slower reasoning model. */
+  deep?: boolean
+  onToggleDeep?: (next: boolean) => void
 }) {
   useEffect(() => {
     if (!open) return
@@ -78,6 +93,47 @@ export function AttachSheet({
               </button>
             ))}
           </div>
+        )}
+
+        {onToggleDeep && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={deep}
+            onClick={() => onToggleDeep(!deep)}
+            className={`mt-4 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
+              deep
+                ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.08]'
+                : 'border-white/8 bg-white/[0.02] hover:bg-white/5'
+            }`}
+          >
+            <span
+              className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
+                deep ? 'bg-[#ffc627] text-black' : 'bg-[#2a2b2c] text-fg'
+              }`}
+            >
+              <DeepIcon className="size-[18px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-fg block text-[15px] font-medium">Deep thinking</span>
+              <span className="text-muted block text-[12.5px] leading-snug">
+                Slower, more careful answers from a reasoning model on AIR. Stays on until you turn
+                it off.
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className={`relative h-[22px] w-[38px] shrink-0 rounded-full border transition-colors ${
+                deep ? 'border-[#ffc627]/50 bg-[#ffc627]/30' : 'border-white/12 bg-white/6'
+              }`}
+            >
+              <span
+                className={`absolute top-[2px] size-4 rounded-full transition-all ${
+                  deep ? 'left-[18px] bg-[#ffc627]' : 'left-[2px] bg-[#8e9195]'
+                }`}
+              />
+            </span>
+          </button>
         )}
 
         {!locked && (

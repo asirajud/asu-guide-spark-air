@@ -27,6 +27,11 @@ export const CAPABILITIES: Capability[] = [
         label: 'Conversation model',
         hint: 'Every turn a student sends runs here. Latency shows up directly in the reply.',
       },
+      {
+        service: 'deep',
+        label: 'Deep thinking',
+        hint: 'Opt-in from the + menu. A reasoning model with its budget turned up; slower by design.',
+      },
     ],
   },
   {
