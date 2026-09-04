@@ -71,22 +71,15 @@ export function AttachSheet({
                 onClick={() => onPick(id)}
                 aria-label={label}
                 title={label}
-                className="flex items-center justify-center rounded-2xl p-1.5 transition-colors hover:bg-white/5 active:scale-95"
+                className="flex w-[84px] flex-col items-center gap-1.5 rounded-2xl py-2 transition-colors hover:bg-white/5 active:scale-95"
               >
                 <span className="flex size-12 items-center justify-center rounded-full bg-[#2a2b2c]">
                   <Icon className="text-fg size-5" />
                 </span>
+                <span className="text-fg text-[13px]">{label}</span>
               </button>
             ))}
           </div>
-        )}
-
-        {!locked && (
-          <p className="text-muted mt-2 px-1 text-center text-[12px] leading-snug">
-            Media is read on ASU AIR by <span className="text-fg/80">gemma4-31b-it</span>,{' '}
-            <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
-            <span className="text-fg/80">qwen3-asr</span>.
-          </p>
         )}
       </div>
     </div>
