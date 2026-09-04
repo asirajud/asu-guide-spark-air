@@ -176,10 +176,13 @@ export function HeatRouteMap({
   routes,
   selectedRoute,
   recommended,
+  fit = false,
 }: {
   routes: EvaluatedRoute[]
   selectedRoute: EvaluatedRoute | null
   recommended: EvaluatedRoute | null
+  /** Zoom the SVG pilot map to the routes shown (the chat card) instead of the whole campus. */
+  fit?: boolean
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -327,6 +330,7 @@ export function HeatRouteMap({
         routes={routes}
         selectedRoute={selectedRoute}
         recommended={recommended}
+        fit={fit}
         fallbackReason="Pilot map · a real basemap appears when a map style is configured"
       />
     )
@@ -393,17 +397,47 @@ function ApproximateRouteNotice() {
   )
 }
 
+/** viewBox that frames the given routes with a little air, in the 0–100 projected space. */
+function fitViewBox(routes: EvaluatedRoute[]): string {
+  const xs: number[] = []
+  const ys: number[] = []
+  for (const route of routes) {
+    for (const segment of route.segments) {
+      for (const p of segment.path) {
+        const q = projectPoint(p)
+        xs.push(q.x)
+        ys.push(q.y)
+      }
+    }
+  }
+  if (xs.length === 0) return '0 0 100 100'
+  const pad = 6
+  const minX = Math.max(0, Math.min(...xs) - pad)
+  const maxX = Math.min(100, Math.max(...xs) + pad)
+  const minY = Math.max(0, Math.min(...ys) - pad)
+  const maxY = Math.min(100, Math.max(...ys) + pad)
+  // Keep at least a 24-unit window so a short route does not become a blob.
+  const w = Math.max(24, maxX - minX)
+  const h = Math.max(24, maxY - minY)
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+  return `${(cx - w / 2).toFixed(2)} ${(cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`
+}
+
 export function HeatRouteSvgMap({
   routes,
   selectedRoute,
   recommended,
   fallbackReason,
+  fit = false,
 }: {
   routes: EvaluatedRoute[]
   selectedRoute: EvaluatedRoute | null
   recommended: EvaluatedRoute | null
   fallbackReason?: string
+  fit?: boolean
 }) {
+  const viewBox = fit ? fitViewBox(routes) : '0 0 100 100'
   return (
     <div className="absolute inset-0 p-4 lg:p-6">
       <div className="flex h-full min-h-0 flex-col rounded-3xl border border-white/8 bg-white/[0.02]">
@@ -411,7 +445,7 @@ export function HeatRouteSvgMap({
 
         <div className="relative min-h-0 flex-1">
           <ApproximateRouteNotice />
-          <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
+          <svg viewBox={viewBox} className="h-full w-full" preserveAspectRatio="xMidYMid meet">
             <defs>
               <pattern id="heatroute-grid" width="6" height="6" patternUnits="userSpaceOnUse">
                 <path

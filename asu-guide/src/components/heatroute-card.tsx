@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { HeatRouteSvgMap } from '@/components/heatroute-map'
+import { HeatRouteMap } from '@/components/heatroute-map'
 import { SunIcon } from '@/components/icons'
 import type { LandmarkId } from '@/lib/heatroute-data'
 import { routesForJourney } from '@/lib/heatroute-engine'
@@ -61,9 +61,11 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
         </a>
       </div>
 
+      {/* The real basemap when a map style is configured, the SVG pilot map
+          fitted to this route otherwise — the same component the /heat page uses. */}
       {routes.length > 0 && (
-        <div className="relative mx-3 mt-3 h-[260px]">
-          <HeatRouteSvgMap routes={routes} selectedRoute={selected} recommended={recommended} />
+        <div className="relative mt-3 h-[360px]">
+          <HeatRouteMap routes={routes} selectedRoute={selected} recommended={recommended} fit />
         </div>
       )}
 
