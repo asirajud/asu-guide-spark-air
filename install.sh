@@ -9,9 +9,10 @@
 #   2. collects RC_OPENAI_API_KEY — reuses the shell env if already exported
 #   3. tests the ASU AIR gateway (needs the Cisco VPN); lets you connect and retry
 #   4. optionally collects BRAVE_API_KEY for web search (skip = "not configured")
-#   5. writes .env (root) + asu-guide/.env.local + asu-search-api/.env
-#   6. installs dependencies for the root (Prettier + pre-commit hook) and all five services
-#   7. seeds the two SQLite databases (events embeddings need VPN + key)
+#   5. optionally collects a MapTiler style URL for the HeatRoute basemap
+#   6. writes .env (root) + asu-guide/.env.local + asu-search-api/.env
+#   7. installs dependencies for the root (Prettier + pre-commit hook) and all seven services
+#   8. seeds the two SQLite databases (events embeddings need VPN + key)
 #
 # Nothing here sends anything anywhere except the AIR gateway health probe.
 set -euo pipefail
@@ -26,7 +27,7 @@ for arg in "$@"; do
   case "$arg" in
     -y | --yes) YES=1 ;;
     -h | --help)
-      sed -n '2,15p' "$0"
+      sed -n '2,16p' "$0"
       exit 0
       ;;
     *)
@@ -191,7 +192,27 @@ else
   fi
 fi
 
-# ---------------------------------------------------------------- 5. env files
+# ---------------------------------------------------------------- 5. MapTiler (optional)
+step "HeatRoute basemap (optional — MapTiler style URL)"
+
+if [ -z "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ] && [ -f asu-guide/.env.local ]; then
+  NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL="$(grep '^NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL=' asu-guide/.env.local | cut -d= -f2- || true)"
+fi
+if [ -n "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ]; then
+  ok "already set — skipping prompt"
+else
+  echo "  Free key: https://cloud.maptiler.com/account/keys/ — then the style URL is"
+  echo "  https://api.maptiler.com/maps/streets-v2/style.json?key=YOUR_KEY"
+  echo "  Without it HeatRoute still works and draws its SVG pilot map instead."
+  ask NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL "MapTiler style URL, or Enter to skip: "
+  if [ -z "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ]; then
+    warn "skipped — HeatRoute will draw the SVG pilot map"
+  elif [[ "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != http*style.json?key=* ]]; then
+    warn "that does not look like a MapLibre style URL (…/style.json?key=…) — writing it anyway"
+  fi
+fi
+
+# ---------------------------------------------------------------- 6. env files
 step "Writing env files"
 
 # Root .env — sourced by ./dev.sh so the plain-node services see the key.
@@ -207,12 +228,16 @@ fi
 set_env_line asu-guide/.env.local RC_OPENAI_API_KEY "${RC_OPENAI_API_KEY:-}"
 # Pin the app origin so the SSO redirect_uri never depends on a code default.
 set_env_line asu-guide/.env.local APP_URL "http://localhost:3000"
+# Only written when given: an empty value would override a real one on a re-run.
+if [ -n "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ]; then
+  set_env_line asu-guide/.env.local NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL"
+fi
 ok "asu-guide/.env.local"
 
 set_env_line asu-search-api/.env BRAVE_API_KEY "${BRAVE_API_KEY:-}"
 ok "asu-search-api/.env"
 
-# ---------------------------------------------------------------- 6. dependencies
+# ---------------------------------------------------------------- 7. dependencies
 step "Installing dependencies with $PM"
 
 # Root: Prettier + the pre-commit hook that runs it on staged files.
@@ -235,7 +260,7 @@ for svc in "${SERVICES[@]}"; do
   ok "$svc"
 done
 
-# ---------------------------------------------------------------- 7. seed
+# ---------------------------------------------------------------- 8. seed
 step "Seeding databases"
 
 export RC_OPENAI_API_KEY AIR_BASE_URL
@@ -275,4 +300,5 @@ EOF
 [ "$VPN_OK" = 1 ] || printf '  %s!%s VPN was not verified. Connect it before ./dev.sh or every model call fails.\n' "$YEL" "$RST"
 command -v ffmpeg >/dev/null || printf '  %s!%s ffmpeg missing: video upload disabled.\n' "$YEL" "$RST"
 [ -n "${BRAVE_API_KEY:-}" ] || printf '  %s!%s Web search not configured (optional).\n' "$YEL" "$RST"
+[ -n "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ] || printf '  %s!%s No MapTiler style URL: HeatRoute draws its SVG pilot map (optional).\n' "$YEL" "$RST"
 echo

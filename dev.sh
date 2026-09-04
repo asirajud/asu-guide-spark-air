@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start all five services in one terminal with prefixed logs. Ctrl-C stops them all.
+# Start all seven services in one terminal with prefixed logs. Ctrl-C stops them all.
 # Run ./install.sh first.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
