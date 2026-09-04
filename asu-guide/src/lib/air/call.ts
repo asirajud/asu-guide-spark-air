@@ -103,19 +103,21 @@ export type AirResult<T> = { value: T; model: string; ms: number; attempts: stri
 export async function callAir<T>(
   service: AirService,
   attempt: (model: string) => Promise<T>,
+  candidates?: string[],
 ): Promise<AirResult<T>> {
   const skip = benched()
-  // An admin's pick from /s/admin goes first, then the compiled-in chain.
-  const configured = orderFor(service)
-  const candidates = configured.filter((m) => !skip.has(m))
+  // Explicit candidates support role-specific chains; otherwise an admin's
+  // pick from /s/admin goes first, followed by the compiled-in chain.
+  const configured = candidates ?? orderFor(service)
+  const order = configured.filter((m) => !skip.has(m))
   // Everything is benched (or nothing configured) — try the primary anyway
   // rather than fail without asking.
-  const order = candidates.length > 0 ? candidates : configured.slice(0, 1)
+  const finalOrder = order.length > 0 ? order : configured.slice(0, 1)
 
   const attempts: string[] = []
   let lastError: unknown = new Error(`No models configured for "${service}".`)
 
-  for (const model of order) {
+  for (const model of finalOrder) {
     const started = Date.now()
     attempts.push(model)
     try {

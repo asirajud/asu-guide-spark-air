@@ -317,3 +317,19 @@ export function ListIcon(p: P) {
     </svg>
   )
 }
+
+export function CouncilIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <circle cx="12" cy="12" r="1.8" />
+      <path d="M12 5.5V3.2" strokeLinecap="round" />
+      <path d="M12 20.8V18.5" strokeLinecap="round" />
+      <path d="M5.5 12H3.2" strokeLinecap="round" />
+      <path d="M20.8 12H18.5" strokeLinecap="round" />
+      <path d="M6.5 6.5 4.4 4.4" strokeLinecap="round" />
+      <path d="M19.6 19.6 17.5 17.5" strokeLinecap="round" />
+      <path d="M6.5 17.5 4.4 19.6" strokeLinecap="round" />
+      <path d="M19.6 4.4 17.5 6.5" strokeLinecap="round" />
+    </svg>
+  )
+}

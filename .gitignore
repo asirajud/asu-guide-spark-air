@@ -40,3 +40,5 @@ next-env.d.ts
 .history/
 .air-done/
 
+# agent smoke-test artifacts (evidence the orchestrator must be able to read)
+.council-smoke/

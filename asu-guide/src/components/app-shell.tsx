@@ -7,6 +7,7 @@ import { SideNav, type NotebookNavItem } from '@/components/side-nav'
 import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import { HeatRouteDemo } from '@/components/heatroute-demo'
+import { StudyCouncil } from '@/components/study-council'
 import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
@@ -437,6 +438,8 @@ export function AppShell({
             <HeatRouteDemo />
           ) : preview === 'brief' ? (
             <DailyBriefPreview events={events} />
+          ) : preview === 'council' ? (
+            <StudyCouncil />
           ) : openNotebook ? (
             <NotebookView
               key={openNotebook}
