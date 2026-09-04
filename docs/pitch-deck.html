@@ -240,7 +240,7 @@
     line-height: 1.9;
   }
   .trace .prompt { color: var(--ink); }
-  .trace .prompt::before { content: "› "; color: var(--maroon-text); }
+  .trace .prompt::before { content: "&rsaquo; "; color: var(--maroon-text); }
   .trace .step { color: var(--ink-2); display: flex; gap: 10px; }
   .trace .step .arrow { color: var(--muted); flex: none; }
   .trace .step.fail .status { color: var(--maroon-text); }
@@ -316,19 +316,19 @@
   .notes-panel .label { color: var(--gold-dim); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10.5px; margin-bottom: 6px; }
 </style>
 
-<div class="chrome wordmark">Sol · InnovatAIRs</div>
+<div class="chrome wordmark">Sol &middot; InnovatAIRs</div>
 <div class="chrome counter"><b id="cur">1</b> / 8</div>
 <nav class="chrome dots" id="dots" aria-label="Slides"></nav>
 <div class="chrome hint"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate</span><span><kbd>N</kbd> notes</span></div>
 
 <main class="deck" id="deck">
 
-  <!-- 01 — Title -->
+  <!-- 01 &mdash; Title -->
   <section class="slide s-title" data-note="90-second demo, three moves: search an event by photo, watch the model reach for a tool mid-conversation, then show the same engine reading your own notes.">
     <div class="content">
-      <p class="eyebrow"><span class="dot"></span>ASU AI Research Platform Spark Challenge · Team InnovatAIRs</p>
+      <p class="eyebrow"><span class="dot"></span>ASU AI Research Platform Spark Challenge &middot; Team InnovatAIRs</p>
       <h1 class="brand">Sol<span class="dot">.</span></h1>
-      <p class="tagline">An AI campus compass — built entirely on ASU's AI Research Platform.</p>
+      <p class="tagline">An AI campus compass &mdash; built entirely on ASU's AI Research Platform.</p>
       <div class="meta">
         <span class="tag">qwen35-27b</span>
         <span class="tag">qwen3-vl-32b-instruct</span>
@@ -338,8 +338,8 @@
     </div>
   </section>
 
-  <!-- 02 — Problem -->
-  <section class="slide" data-note="Frame: ASU bought a supercomputer and students can't touch it directly — Sol is the interface. Every number here is real, not illustrative.">
+  <!-- 02 &mdash; Problem -->
+  <section class="slide" data-note="Frame: ASU bought a supercomputer and students can't touch it directly &mdash; Sol is the interface. Every number here is real, not illustrative.">
     <div class="content">
       <p class="eyebrow"><span class="dot"></span>The problem</p>
       <div class="problem-grid">
@@ -351,22 +351,22 @@
           </li>
           <li>
             <span class="n">02</span>
-            <span><span class="lead">Deadlines buried in long official emails</span><span class="sub">The action item is in there — nobody reads to paragraph four.</span></span>
+            <span><span class="lead">Deadlines buried in long official emails</span><span class="sub">The action item is in there &mdash; nobody reads to paragraph four.</span></span>
           </li>
           <li>
             <span class="n">03</span>
-            <span><span class="lead">Course material scattered across photos and PDFs</span><span class="sub">Whiteboard shots, lecture slides — never searchable, never connected.</span></span>
+            <span><span class="lead">Course material scattered across photos and PDFs</span><span class="sub">Whiteboard shots, lecture slides &mdash; never searchable, never connected.</span></span>
           </li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- 03 — Solution / north star -->
+  <!-- 03 &mdash; Solution / north star -->
   <section class="slide s-solution" data-note="Deliver this sentence close to verbatim. It's the whole pitch in one breath.">
     <div class="content narrow">
       <p class="eyebrow" style="justify-content:center"><span class="dot"></span>The idea</p>
-      <p class="quote">Sol turns any firehose of unstructured ASU information into something a student can <span class="mark">search, understand, and act on</span> — powered entirely by ASU's AI Research Platform.</p>
+      <p class="quote">Sol turns any firehose of unstructured ASU information into something a student can <span class="mark">search, understand, and act on</span> &mdash; powered entirely by ASU's AI Research Platform.</p>
       <div class="engine">
         <span class="step">ingest</span><span class="arrow">&rarr;</span>
         <span class="step">embed</span><span class="arrow">&rarr;</span>
@@ -374,28 +374,28 @@
         <span class="step">tool-call to act</span>
       </div>
       <div class="corpora">
-        <span class="tag gold">Corpus 1 — campus events</span>
-        <span class="tag gold">Corpus 2 — your notebooks</span>
+        <span class="tag gold">Corpus 1 &mdash; campus events</span>
+        <span class="tag gold">Corpus 2 &mdash; your notebooks</span>
       </div>
     </div>
   </section>
 
-  <!-- 04 — Demo: Events -->
-  <section class="slide" data-note="Live demo beat. Ask it to reserve a spot without giving an event id — watch it recover from its own guess using the tool's structured error.">
+  <!-- 04 &mdash; Demo: Events -->
+  <section class="slide" data-note="Live demo beat. Ask it to reserve a spot without giving an event id &mdash; watch it recover from its own guess using the tool's structured error.">
     <div class="content">
-      <p class="eyebrow"><span class="dot"></span>Demo 1 — events</p>
+      <p class="eyebrow"><span class="dot"></span>Demo 1 &mdash; events</p>
       <div class="demo-grid">
         <div class="demo-copy">
-          <h2>Snap a flyer. Sol finds the event, books the seat — and recovers when it guesses wrong.</h2>
+          <h2>Snap a flyer. Sol finds the event, books the seat &mdash; and recovers when it guesses wrong.</h2>
           <p class="lede">Vision reads the flyer, hybrid BM25 + embedding search matches it against the live feed, and one tool-calling loop handles the failure case live, on camera.</p>
         </div>
         <div class="trace">
           <div class="prompt">reserve me a spot for the first one</div>
           <div class="div"></div>
-          <div class="step fail"><span class="arrow">&rsaquo;</span><span><span class="status">reserve_spot</span> — guessed id, fails</span></div>
+          <div class="step fail"><span class="arrow">&rsaquo;</span><span><span class="status">reserve_spot</span> &mdash; guessed id, fails</span></div>
           <div class="step"><span class="arrow">&rsaquo;</span><span>model reads the JSON-Schema error</span></div>
-          <div class="step"><span class="arrow">&rsaquo;</span><span><span class="status" style="color:var(--gold-dim)">search_events</span> — recovers the real id</span></div>
-          <div class="step ok"><span class="arrow">&rsaquo;</span><span><span class="status">reserve_spot</span> — succeeds</span></div>
+          <div class="step"><span class="arrow">&rsaquo;</span><span><span class="status" style="color:var(--gold-dim)">search_events</span> &mdash; recovers the real id</span></div>
+          <div class="step ok"><span class="arrow">&rsaquo;</span><span><span class="status">reserve_spot</span> &mdash; succeeds</span></div>
           <div class="div"></div>
           <div class="step" style="color:var(--muted)">3 tool calls, 1 turn, live.</div>
         </div>
@@ -403,19 +403,19 @@
     </div>
   </section>
 
-  <!-- 05 — Demo: HeatRoute -->
+  <!-- 05 &mdash; Demo: HeatRoute -->
   <section class="slide" data-note="This is the AI reaching for a tool mid-conversation, not a page you had to navigate to. That's the actual differentiator from a normal campus map app.">
     <div class="content">
-      <p class="eyebrow"><span class="dot"></span>Demo 2 — HeatRoute</p>
+      <p class="eyebrow"><span class="dot"></span>Demo 2 &mdash; HeatRoute</p>
       <div class="demo-grid">
         <div class="demo-copy">
           <h2>An AI doesn't need a page. It reaches for a tool.</h2>
-          <p class="lede">Ask a normal question — Sol decides on its own that the answer needs a walking-route tool, calls it, and folds the plan back into the conversation.</p>
+          <p class="lede">Ask a normal question &mdash; Sol decides on its own that the answer needs a walking-route tool, calls it, and folds the plan back into the conversation.</p>
         </div>
         <div class="trace">
           <div class="prompt">MU to Hayden at 12:30 without frying</div>
           <div class="div"></div>
-          <div class="step ok"><span class="arrow">&rsaquo;</span><span><span class="status">plan_heat_route</span> — 22ms tool call</span></div>
+          <div class="step ok"><span class="arrow">&rsaquo;</span><span><span class="status">plan_heat_route</span> &mdash; 22ms tool call</span></div>
           <div class="step"><span class="arrow">&rsaquo;</span><span>shade-aware path, honest time estimate</span></div>
           <div class="div"></div>
           <div class="step" style="color:var(--muted)">5.6s end to end, no map click required.</div>
@@ -424,30 +424,30 @@
     </div>
   </section>
 
-  <!-- 06 — Demo: Notebooks -->
+  <!-- 06 &mdash; Demo: Notebooks -->
   <section class="slide" data-note="Close on this: same engine, second corpus. Ask 'what is still unclear or unfinished' live for the strongest beat.">
     <div class="content">
-      <p class="eyebrow"><span class="dot"></span>Demo 3 — notebooks</p>
-      <h2 style="font-size:clamp(28px,3.6vw,40px); font-weight:500; max-width:24ch;">Same engine, second corpus — this time it's your own notes.</h2>
-      <p style="color:var(--ink-2); font-size:16.5px; max-width:56ch; margin:14px 0 30px; line-height:1.6;">Upload page photos in order. Sol OCRs each one, keeps a running digest as it goes, then answers questions from the digest plus the raw pages — citing the page it came from.</p>
+      <p class="eyebrow"><span class="dot"></span>Demo 3 &mdash; notebooks</p>
+      <h2 style="font-size:clamp(28px,3.6vw,40px); font-weight:500; max-width:24ch;">Same engine, second corpus &mdash; this time it's your own notes.</h2>
+      <p style="color:var(--ink-2); font-size:16.5px; max-width:56ch; margin:14px 0 30px; line-height:1.6;">Upload page photos in order. Sol OCRs each one, keeps a running digest as it goes, then answers questions from the digest plus the raw pages &mdash; citing the page it came from.</p>
       <div class="digest">
         <div class="card"><div class="h">Topics</div><div class="b">Regular languages, finite automata <sup>p.1</sup></div></div>
-        <div class="card"><div class="h">Key facts</div><div class="b">Pumping lemma disproves <code>0ⁿ1ⁿ</code> is regular <sup>p.2</sup></div></div>
-        <div class="card"><div class="h">Connections</div><div class="b"><code>0ⁿ1ⁿ</code> returns as a context-free grammar <sup>p.3</sup></div></div>
-        <div class="card"><div class="h">Open questions</div><div class="b">"What is still unclear or unfinished?" — asked live</div></div>
+        <div class="card"><div class="h">Key facts</div><div class="b">Pumping lemma disproves <code>0&#8319;1&#8319;</code> is regular <sup>p.2</sup></div></div>
+        <div class="card"><div class="h">Connections</div><div class="b"><code>0&#8319;1&#8319;</code> returns as a context-free grammar <sup>p.3</sup></div></div>
+        <div class="card"><div class="h">Open questions</div><div class="b">"What is still unclear or unfinished?" &mdash; asked live</div></div>
       </div>
     </div>
   </section>
 
-  <!-- 07 — Built on AIR -->
+  <!-- 07 &mdash; Built on AIR -->
   <section class="slide" data-note="Every model call this app makes goes to openai.rc.asu.edu. Point at the usage dashboard export as harder evidence than any claim in the deck.">
     <div class="content narrow">
       <p class="eyebrow"><span class="dot"></span>Built entirely on ASU AIR</p>
       <table class="model-table">
         <thead><tr><th>Model</th><th>Does</th><th style="text-align:right">Latency</th></tr></thead>
         <tbody>
-          <tr><td class="name">qwen35-27b</td><td class="role">Chat &amp; reasoning — beat a 120B model on speed <em>and</em> quality</td><td class="lat stat">1.7s</td></tr>
-          <tr><td class="name">qwen3-vl-32b-instruct</td><td class="role">Vision — flyer &amp; notebook OCR</td><td class="lat stat">5&ndash;12s</td></tr>
+          <tr><td class="name">qwen35-27b</td><td class="role">Chat &amp; reasoning &mdash; beat a 120B model on speed <em>and</em> quality</td><td class="lat stat">1.7s</td></tr>
+          <tr><td class="name">qwen3-vl-32b-instruct</td><td class="role">Vision &mdash; flyer &amp; notebook OCR</td><td class="lat stat">5&ndash;12s</td></tr>
           <tr><td class="name">qwen3-embedding-4b</td><td class="role">Hybrid retrieval over the events corpus</td><td class="lat stat">278ms</td></tr>
           <tr><td class="name">qwen3-coder-30b</td><td class="role">Wrote most of the app itself, via opencode</td><td class="lat stat">workhorse</td></tr>
         </tbody>
@@ -460,8 +460,8 @@
     </div>
   </section>
 
-  <!-- 08 — Team + close -->
-  <section class="slide" data-note="Name who did what — it's a scored criterion. Close on the honest caveat, then the ask.">
+  <!-- 08 &mdash; Team + close -->
+  <section class="slide" data-note="Name who did what &mdash; it's a scored criterion. Close on the honest caveat, then the ask.">
     <div class="content">
       <p class="eyebrow"><span class="dot"></span>Team InnovatAIRs</p>
       <div class="team-grid">
@@ -471,7 +471,7 @@
         <div class="member"><div class="role">Pitch</div><div class="name">Adam</div><div class="desc">Physics PhD, MS AI in Business.</div></div>
       </div>
       <div class="caveat"><b>Where we're honest about the gap:</b> retrieval is a proof of concept over a real corpus, not yet evaluated against gold labels. The engine is real; the evaluation is next.</div>
-      <p class="ask">Give Sol a wider corpus and a real cohort — <span class="mark">the engine is corpus-agnostic already.</span></p>
+      <p class="ask">Give Sol a wider corpus and a real cohort &mdash; <span class="mark">the engine is corpus-agnostic already.</span></p>
     </div>
   </section>
 
