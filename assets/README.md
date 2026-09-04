@@ -3,7 +3,7 @@
 | file | made with | size | use |
 | --- | --- | --- | --- |
 | `hero-flux2-air-1536x640.png` | **`flux-2` on ASU AIR** (`POST /v1/images/generations`, ~68s) | 1536×640 | Submission hero. Generated on ASU's own Gaudi hardware — no external image service. |
-| `architecture-codex-1774x887.png` | GPT-Image, local ChatGPT quota | 1774×887 | Deck illustration only. ⚠️ Its annotations contain invented figures (`<150ms p95_target`) — crop or correct before showing. |
+| `architecture-2026-09-03-1536x1024.png` | GPT-Image, local ChatGPT quota | 1536×1024 | Deck illustration. Labels are the real services, ports and tools as of 2026-09-03; no latency or accuracy figures are claimed on it. |
 
 Real measured latencies, if the illustration is ever re-annotated: speech 0.4s ·
 image 1.8s · chat 1.7s · titles 0.3s · rerank 0.15s.
