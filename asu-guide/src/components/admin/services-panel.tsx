@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { SearchIcon } from '@/components/icons'
 import { Toggle } from '@/components/admin/toggle'
 
 type Tool = {
@@ -28,6 +29,8 @@ export function ServicesPanel() {
   const [data, setData] = useState<Snapshot | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  /** Filters tools by name, path, description or owning service. Empty shows everything. */
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -86,6 +89,16 @@ export function ServicesPanel() {
 
   const enabledCount = data?.services.flatMap((s) => s.tools).filter((t) => t.enabled).length ?? 0
 
+  const q = query.trim().toLowerCase()
+  const matches = (s: Service, t: Tool) =>
+    !q || [t.name, t.path, t.method, t.description, s.id].join(' ').toLowerCase().includes(q)
+  // A service stays only while at least one of its tools matches.
+  const visible = (data?.services ?? [])
+    .map((s) => ({ ...s, tools: s.tools.filter((t) => matches(s, t)) }))
+    .filter((s) => s.tools.length > 0)
+  const totalTools = data?.services.flatMap((s) => s.tools).length ?? 0
+  const shownTools = visible.flatMap((s) => s.tools).length
+
   return (
     <div className="mt-8 flex flex-col gap-4">
       {failure && (
@@ -105,7 +118,32 @@ export function ServicesPanel() {
         </p>
       )}
 
-      {data?.services.map((s) => (
+      {data && !data.error && (
+        <div className="flex items-center gap-3">
+          <label className="relative min-w-0 flex-1">
+            <SearchIcon className="text-muted pointer-events-none absolute top-1/2 left-4 size-[17px] -translate-y-1/2" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Filter tools — name, path, description or service"
+              aria-label="Filter tools"
+              className="placeholder:text-muted/70 h-11 w-full rounded-full border border-white/12 bg-black/40 pr-4 pl-11 text-[15px] text-white outline-none focus:border-[#ffc627]/60"
+            />
+          </label>
+          <span className="text-muted shrink-0 text-[13px] tabular-nums">
+            {q ? `${shownTools} of ${totalTools}` : `${totalTools} tools`}
+          </span>
+        </div>
+      )}
+
+      {data && !data.error && q && visible.length === 0 && (
+        <p className="text-muted rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3 text-[14px]">
+          No tool matches “{query.trim()}”.
+        </p>
+      )}
+
+      {visible.map((s) => (
         <section key={s.id} className="rounded-3xl border border-white/8 bg-[#0e0e0f] p-5">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span
