@@ -37,6 +37,8 @@ export const messages = sqliteTable('messages', {
   /** 'events' when the scripted shortlist was shown, 'vision' for an image reply. */
   kind: text('kind').notNull().default('text'),
   imageName: text('image_name'),
+  /** JSON: what the assistant drew on this turn (event cards, a HeatRoute plan), so a restored chat keeps them. */
+  payload: text('payload'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 })
 

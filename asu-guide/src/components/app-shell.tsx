@@ -11,6 +11,7 @@ import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
+import type { HeatRoutePlan } from '@/lib/tools'
 
 /** One finished turn, as reported by Chat. */
 export type PersistTurn = {
@@ -18,6 +19,7 @@ export type PersistTurn = {
   content: string
   kind: string
   imageName?: string | null
+  payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan } | null
 }
 
 /** Owns conversation persistence; Chat stays focused on the conversation itself. */
@@ -68,6 +70,20 @@ function writeStored(key: string, value: string | null) {
 function setUrl(path: string) {
   if (typeof window !== 'undefined' && window.location.pathname !== path) {
     window.history.replaceState(null, '', path)
+  }
+}
+
+/** Cards and plans stored with a turn come back as JSON text; a bad row is just a turn without them. */
+function parsePayload(raw: string | null | undefined): Pick<Turn, 'events' | 'heatroute'> {
+  if (!raw) return {}
+  try {
+    const p = JSON.parse(raw) as { events?: DemoEvent[]; heatroute?: HeatRoutePlan }
+    return {
+      ...(Array.isArray(p.events) && p.events.length ? { events: p.events } : {}),
+      ...(p.heatroute && typeof p.heatroute === 'object' ? { heatroute: p.heatroute } : {}),
+    }
+  } catch {
+    return {}
   }
 }
 
@@ -242,6 +258,7 @@ export function AppShell({
             content: t.content,
             kind: t.kind,
             imageName: t.imageName ?? null,
+            payload: t.payload ?? null,
           },
         }),
       })
@@ -263,7 +280,13 @@ export function AppShell({
     writeStored(activeKey(asurite), id)
 
     const data = (await res.json()) as {
-      messages: { id: string; role: 'user' | 'assistant'; content: string; kind: string }[]
+      messages: {
+        id: string
+        role: 'user' | 'assistant'
+        content: string
+        kind: string
+        payload?: string | null
+      }[]
     }
 
     chatIdRef.current = Promise.resolve(id)
@@ -282,6 +305,7 @@ export function AppShell({
             : 'text') as Turn['kind'],
         // What a vision model read off an image: context for the chat model, not a reply.
         hidden: m.kind === 'media',
+        ...parsePayload(m.payload),
         restored: true,
         // Object URLs die with the page, and cited cards are not stored, so a
         // reloaded thread comes back as text. The model still sees every word of it.
