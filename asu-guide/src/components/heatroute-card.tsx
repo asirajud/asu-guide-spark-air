@@ -1,8 +1,20 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { HeatRouteMap } from '@/components/heatroute-map'
-import { SunIcon } from '@/components/icons'
+import { Close, SunIcon } from '@/components/icons'
+
+function ExpandIcon(p: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" {...p}>
+      <path
+        d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 import type { LandmarkId } from '@/lib/heatroute-data'
 import { routesForJourney } from '@/lib/heatroute-engine'
 import type { HeatRoutePlan } from '@/lib/tools'
@@ -22,6 +34,8 @@ const RISK = {
  */
 export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
   const [selectedId, setSelectedId] = useState<string | null>(plan.recommendedId)
+  /** Full-screen view of the same map, for actually reading it. */
+  const [expanded, setExpanded] = useState(false)
   const routes = useMemo(
     () =>
       routesForJourney({
@@ -35,6 +49,13 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
   )
   const recommended = routes.find((r) => r.id === plan.recommendedId) ?? routes[0] ?? null
   const selected = routes.find((r) => r.id === selectedId) ?? recommended
+  useEffect(() => {
+    if (!expanded) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setExpanded(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [expanded])
+
   const when = new Date(plan.departureIso).toLocaleTimeString([], {
     hour: 'numeric',
     minute: '2-digit',
@@ -69,6 +90,15 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
       {routes.length > 0 && (
         <div className="relative mt-3 h-[360px]">
           <HeatRouteMap routes={routes} selectedRoute={selected} recommended={recommended} fit />
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            aria-label="Expand map"
+            title="Expand map"
+            className="text-fg absolute top-7 right-7 z-20 flex size-9 items-center justify-center rounded-full border border-white/12 bg-[#141415]/90 backdrop-blur transition-colors hover:bg-white/10"
+          >
+            <ExpandIcon className="size-4" />
+          </button>
         </div>
       )}
 
@@ -111,6 +141,87 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
           )
         })}
       </ul>
+
+      {expanded && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${plan.start.label} to ${plan.destination.label} map`}
+          className="fixed inset-0 z-50 flex flex-col bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+        >
+          <button
+            type="button"
+            aria-label="Close map"
+            onClick={() => setExpanded(false)}
+            className="absolute inset-0"
+          />
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0e0e0f] shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/6 px-5 py-3.5">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#3a1723] text-[#ffc627]">
+                <SunIcon className="size-[18px]" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-fg truncate text-[16px]">
+                  {plan.start.label} → {plan.destination.label}
+                </p>
+                <p className="text-muted text-[13.5px]">
+                  Leaving {when} · {selected?.label ?? 'route'} · estimated exposure, pilot data
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpanded(false)}
+                aria-label="Close map"
+                className="text-muted hover:text-fg flex size-9 items-center justify-center rounded-full transition-colors hover:bg-white/5"
+              >
+                <Close className="size-[18px]" />
+              </button>
+            </div>
+            <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
+              <div className="relative min-h-[320px]">
+                <HeatRouteMap
+                  routes={routes}
+                  selectedRoute={selected}
+                  recommended={recommended}
+                  fit
+                />
+              </div>
+              <ul className="thin-scroll flex flex-col gap-1.5 overflow-y-auto border-t border-white/6 p-3 lg:border-t-0 lg:border-l">
+                {plan.routes.map((r) => {
+                  const active = r.id === (selected?.id ?? plan.recommendedId)
+                  return (
+                    <li key={r.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(r.id)}
+                        className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 text-left transition-colors ${
+                          active
+                            ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.07]'
+                            : 'border-transparent hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="text-fg block text-[15.5px]">{r.label}</span>
+                          <span className="text-muted block text-[13px]">
+                            {r.protectedMinutes}m protected · {r.waterStops}{' '}
+                            {r.waterStops === 1 ? 'water stop' : 'water stops'}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right tabular-nums">
+                          <span className="text-fg block text-[17px]">{r.durationMinutes}m</span>
+                          <span className={`block text-[13px] ${RISK[r.heatRisk] ?? 'text-muted'}`}>
+                            {r.exposurePercent}% sun
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

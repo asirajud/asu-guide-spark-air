@@ -1,0 +1,25 @@
+Write ONE self-contained HTML file at pitch-deck-qwen3-coder-30b-a3b-instruct.html — a pitch-deck slideshow for a hackathon demo tomorrow. No build step, no external JS framework, inline CSS/JS only. Google Fonts links are fine.
+
+PRODUCT: Sol — an AI campus assistant for ASU students, built on ASU's AI Research Platform (AIR), an open-weight-model gateway at openai.rc.asu.edu/v1. Team InnovatAIRs, ASU AIR Spark Challenge hackathon.
+
+NORTH-STAR SENTENCE (put on slide 3, close to verbatim):
+"Sol turns any firehose of unstructured ASU information into something a student can search, understand, and act on — powered entirely by ASU's AI Research Platform."
+
+CORE IDEA: one retrieval engine (ingest -> embed -> hybrid search -> tool-call to act) applied to two corpora: campus events, and personal documents/notebooks.
+
+REAL FACTS — use these exact numbers, invent NOTHING else:
+- 1,962 upcoming events on the public Sun Devil Central iCal feed, no personal search today.
+- Demo 1 (Events): snap a flyer photo -> vision reads it -> hybrid BM25+embedding search matches the live event -> shows card. Tool loop: user says "reserve me a spot for the first one" -> reserve_spot fails on a guessed id -> model reads the tool's structured JSON-Schema error -> calls search_events to recover the real id -> reserve_spot succeeds. 3 tool calls, 1 turn, live.
+- Demo 2 (HeatRoute): user asks "MU to Hayden at 12:30 without frying" -> model calls plan_heat_route tool (22ms) -> shade-aware walking route, honest time estimate, 5.6s end to end. The AI reaches for the tool mid-conversation, no page navigation needed.
+- Demo 3 (Notebooks): upload page photos in order -> qwen3-vl-32b-instruct OCRs each page -> running digest kept (Topics / Key facts / Connections / Open questions, each cites a page number) -> chat answers from digest + raw pages, cited. Example digest: Topics = "Regular languages, finite automata (p.1)"; Key facts = "Pumping lemma disproves 0^n1^n is regular (p.2)"; Connections = "0^n1^n returns as a context-free grammar (p.3)". Best line to demo live: "what is still unclear or unfinished?"
+- Models + measured latency: qwen35-27b (chat/reasoning, 1.7s, beat a 120B model on speed AND quality), qwen3-vl-32b-instruct (vision/OCR, 5-12s), qwen3-embedding-4b (retrieval embeddings, 278ms), qwen3-coder-30b (wrote most of the app itself via opencode).
+- Usage: 486 gateway requests, 4.5M tokens processed during the build week, zero calls to anything but AIR.
+- Team InnovatAIRs (name every role, it's a scored criterion): Azhar - Platform (AIR stack, retrieval engine, tool registry). Nikhil - Frontend builder, MS Data Science & Engineering. Tino - RAG & eval, AI Innovation Engineer at ASU. Adam - Pitch/strategist, Physics PhD, MS AI in Business.
+- Honest limitation, state once: retrieval is a proof of concept over a real corpus, not yet evaluated against gold labels.
+- Brand: ASU maroon #8C1D40, ASU gold #FFC627. The real app UI is near-black with maroon/gold accents.
+
+SLIDES (exactly 8, in order): 1 Title/hook. 2 Problem. 3 Solution (north-star sentence). 4 Demo: Events. 5 Demo: HeatRoute. 6 Demo: Notebooks. 7 Built entirely on AIR (models + usage numbers). 8 Team + honest limitation + close/ask.
+
+REQUIREMENTS: full-viewport slide sections, arrow-key navigation, a slide counter. No lorem ipsum, no invented stats beyond the ones above. No generic AI-template look — no purple gradient hero, no 3-card feature grid, no emoji bullet points. Strong typographic hierarchy since a judge sees each slide for seconds. Use HTML entities (&mdash; &rarr; etc) instead of raw Unicode dash/arrow characters to avoid encoding bugs.
+
+Give the file a <title>Sol Pitch Deck</title> tag. When done, the file at pitch-deck-qwen3-coder-30b-a3b-instruct.html must be complete and openable directly in a browser. As your LAST action, run: touch .air-done/qwen3-coder-30b-a3b-instruct
