@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { airFetch, callAir } from '@/lib/air/call'
-import { THINKING_OFF } from '@/lib/air/models'
+import { THINKING_MODELS, THINKING_OFF } from '@/lib/air/models'
 import { getTools, callTool, extractEvents, summariseForModel, type ToolEvent } from '@/lib/tools'
 import { describeToolCall, summariseOutcome, type TraceEvent } from '@/lib/tool-trace'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 180
 const MAX_TURNS = 24
 /** Bounded so one user turn cannot fan out into an unbounded chain of tool calls. */
 const MAX_TOOL_ROUNDS = 3
@@ -83,6 +83,10 @@ export async function POST(request: Request) {
   // Falls back to no greeting rather than to the ASURITE.
   const firstName = session?.name?.trim().split(/\s+/)[0] || null
 
+  // Opt-in per turn from the composer's + menu: a slower reasoning model with a
+  // bigger budget. Identity and tools are identical; only the model changes.
+  const deep = body.deep === true
+
   const tools = await getTools()
   const messages: ChatMessage[] = [
     { role: 'system', content: systemPrompt(asurite, firstName, tools.length > 0) },
@@ -98,7 +102,7 @@ export async function POST(request: Request) {
     async start(controller) {
       const emit = (ev: TraceEvent) => controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'))
       try {
-        emit(await runToolLoop(messages, tools, emit))
+        emit(await runToolLoop(messages, tools, emit, deep))
       } catch (err) {
         emit({
           type: 'error',
@@ -123,6 +127,7 @@ async function runToolLoop(
   messages: ChatMessage[],
   tools: Awaited<ReturnType<typeof getTools>>,
   emit: (ev: TraceEvent) => void,
+  deep = false,
 ): Promise<TraceEvent> {
   const collected: ToolEvent[] = []
   let reserved: ToolEvent[] = []
@@ -133,7 +138,7 @@ async function runToolLoop(
   let step = 0
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-    const { value, model, ms } = await callAir('chat', async (m) => {
+    const { value, model, ms } = await callAir(deep ? 'deep' : 'chat', async (m) => {
       const gptOss = m.startsWith('gpt-oss')
       const res = await airFetch(
         '/chat/completions',
@@ -144,17 +149,22 @@ async function runToolLoop(
             model: m,
             // gpt-oss spends its budget on hidden reasoning before it writes a word,
             // so it needs both a bigger ceiling and its reasoning dialled down.
-            max_tokens: gptOss ? 900 : 400,
-            temperature: 0.5,
-            ...(gptOss ? { reasoning_effort: 'low' } : {}),
-            ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
+            // Deep: room to reason and a longer answer; the reasoning itself is
+            // hidden by the gateway, only the answer comes back.
+            max_tokens: deep ? (gptOss ? 3000 : 4000) : gptOss ? 900 : 400,
+            temperature: deep ? 0.4 : 0.5,
+            // 'high' spends the whole budget reasoning and returns nothing; medium answers.
+            ...(gptOss ? { reasoning_effort: deep ? 'medium' : 'low' } : {}),
+            ...(THINKING_OFF.has(m) && !(deep && THINKING_MODELS.has(m))
+              ? { chat_template_kwargs: { enable_thinking: false } }
+              : {}),
             messages,
             // On the last permitted round the tools are withheld, which forces the
             // model to stop calling and answer in prose.
             ...(tools.length > 0 && round < MAX_TOOL_ROUNDS ? { tools, tool_choice: 'auto' } : {}),
           }),
         },
-        55_000,
+        deep ? 120_000 : 55_000,
       )
       const data = (await res.json()) as {
         choices?: { message?: ChatMessage }[]

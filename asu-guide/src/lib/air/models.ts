@@ -7,7 +7,7 @@
  * distinction. Latencies below were measured against the live gateway.
  */
 export type AirService =
-  'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image' | 'ocr'
+  'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image' | 'ocr' | 'deep'
 
 export const AIR_BASE = process.env.AIR_BASE_URL ?? 'https://openai.rc.asu.edu/v1'
 
@@ -46,6 +46,13 @@ export const MODELS: Record<AirService, string[]> = {
   // the fastest wins and the other two are fallbacks.
   chat: ['qwen35-27b', 'gpt-oss-120b', 'qwen3-235b-a22b-instruct-2507'],
 
+  // "Deep thinking", opted into from the composer's + menu. Slower on purpose.
+  // Measured on a planning prompt with a 4000-token budget: gpt-oss-120b at
+  // reasoning_effort=medium answered in 8.9s (1.2K reasoning tokens); at =high
+  // it spent 15K tokens reasoning and returned nothing; qwen36-27b thinking
+  // took 36s; qwen3-235b-instruct 89s. Medium effort on gpt-oss is the pick.
+  deep: ['gpt-oss-120b', 'qwen36-27b', 'qwen35-27b'],
+
   // Watching a clip. qwen3-vl is the only family on AIR that accepts a
   // video_url content part — gemma4 and glm-4-5v reject it outright.
   video: ['qwen3-vl-32b-instruct', 'qwen3-vl-32b-thinking'],
@@ -60,3 +67,10 @@ export const MODELS: Record<AirService, string[]> = {
 
 /** Models that need thinking explicitly switched off to answer promptly. */
 export const THINKING_OFF = new Set(['qwen35-27b', 'qwen3-30b-a3b-instruct-2507'])
+
+/** Models whose thinking is what we WANT when the student asks for deep thinking. */
+export const THINKING_MODELS = new Set([
+  'qwen36-27b',
+  'qwen38-27b',
+  'qwen3-235b-a22b-thinking-2507',
+])
