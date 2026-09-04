@@ -11,7 +11,7 @@ import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
-import type { HeatRoutePlan } from '@/lib/tools'
+import type { HeatRoutePlan, WeatherReport } from '@/lib/tools'
 
 /** One finished turn, as reported by Chat. */
 export type PersistTurn = {
@@ -19,7 +19,7 @@ export type PersistTurn = {
   content: string
   kind: string
   imageName?: string | null
-  payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan } | null
+  payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan; weather?: WeatherReport } | null
 }
 
 /** Owns conversation persistence; Chat stays focused on the conversation itself. */
@@ -74,13 +74,20 @@ function setUrl(path: string) {
 }
 
 /** Cards and plans stored with a turn come back as JSON text; a bad row is just a turn without them. */
-function parsePayload(raw: string | null | undefined): Pick<Turn, 'events' | 'heatroute'> {
+function parsePayload(
+  raw: string | null | undefined,
+): Pick<Turn, 'events' | 'heatroute' | 'weather'> {
   if (!raw) return {}
   try {
-    const p = JSON.parse(raw) as { events?: DemoEvent[]; heatroute?: HeatRoutePlan }
+    const p = JSON.parse(raw) as {
+      events?: DemoEvent[]
+      heatroute?: HeatRoutePlan
+      weather?: WeatherReport
+    }
     return {
       ...(Array.isArray(p.events) && p.events.length ? { events: p.events } : {}),
       ...(p.heatroute && typeof p.heatroute === 'object' ? { heatroute: p.heatroute } : {}),
+      ...(p.weather && typeof p.weather === 'object' ? { weather: p.weather } : {}),
     }
   } catch {
     return {}

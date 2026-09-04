@@ -19,7 +19,7 @@ if [ "$(uname)" = Darwin ] && lsof -nP -iTCP:5000 -sTCP:LISTEN 2>/dev/null | gre
 fi
 
 # Ports already in use? Usually a previous dev.sh or a stray `pnpm dev`. Ask.
-PORTS=(3000 4000 5000 5001 5003 5004)
+PORTS=(3000 4000 5000 5001 5003 5004 5005)
 busy=()
 for port in "${PORTS[@]}"; do
   # exclude AirPlay (ControlCenter) on 5000 — it does not block our 127.0.0.1 bind
@@ -49,7 +49,7 @@ if [ "${#busy[@]}" -gt 0 ]; then
   esac
 fi
 
-if [ -t 1 ]; then RST=$'\e[0m'; C=($'\e[35m' $'\e[33m' $'\e[36m' $'\e[32m' $'\e[34m' $'\e[31m'); else RST=''; C=('' '' '' '' '' ''); fi
+if [ -t 1 ]; then RST=$'\e[0m'; C=($'\e[35m' $'\e[33m' $'\e[36m' $'\e[32m' $'\e[34m' $'\e[31m' $'\e[37m'); else RST=''; C=('' '' '' '' '' '' ''); fi
 
 PIDS=()
 run() {
@@ -66,6 +66,7 @@ run events     asu-events-api "${C[1]}" $PM run dev
 run tools      asu-tools-api  "${C[2]}" $PM run dev
 run search     asu-search-api "${C[3]}" $PM run dev
 run heat       asu-heatroute-api "${C[5]}" $PM run dev
+run weather    asu-weather-api "${C[6]}" $PM run dev
 run guide      asu-guide      "${C[4]}" $PM run dev
 
 echo
@@ -74,6 +75,7 @@ echo "  asu-sso        http://localhost:4000"
 echo "  asu-tools-api  http://127.0.0.1:5000/health"
 echo "  asu-events-api http://127.0.0.1:5001/health"
 echo "  asu-heatroute-api http://127.0.0.1:5004/health"
+echo "  asu-weather-api http://127.0.0.1:5005/health"
 echo "  asu-search-api http://127.0.0.1:5003/health"
 echo
 

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { featureSettings } from '@/db/schema'
 
-export type Feature = 'notebooks' | 'heatroute'
+export type Feature = 'notebooks' | 'heatroute' | 'weather'
 
 export type FeatureInfo = {
   id: Feature
@@ -27,6 +27,13 @@ export const FEATURES: FeatureInfo[] = [
     name: 'HeatRoute',
     summary:
       'Heat-aware walking routes across Tempe campus, scored on estimated sun exposure, shade, water and shuttles, with an AIR-written explanation. Pilot data; not turn-by-turn navigation.',
+    defaultEnabled: true,
+  },
+  {
+    id: 'weather',
+    name: 'Weather',
+    summary:
+      'Current conditions and an hourly forecast for the Tempe campus from Open-Meteo, drawn as a card when a student asks about the weather or the heat.',
     defaultEnabled: true,
   },
 ]

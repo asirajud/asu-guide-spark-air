@@ -27,6 +27,8 @@ export type TraceEvent =
       events: unknown[]
       /** A HeatRoute plan the assistant obtained on this turn, drawn as a card. */
       heatroute?: unknown
+      /** A weather report the assistant obtained on this turn, drawn as an hourly card. */
+      weather?: unknown
       model: string
       ms: number
       tools: { name: string; ok: boolean; ms: number }[]
@@ -50,6 +52,8 @@ export function describeToolCall(name: string, args: Record<string, unknown>): s
       return 'Reserving a spot'
     case 'web_search':
       return `Searching the web ${quote(args.query)}`.trim()
+    case 'get_weather':
+      return 'Checking Tempe weather'
     case 'plan_heat_route':
       return `Planning a cooler route ${quote(args.start, 24)} → ${quote(args.destination, 24)}`.trim()
     case 'list_capabilities':
@@ -75,6 +79,13 @@ export function summariseOutcome(name: string, ok: boolean, content: unknown): s
   if (name === 'web_search') {
     const n = Array.isArray(obj?.results) ? obj!.results.length : 0
     return n === 1 ? '1 result' : `${n} results`
+  }
+  if (name === 'get_weather') {
+    const cur = (obj as { current?: { tempF?: number; feelsLikeF?: number; condition?: string } })
+      ?.current
+    return cur?.tempF != null
+      ? `${cur.tempF}°F, feels ${cur.feelsLikeF}°F, ${String(cur.condition ?? '').toLowerCase()}`
+      : 'no report'
   }
   if (name === 'plan_heat_route') {
     const routes = Array.isArray(obj?.routes)

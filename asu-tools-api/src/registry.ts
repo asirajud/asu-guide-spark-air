@@ -260,4 +260,5 @@ export const SESSION_TOOLS = [
   'reserve_spot',
   'web_search',
   'plan_heat_route',
+  'get_weather',
 ]

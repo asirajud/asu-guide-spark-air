@@ -7,7 +7,8 @@ import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
 import { EventList } from '@/components/event-list'
 import { HeatRouteCard } from '@/components/heatroute-card'
-import type { HeatRoutePlan } from '@/lib/tools'
+import { WeatherCard } from '@/components/weather-card'
+import type { HeatRoutePlan, WeatherReport } from '@/lib/tools'
 import { RichText } from '@/components/rich-text'
 import { capitaliseReply } from '@/lib/capitalise'
 import Image from 'next/image'
@@ -27,6 +28,8 @@ export type Turn = {
   events?: DemoEvent[]
   /** A HeatRoute plan the assistant obtained on this turn, drawn as a map card. */
   heatroute?: HeatRoutePlan | null
+  /** A weather report the assistant obtained on this turn, drawn as an hourly card. */
+  weather?: WeatherReport | null
   /** "Read by X on ASU AIR in 2.1s" footnote for a media reply. */
   meta?: { model: string; ms: number; note?: string } | null
   /** Tool calls the assistant made on this turn, in order, failures included. */
@@ -60,7 +63,7 @@ export function Chat({
     kind: string
     imageName?: string | null
     /** What was drawn with the reply, so a restored chat can draw it again. */
-    payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan } | null
+    payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan; weather?: WeatherReport } | null
   }) => void
   restoredTurns?: Turn[] | null
   /** Deep thinking, picked from the header's mode menu; the shell owns it. */
@@ -95,12 +98,13 @@ export function Chat({
     meta: Turn['meta'] = null,
     trace: ToolStep[] = [],
     heatroute: HeatRoutePlan | null = null,
+    weather: WeatherReport | null = null,
   ) {
     const body = full.trim() || 'Sorry — I did not get an answer that time.'
     const id = uid()
     setTurns((t) => [
       ...t,
-      { id, role: 'assistant', content: '', kind, events: cards, meta, trace, heatroute },
+      { id, role: 'assistant', content: '', kind, events: cards, meta, trace, heatroute, weather },
     ])
     setLiveTrace([])
     setPhase('streaming')
@@ -159,6 +163,7 @@ export function Chat({
         null,
         trace,
         (final.heatroute as HeatRoutePlan | undefined) ?? null,
+        (final.weather as WeatherReport | undefined) ?? null,
       )
     } catch (err) {
       appendAssistant(
@@ -316,6 +321,7 @@ export function Chat({
         { model: `${data.model ?? 'AIR vision'} + ${final.model}`, ms: (data.ms ?? 0) + final.ms },
         trace,
         (final.heatroute as HeatRoutePlan | undefined) ?? null,
+        (final.weather as WeatherReport | undefined) ?? null,
       )
     } catch (err) {
       appendAssistant(
@@ -503,6 +509,7 @@ export function Chat({
                     )}
                     {cards.length > 0 && <EventList events={cards} />}
                     {t.heatroute && <HeatRouteCard plan={t.heatroute} />}
+                    {t.weather && <WeatherCard report={t.weather} />}
                   </div>
                 )
               })}
