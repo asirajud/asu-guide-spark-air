@@ -271,3 +271,48 @@ come back later?" → pumping lemma on p. 2, returns as the CFG `S → 0S1 | ε`
 **New harness lesson:** a watchdog that kills on _log idle_ truncates long single-file writes —
 the model emits nothing while it composes a 250-line file. For big files use a 150s idle window,
 or better, the sentinel file (`touch .air-done/<run>`) as the run's mandatory last action.
+
+---
+
+# Session 6 — Notebooks hardened by hand, reviewed, and (re-)landed (2026-09-03, 14:45–17:30 MST)
+
+After the AIR-authored core in session 5, everything below was **hand-written** during a review
+pass. The eligibility rule is runtime on AIR, not authorship, and every model call in the product
+still goes to `openai.rc.asu.edu` — listed so the authorship line in the pitch stays honest.
+
+| Area                          | What changed                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature switch                | Notebooks ships **off**. Dedicated `/s/admin/notebooks` page (Staff) with the switch and a per-notebook **page cap** (default 10, clamp 1–50; new `app_settings` table). Off → nav hides the section, `/api/notebooks*` answer 404.                                                                                                                                                                                                                            |
+| Upload queue                  | Pages can be added while a batch is being read; batches drain sequentially so every page still sees the digest before it. Queued rows stay visible and leave one by one as `page_start` arrives. Cap enforced server-side and pre-checked client-side.                                                                                                                                                                                                         |
+| Auto-title                    | A "New notebook" is named from its first digest by the `title` service (`qwen3-30b-a3b-instruct-2507`), streamed as a `renamed` event. Inline rename in the header.                                                                                                                                                                                                                                                                                            |
+| Delete                        | From the notebook header through a styled `ConfirmDialog` — no native `confirm()`.                                                                                                                                                                                                                                                                                                                                                                             |
+| Sticky notes                  | Collapsed to a badge button at the right edge; a compact bottom-right popover on wide screens, a bottom sheet on phones. Plain text, this browser only, **no model in the loop** until a note is _nudged_: it enters the chat as "I'm pasting this from my sticky notes, can you help answer?", shows with a gold caption, and is struck through on the board.                                                                                                 |
+| Web fallback in notebook chat | Pages first; when they do not cover the question the model emits one `SEARCH: <query>` line, the route runs `web_search`, asks again with the results, and the answer keeps "what the notebook says (p. N)" apart from "From the web:". **Routed in code, not native tool calling** — behind the 24K-char notebook prompt `qwen35-27b` never called the tool and wrote "From the web:" from memory. `searched` is reported by code and shown in the meta line. |
+| AIR runner                    | A 503/429 already fell through to the next model for that call; an overloaded model now also **sits out for 2 minutes** so a batch stops re-paying the failed round trip (`ocr`: `qwen3-vl-32b` → `gemma4-31b` → `qwen35-27b`).                                                                                                                                                                                                                                |
+| URLs                          | `/c/<chat>` and `/n/<notebook>` survive a refresh (`history.replaceState`).                                                                                                                                                                                                                                                                                                                                                                                    |
+| UI                            | Type scale matched to the chat (17px body); pages list scrolls inside 296px; Understanding collapses to 420px with a blurred fade and Show more / less.                                                                                                                                                                                                                                                                                                        |
+
+**Bugs found in the review pass:** preview thumbnails indexed by notebook-wide `position` instead
+of upload order; a rename effect keyed on an inline-arrow prop → infinite `GET /api/notebooks`
+loop (fixed with a ref written inside an effect, per `react-hooks/refs`); a `.gitignore` with no
+trailing newline glued an appended rule onto the previous line.
+
+**Live measurements (3 synthetic CSE 340 pages):** OCR 8.4–13.9s/page · digest ~5s/page · question
+1.9–3.6s · web-fallback question 2.6–4.0s · whole 3-page ingest ≈ 60s. Cross-page recall verified
+(non-regular `0^n1^n` on p. 2 returns as the CFG on p. 3).
+
+**Merging, and a lesson.** #17 (admin dashboard) and #18 (notebooks, stacked on #17) were merged a
+minute apart — #17 first, then #18 **into `feat/admin-dashboard`**, so none of the notebook commits
+reached `main`. Caught when the build-log commit found no notebook files on `main`; re-landed as
+#19 (conflicts in `capabilities.ts`, `schema.ts`, `admin/nav.tsx` resolved to the superset side).
+Rule for stacked PRs: merge the top of the stack first, or re-check the base after the bottom merges.
+#15 (SSO login) started as a repo-wide 3000→3001 port move; review traced the real cause to
+`asu-guide/src/lib/sso.ts` defaulting `APP_URL` to `:3001` against the IdP's `:3000` registration.
+Trimmed to the actual fix (keep `response_type` on a failed-login retry, default → 3000,
+`install.sh` writes `APP_URL`, both callback ports registered, `${BRAVE_API_KEY:-}`), Tino's
+authorship kept, merged. Its squash also swept in the `.air-done/` sentinel files (the ignore rule
+lived only on the notebooks branch); #19 removed them.
+
+**Not browser-verified today:** the queue rows, sticky board, nudge caption and URL restore were
+API-verified only — the debug Chrome went down mid-afternoon. Click through once before recording
+the demo.
