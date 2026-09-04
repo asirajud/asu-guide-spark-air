@@ -39,7 +39,9 @@
                 "description": "How many events to return. Defaults to 5."
               }
             },
-            "required": ["query"],
+            "required": [
+              "query"
+            ],
             "additionalProperties": false
           }
         },
@@ -59,7 +61,9 @@
                 "description": "The id returned by search_events."
               }
             },
-            "required": ["event_id"],
+            "required": [
+              "event_id"
+            ],
             "additionalProperties": false
           }
         },
@@ -84,7 +88,10 @@
                 "description": "The signed-in student's ASURITE."
               }
             },
-            "required": ["event_id", "asurite"],
+            "required": [
+              "event_id",
+              "asurite"
+            ],
             "additionalProperties": false
           }
         }
@@ -120,11 +127,18 @@
               },
               "freshness": {
                 "type": "string",
-                "enum": ["pd", "pw", "pm", "py"],
+                "enum": [
+                  "pd",
+                  "pw",
+                  "pm",
+                  "py"
+                ],
                 "description": "Restrict to the past day, week, month or year."
               }
             },
-            "required": ["query"],
+            "required": [
+              "query"
+            ],
             "additionalProperties": false
           }
         }
@@ -170,7 +184,10 @@
                 "description": "Whether shuttle routes may be included. Defaults to true."
               }
             },
-            "required": ["start", "destination"],
+            "required": [
+              "start",
+              "destination"
+            ],
             "additionalProperties": false
           }
         }
@@ -178,14 +195,14 @@
     },
     {
       "id": "asu-weather-api",
-      "description": "Tempe campus weather from Open-Meteo (free, keyless): current conditions, hourly forecast, heat guidance. Deterministic; no model inside.",
+      "description": "Weather from Open-Meteo (free, keyless): current conditions, hourly forecast, heat guidance. Defaults to the Tempe campus; any named place is geocoded. Deterministic; no model inside.",
       "baseUrl": "http://127.0.0.1:5005",
       "healthPath": "/health",
-      "contractVersion": "1.0.0",
+      "contractVersion": "1.1.0",
       "tools": [
         {
           "name": "get_weather",
-          "description": "Current conditions and an hourly forecast for the ASU Tempe campus: temperature, feels-like, humidity, UV, wind, chance of rain, sunrise and sunset, plus plain heat guidance. Call it when a student asks about the weather, the heat, whether to walk or wait, what to wear, or when it cools down. The hourly strip is drawn for them automatically, so summarise rather than list every hour. Source: Open-Meteo; no key, no personal data.",
+          "description": "Current conditions and an hourly forecast: temperature, feels-like, humidity, UV, wind, chance of rain, sunrise and sunset, plus plain heat guidance. Defaults to the ASU Tempe campus, so leave place out for anything on campus. Pass place when the student names somewhere else (\"San Francisco\", \"Barcelona\", their home town) and it is resolved by name. Call it when a student asks about the weather, the heat, whether to walk or wait, what to wear, or when it cools down. The hourly strip is drawn for them automatically, so summarise rather than list every hour. Source: Open-Meteo; no key, no personal data.",
           "route": {
             "method": "POST",
             "path": "/weather"
@@ -193,6 +210,12 @@
           "inputSchema": {
             "type": "object",
             "properties": {
+              "place": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 80,
+                "description": "A city, town or landmark in the student's own words. Omit for the ASU Tempe campus."
+              },
               "hours": {
                 "type": "integer",
                 "minimum": 1,

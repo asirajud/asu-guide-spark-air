@@ -64,7 +64,9 @@ export function describeToolCall(name: string, args: Record<string, unknown>): s
     case 'web_search':
       return `Searching the web ${quote(args.query)}`.trim()
     case 'get_weather':
-      return 'Checking Tempe weather'
+      return typeof args.place === 'string' && args.place.trim()
+        ? `Checking the weather ${quote(args.place)}`.trim()
+        : 'Checking Tempe weather'
     case 'plan_heat_route':
       return `Planning a cooler route ${quote(args.start, 24)} → ${quote(args.destination, 24)}`.trim()
     case 'list_capabilities':
