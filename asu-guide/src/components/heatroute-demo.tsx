@@ -78,8 +78,8 @@ function Metric({
 }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wide text-muted">{label}</div>
-      <div className={`mt-0.5 font-semibold ${className}`}>{value}</div>
+      <div className="text-muted text-[12px] tracking-[0.06em] uppercase">{label}</div>
+      <div className={`mt-1 text-[17px] font-medium tabular-nums ${className}`}>{value}</div>
     </div>
   )
 }
@@ -99,30 +99,30 @@ function RouteOption({
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full rounded-lg border p-4 text-left transition-colors ${
+      className={`w-full rounded-2xl border p-4 text-left transition-colors ${
         selected
-          ? 'border-asu-gold bg-[#1d1b12]'
-          : 'border-[#2b2d30] bg-[#111214] hover:border-[#4a4d52]'
+          ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.07]'
+          : 'border-white/8 bg-white/[0.02] hover:bg-white/[0.05]'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[15px] font-semibold text-white">{route.label}</span>
+            <span className="text-[16px] font-medium text-white">{route.label}</span>
             {recommended && (
-              <span className="rounded-full bg-asu-gold px-2 py-0.5 text-[10px] font-bold text-black">
+              <span className="rounded-full bg-[#ffc627] px-2 py-0.5 text-[11px] font-medium text-black">
                 Recommended
               </span>
             )}
           </div>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">{route.description}</p>
+          <p className="text-muted mt-1 text-[14px] leading-relaxed">{route.description}</p>
         </div>
-        <span className="shrink-0 text-[18px] font-semibold text-white">
+        <span className="shrink-0 text-[20px] font-medium text-white tabular-nums">
           {route.durationMinutes}m
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-[12px]">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         <Metric
           label="Sun"
           value={`${route.exposurePercent}%`}
@@ -132,7 +132,7 @@ function RouteOption({
         <Metric label="Water" value={`${route.waterStops}`} />
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#25272a]">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
         <div
           className={`h-full rounded-full ${exposureBarColor(route.exposurePercent)}`}
           style={{ width: `${route.exposurePercent}%` }}
@@ -239,31 +239,35 @@ export function HeatRouteDemo() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-[#070809] text-white">
-      <div className="border-b border-[#24262a] px-4 py-3 sm:px-6">
+    <div className="flex h-full min-h-0 w-full flex-col text-white">
+      <div className="border-b border-white/6 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <SunIcon className="size-5 text-asu-gold" />
-              <h1 className="text-[20px] font-semibold">HeatRoute ASU</h1>
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
+                <SunIcon className="size-[22px]" />
+              </span>
+              <div>
+                <h1 className="text-[22px] font-medium tracking-[-0.02em] text-white">
+                  HeatRoute ASU
+                </h1>
+                <p className="text-muted text-[15px]">
+                  Estimated heat-aware routing for Tempe campus · not turn-by-turn navigation
+                </p>
+              </div>
             </div>
-            <p className="mt-1 text-[12px] text-muted">
-              Estimated heat-aware routing for Tempe campus. Not turn-by-turn navigation.
-            </p>
           </div>
-          <div className="rounded-full border border-[#34373c] px-3 py-1.5 text-[12px] text-muted">
-            Verified pilot data - {displayDate('2026-09-03')}
+          <div className="text-muted rounded-full border border-white/12 px-3 py-1.5 text-[13px]">
+            Pilot data · verified {displayDate('2026-09-03')}
           </div>
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="min-h-0 overflow-y-auto border-b border-[#24262a] p-4 lg:border-r lg:border-b-0 lg:p-5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[400px_minmax(0,1fr)]">
+        <aside className="thin-scroll min-h-0 overflow-y-auto border-b border-white/6 p-5 lg:border-r lg:border-b-0">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Start
-              </span>
+              <span className="text-muted text-[13px] tracking-[0.06em] uppercase">Start</span>
               <select
                 value={startId}
                 onChange={(event) => {
@@ -273,7 +277,7 @@ export function HeatRouteDemo() {
                   if (nextDestination) setEndId(nextDestination.id)
                   setSelectedRouteId(null)
                 }}
-                className="mt-1.5 h-10 w-full rounded-md border border-[#33363b] bg-[#111214] px-3 text-[14px] text-white outline-none focus:border-asu-gold"
+                className="mt-2 h-11 w-full rounded-xl border border-white/12 bg-black/40 px-3.5 text-[15.5px] text-white outline-none focus:border-[#ffc627]/60"
               >
                 {START_LANDMARKS.map((landmark) => (
                   <option key={landmark.id} value={landmark.id}>
@@ -284,7 +288,7 @@ export function HeatRouteDemo() {
             </label>
 
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+              <span className="text-muted text-[13px] tracking-[0.06em] uppercase">
                 Destination
               </span>
               <select
@@ -293,7 +297,7 @@ export function HeatRouteDemo() {
                   setEndId(event.target.value as LandmarkId)
                   setSelectedRouteId(null)
                 }}
-                className="mt-1.5 h-10 w-full rounded-md border border-[#33363b] bg-[#111214] px-3 text-[14px] text-white outline-none focus:border-asu-gold"
+                className="mt-2 h-11 w-full rounded-xl border border-white/12 bg-black/40 px-3.5 text-[15.5px] text-white outline-none focus:border-[#ffc627]/60"
               >
                 {destinations.map((landmark) => (
                   <option key={landmark.id} value={landmark.id}>
@@ -304,26 +308,22 @@ export function HeatRouteDemo() {
             </label>
 
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Date
-              </span>
+              <span className="text-muted text-[13px] tracking-[0.06em] uppercase">Date</span>
               <input
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="mt-1.5 h-10 w-full rounded-md border border-[#33363b] bg-[#111214] px-3 text-[14px] text-white outline-none focus:border-asu-gold"
+                className="mt-2 h-11 w-full rounded-xl border border-white/12 bg-black/40 px-3.5 text-[15.5px] text-white outline-none focus:border-[#ffc627]/60"
               />
             </label>
 
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Depart
-              </span>
+              <span className="text-muted text-[13px] tracking-[0.06em] uppercase">Depart</span>
               <input
                 type="time"
                 value={time}
                 onChange={(event) => setTime(event.target.value)}
-                className="mt-1.5 h-10 w-full rounded-md border border-[#33363b] bg-[#111214] px-3 text-[14px] text-white outline-none focus:border-asu-gold"
+                className="mt-2 h-11 w-full rounded-xl border border-white/12 bg-black/40 px-3.5 text-[15.5px] text-white outline-none focus:border-[#ffc627]/60"
               />
             </label>
           </div>
@@ -343,12 +343,12 @@ export function HeatRouteDemo() {
             />
           </div>
 
-          <div className="mt-4 rounded-lg border border-[#2b2d30] bg-[#101113] p-4">
+          <div className="mt-5 rounded-3xl border border-white/8 bg-white/[0.02] p-5">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[12px] font-semibold uppercase tracking-wide text-muted">
+              <span className="text-muted text-[13px] tracking-[0.06em] uppercase">
                 Sun position
               </span>
-              <span className="text-[12px] text-white">{timeToLabel(time)}</span>
+              <span className="text-[15px] text-white">{timeToLabel(time)}</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-3">
               <Metric label="Altitude" value={`${Math.round(sun.altitudeDeg)} deg`} />
@@ -368,10 +368,8 @@ export function HeatRouteDemo() {
 
           <div className="mt-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-[12px] font-semibold uppercase tracking-wide text-muted">
-                Route options
-              </h2>
-              <span className="text-[12px] text-muted">{rankedRoutes.length} candidates</span>
+              <h2 className="text-muted text-[13px] tracking-[0.06em] uppercase">Route options</h2>
+              <span className="text-muted text-[13.5px]">{rankedRoutes.length} candidates</span>
             </div>
             {rankedRoutes.length ? (
               rankedRoutes.map((route) => (
@@ -384,14 +382,14 @@ export function HeatRouteDemo() {
                 />
               ))
             ) : (
-              <div className="rounded-lg border border-[#2b2d30] bg-[#101113] p-4 text-[13px] text-muted">
+              <div className="text-muted rounded-3xl border border-white/8 bg-white/[0.02] p-5 text-[15px]">
                 No curated route is available for this pair yet.
               </div>
             )}
           </div>
         </aside>
 
-        <main className="relative min-h-[620px] overflow-hidden bg-[#0b0c0e]">
+        <main className="relative min-h-[620px] overflow-hidden bg-black/30">
           <HeatRouteMap
             routes={rankedRoutes}
             selectedRoute={selectedRoute}
@@ -420,13 +418,13 @@ function AiRouteInsight({
   onExplain: () => void
 }) {
   return (
-    <div className="mt-4 rounded-lg border border-[#2b2d30] bg-[#101113] p-4">
+    <div className="mt-5 rounded-3xl border border-white/8 bg-white/[0.02] p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-[12px] font-semibold uppercase tracking-wide text-muted">
-            AI route note
+          <div className="text-muted text-[13px] tracking-[0.06em] uppercase">
+            Sol on this route
           </div>
-          <div className="mt-1 text-[13px] text-white">
+          <div className="mt-1 text-[16px] text-white">
             {route ? route.label : 'Select a route'}
           </div>
         </div>
@@ -434,22 +432,24 @@ function AiRouteInsight({
           type="button"
           onClick={onExplain}
           disabled={!route || loading}
-          className="h-8 shrink-0 rounded-full bg-asu-gold px-3 text-[12px] font-semibold text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-9 shrink-0 rounded-full bg-[#ffc627] px-4 text-[14px] font-medium text-black transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'Thinking...' : 'Explain'}
+          {loading ? 'Thinking…' : 'Explain'}
         </button>
       </div>
 
-      {explanation && (
-        <p className="mt-3 text-[13px] leading-relaxed text-[#d8dcdf]">{explanation}</p>
-      )}
-      {error && <p className="mt-3 text-[13px] leading-relaxed text-red-300">{error}</p>}
+      {explanation && <p className="text-fg mt-3 text-[16px] leading-[1.55]">{explanation}</p>}
+      {error && <p className="mt-3 text-[15px] leading-relaxed text-red-400">{error}</p>}
       {!explanation && !error && (
-        <p className="mt-3 text-[12px] leading-relaxed text-muted">
-          Uses ASU AIR to summarize the selected route from the estimated HeatRoute data.
+        <p className="text-muted mt-3 text-[14px] leading-relaxed">
+          Explains the selected route from the estimated HeatRoute data, on ASU AIR.
         </p>
       )}
-      {model && <div className="mt-2 text-[10px] uppercase tracking-wide text-muted">{model}</div>}
+      {model && (
+        <p className="text-muted mt-3 text-[12.5px]">
+          Explained by <span className="text-fg/80">{model}</span> on ASU AIR
+        </p>
+      )}
     </div>
   )
 }
@@ -469,20 +469,20 @@ function Toggle({
     <button
       type="button"
       onClick={onChange}
-      className="flex items-center justify-between gap-3 rounded-lg border border-[#2b2d30] bg-[#101113] p-3 text-left"
+      className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.02] px-4 py-3 text-left transition-colors hover:bg-white/[0.04]"
     >
       <span>
-        <span className="block text-[14px] font-medium text-white">{label}</span>
-        <span className="mt-0.5 block text-[12px] text-muted">{note}</span>
+        <span className="block text-[15.5px] text-white">{label}</span>
+        <span className="text-muted mt-0.5 block text-[13px]">{note}</span>
       </span>
       <span
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          checked ? 'bg-asu-gold' : 'bg-[#3a3d42]'
+        className={`relative h-[24px] w-[42px] shrink-0 rounded-full border transition-colors ${
+          checked ? 'border-[#ffc627]/40 bg-[#ffc627]/25' : 'border-white/12 bg-white/6'
         }`}
       >
         <span
-          className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
+          className={`absolute top-[2px] size-[18px] rounded-full transition-all ${
+            checked ? 'left-[21px] bg-[#ffc627]' : 'left-[2px] bg-[#8e9195]'
           }`}
         />
       </span>
@@ -492,42 +492,42 @@ function Toggle({
 
 function RouteDetails({ route }: { route: EvaluatedRoute }) {
   return (
-    <div className="absolute right-4 bottom-4 left-4 rounded-lg border border-[#2b2d30] bg-[#0c0d0f]/95 p-4 shadow-2xl backdrop-blur lg:left-auto lg:w-[360px]">
+    <div className="absolute right-4 bottom-4 left-4 rounded-3xl border border-white/10 bg-[#141415]/95 p-5 shadow-2xl backdrop-blur lg:left-auto lg:w-[380px]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-[16px] font-semibold">{route.label}</h2>
-          <p className="mt-1 text-[12px] leading-relaxed text-muted">{route.verificationNotes}</p>
+          <h2 className="text-[18px] font-medium tracking-[-0.01em]">{route.label}</h2>
+          <p className="text-muted mt-1 text-[14px] leading-relaxed">{route.verificationNotes}</p>
         </div>
-        <span className={`text-[18px] font-bold ${RISK_STYLE[route.heatRisk]}`}>
+        <span className={`text-[22px] font-medium tabular-nums ${RISK_STYLE[route.heatRisk]}`}>
           {route.exposurePercent}%
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-3 text-[12px]">
+      <div className="mt-4 grid grid-cols-4 gap-3">
         <Metric label="Walk" value={`${route.durationMinutes}m`} />
         <Metric label="Distance" value={metersToMiles(route.distanceMeters)} />
         <Metric label="Confidence" value={`${route.confidence}%`} />
         <Metric label="Risk" value={route.heatRisk} className={RISK_STYLE[route.heatRisk]} />
       </div>
-      <p className="mt-3 text-[12px] leading-snug text-muted">
+      <p className="text-muted mt-3 text-[13px] leading-snug">
         Lines are approximate campus corridors, not exact walking paths through buildings.
       </p>
 
       <div className="mt-4 space-y-2">
         {route.evaluatedSegments.map((segment) => (
-          <div key={segment.id} className="flex items-start gap-3 rounded-md bg-white/[0.04] p-2.5">
+          <div key={segment.id} className="flex items-start gap-3 rounded-xl bg-white/[0.04] p-3">
             <span
               className="mt-1 size-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: HEATROUTE_KIND_STYLE[segment.kind].stroke }}
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
-                <span className="truncate text-[13px] font-medium text-white">{segment.label}</span>
-                <span className="shrink-0 text-[12px] text-muted">
-                  {segment.durationMinutes}m - {segment.exposurePercent}% sun
+                <span className="truncate text-[15px] text-white">{segment.label}</span>
+                <span className="text-muted shrink-0 text-[13px] tabular-nums">
+                  {segment.durationMinutes}m · {segment.exposurePercent}% sun
                 </span>
               </div>
-              <p className="mt-0.5 text-[12px] leading-snug text-muted">{segment.notes}</p>
+              <p className="text-muted mt-0.5 text-[13.5px] leading-snug">{segment.notes}</p>
             </div>
           </div>
         ))}

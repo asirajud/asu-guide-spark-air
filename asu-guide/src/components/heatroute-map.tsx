@@ -327,7 +327,7 @@ export function HeatRouteMap({
         routes={routes}
         selectedRoute={selectedRoute}
         recommended={recommended}
-        fallbackReason="Set NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL to enable the real basemap."
+        fallbackReason="Pilot map · a real basemap appears when a map style is configured"
       />
     )
   }
@@ -345,14 +345,14 @@ export function HeatRouteMap({
 
   return (
     <div className="absolute inset-0 p-4 lg:p-6">
-      <div className="flex h-full min-h-0 flex-col rounded-lg border border-[#24262a] bg-[#111214]">
+      <div className="flex h-full min-h-0 flex-col rounded-3xl border border-white/8 bg-white/[0.02]">
         <MapHeader title="Tempe campus live map" />
         <div className="relative min-h-0 flex-1">
           <div ref={containerRef} className="h-full w-full" />
           <ApproximateRouteNotice />
           {!mapReady && (
-            <div className="absolute inset-0 grid place-items-center bg-[#0b0c0e] text-[13px] text-muted">
-              Loading Tempe basemap...
+            <div className="text-muted absolute inset-0 grid place-items-center text-[15px]">
+              Loading Tempe basemap…
             </div>
           )}
         </div>
@@ -363,18 +363,20 @@ export function HeatRouteMap({
 
 function MapHeader({ title, fallbackReason }: { title: string; fallbackReason?: string }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#24262a] px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/6 px-5 py-3.5">
       <div className="flex min-w-0 items-center gap-2">
-        <MapIcon className="size-4 shrink-0 text-asu-gold" />
-        <span className="truncate text-[13px] font-semibold">{title}</span>
+        <MapIcon className="size-[18px] shrink-0 text-[#ffc627]" />
+        <span className="truncate text-[15px] font-medium">{title}</span>
         {fallbackReason && (
-          <span className="hidden truncate text-[11px] text-muted sm:inline">{fallbackReason}</span>
+          <span className="text-muted hidden truncate text-[13px] sm:inline">
+            · {fallbackReason}
+          </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-3 text-[11px] text-muted">
+      <div className="text-muted flex flex-wrap gap-3.5 text-[13px]">
         {Object.entries(HEATROUTE_KIND_STYLE).map(([kind, style]) => (
           <span key={kind} className="flex items-center gap-1.5">
-            <span className="size-2 rounded-full" style={{ backgroundColor: style.stroke }} />
+            <span className="size-2.5 rounded-full" style={{ backgroundColor: style.stroke }} />
             {style.label}
           </span>
         ))}
@@ -385,8 +387,8 @@ function MapHeader({ title, fallbackReason }: { title: string; fallbackReason?: 
 
 function ApproximateRouteNotice() {
   return (
-    <div className="absolute top-3 left-3 z-10 max-w-[340px] rounded-md border border-[#34373c] bg-[#0c0d0f]/90 px-3 py-2 text-[12px] leading-snug text-muted shadow-xl backdrop-blur">
-      Lines are approximate campus corridors, not exact walking paths.
+    <div className="text-muted absolute top-3 left-3 z-10 rounded-full border border-white/10 bg-[#141415]/90 px-3 py-1.5 text-[13px] leading-snug shadow-xl backdrop-blur">
+      Approximate corridors, not exact walking paths
     </div>
   )
 }
@@ -404,26 +406,45 @@ function HeatRouteSvgMap({
 }) {
   return (
     <div className="absolute inset-0 p-4 lg:p-6">
-      <div className="flex h-full min-h-0 flex-col rounded-lg border border-[#24262a] bg-[#111214]">
+      <div className="flex h-full min-h-0 flex-col rounded-3xl border border-white/8 bg-white/[0.02]">
         <MapHeader title="Tempe campus pilot map" fallbackReason={fallbackReason} />
 
         <div className="relative min-h-0 flex-1">
           <ApproximateRouteNotice />
-          {fallbackReason && (
-            <div className="absolute top-16 left-3 z-10 max-w-[300px] rounded-md border border-[#34373c] bg-[#0c0d0f]/90 px-3 py-2 text-[12px] text-muted shadow-xl backdrop-blur">
-              {fallbackReason}
-            </div>
-          )}
           <svg viewBox="0 0 100 100" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
             <defs>
               <pattern id="heatroute-grid" width="6" height="6" patternUnits="userSpaceOnUse">
-                <path d="M 6 0 L 0 0 0 6" fill="none" stroke="#2b2d30" strokeWidth="0.18" />
+                <path
+                  d="M 6 0 L 0 0 0 6"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeOpacity="0.05"
+                  strokeWidth="0.15"
+                />
               </pattern>
             </defs>
             <rect width="100" height="100" fill="url(#heatroute-grid)" />
-            <path d="M 18 52 L 87 52" stroke="#272a2f" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 45 10 L 45 90" stroke="#272a2f" strokeWidth="2.4" strokeLinecap="round" />
-            <path d="M 10 74 L 84 35" stroke="#202328" strokeWidth="1.8" strokeLinecap="round" />
+            <path
+              d="M 18 52 L 87 52"
+              stroke="#ffffff"
+              strokeOpacity="0.07"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 45 10 L 45 90"
+              stroke="#ffffff"
+              strokeOpacity="0.07"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 10 74 L 84 35"
+              stroke="#ffffff"
+              strokeOpacity="0.05"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
 
             {routes.map((route) => {
               const active = route.id === selectedRoute?.id
