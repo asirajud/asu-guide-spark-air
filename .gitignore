@@ -43,3 +43,6 @@ next-env.d.ts
 docs/pitch-deck-glm-5-3.html
 docs/pitch-deck-kimi-k2-7-code.html
 docs/pitch-deck-qwen3-coder-30b-a3b-instruct.html
+
+# agent smoke-test artifacts (evidence the orchestrator must be able to read)
+.council-smoke/

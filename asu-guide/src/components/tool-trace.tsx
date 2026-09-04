@@ -9,9 +9,17 @@ import type { ToolStep } from '@/lib/tool-trace'
  */
 export function ToolTrace({ steps, live = false }: { steps: ToolStep[]; live?: boolean }) {
   if (steps.length === 0) return null
+  const includesCouncil = steps.some((step) => step.kind === 'council')
+  const includesTools = steps.some((step) => step.kind !== 'council')
   return (
     <ol
-      aria-label="Tools the assistant used"
+      aria-label={
+        includesCouncil && includesTools
+          ? 'Council deliberation and tools used'
+          : includesCouncil
+            ? 'Council deliberation'
+            : 'Tools the assistant used'
+      }
       className={`flex flex-col gap-1.5 text-[13px] leading-[1.35] tracking-[-0.005em] ${
         live ? '' : 'mb-4'
       }`}

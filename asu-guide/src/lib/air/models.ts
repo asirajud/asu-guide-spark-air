@@ -7,12 +7,15 @@
  * distinction. Latencies below were measured against the live gateway.
  */
 export type AirService =
-  'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image' | 'ocr' | 'deep'
+  'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image' | 'ocr' | 'deep' | 'council'
 
 export const AIR_BASE = process.env.AIR_BASE_URL ?? 'https://openai.rc.asu.edu/v1'
 
 /** How long a model stays benched after the gateway refuses it. */
 export const DISABLE_TTL_MS = 24 * 60 * 60 * 1000
+
+// Import here to avoid circular dependency issues
+import type { PanelRole } from '@/lib/council/panels'
 
 export const MODELS: Record<AirService, string[]> = {
   // Naming a conversation. Cheap and tiny is the whole point.
@@ -63,6 +66,9 @@ export const MODELS: Record<AirService, string[]> = {
 
   // Text to image. Only flux-2 and wan-2-2 are diffusion models on AIR.
   image: ['flux-2', 'wan-2-2'],
+
+  // Council panel and chair
+  council: ['qwen35-27b', 'gpt-oss-120b'],
 }
 
 /** Models that need thinking explicitly switched off to answer promptly. */
@@ -74,3 +80,11 @@ export const THINKING_MODELS = new Set([
   'qwen38-27b',
   'qwen3-235b-a22b-thinking-2507',
 ])
+
+/**
+ * Get the model chain for a council role, with the role's model first
+ * followed by the council service chain, excluding duplicates.
+ */
+export function getCouncilModelChain(role: PanelRole): string[] {
+  return [role.model, ...MODELS.council.filter((m) => m !== role.model)]
+}

@@ -295,7 +295,7 @@ cat <<EOF
     admin / admin · sundevil / sundevil
 
   Services:  asu-guide :3000 · asu-sso :4000 · asu-tools-api :5000
-             asu-events-api :5001 · asu-search-api :5003 · asu-heatroute-api :5004 · asu-weather-api :5005
+             asu-events-api :5001 · asu-search-api :5003 · asu-heatroute-api :5014 · asu-weather-api :5005
 EOF
 [ "$VPN_OK" = 1 ] || printf '  %s!%s VPN was not verified. Connect it before ./dev.sh or every model call fails.\n' "$YEL" "$RST"
 command -v ffmpeg >/dev/null || printf '  %s!%s ffmpeg missing: video upload disabled.\n' "$YEL" "$RST"

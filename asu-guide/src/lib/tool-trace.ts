@@ -16,11 +16,21 @@ export type ToolStep = {
   summary?: string
   ms?: number
   round: number
+  kind?: 'tool' | 'council'
+}
+
+export type CouncilContribution = {
+  role: string
+  text: string
+  model: string
+  ms: number
 }
 
 export type TraceEvent =
   | { type: 'tool_start'; id: string; name: string; label: string; round: number }
   | { type: 'tool_end'; id: string; ok: boolean; ms: number; summary: string }
+  | { type: 'council_start'; id: string; role: string; label: string; round: number }
+  | { type: 'council_end'; id: string; ok: boolean; ms: number; summary: string }
   | {
       type: 'done'
       text: string
@@ -32,6 +42,7 @@ export type TraceEvent =
       model: string
       ms: number
       tools: { name: string; ok: boolean; ms: number }[]
+      council?: CouncilContribution[]
     }
   | { type: 'error'; error: string }
 

@@ -1,0 +1,150 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "sprint",
+  "enabled_providers": ["asu"],
+  "small_model": "asu/qwen35-27b",
+  "subagent_depth": 0,
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 12000
+  },
+  "watcher": {
+    "ignore": [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.git/**",
+      ".council-smoke/**"
+    ]
+  },
+  "provider": {
+    "asu": {
+      "options": {
+        "timeout": 120000,
+        "chunkTimeout": 60000
+      },
+      "models": {
+        "qwen3-coder-30b-a3b-instruct": {
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "bench": {
+      "model": "asu/qwen3-coder-30b-a3b-instruct",
+      "mode": "primary",
+      "description": "One-shot ASU model capability benchmark",
+      "prompt": "Do not call tools or explain your work. Follow the user's output format exactly and answer in one concise message.",
+      "temperature": 0,
+      "steps": 2,
+      "permission": {
+        "read": "deny",
+        "glob": "deny",
+        "grep": "deny",
+        "edit": "deny",
+        "bash": "deny",
+        "codesearch": "deny",
+        "todowrite": "deny",
+        "todoread": "deny",
+        "skill": "deny",
+        "question": "deny",
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny"
+      }
+    },
+    "snippet-author": {
+      "model": "asu/qwen3-235b-a22b-instruct-2507",
+      "mode": "primary",
+      "description": "Text-only bounded source-section author",
+      "prompt": "Do not call tools, inspect files, plan, or explain. Return only the complete requested source section inside one code fence. Do not omit code or replace sections with comments.",
+      "temperature": 0.1,
+      "steps": 2,
+      "permission": {
+        "read": "deny",
+        "glob": "deny",
+        "grep": "deny",
+        "edit": "deny",
+        "bash": "deny",
+        "codesearch": "deny",
+        "todowrite": "deny",
+        "todoread": "deny",
+        "skill": "deny",
+        "question": "deny",
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny"
+      }
+    },
+    "patch-author": {
+      "model": "asu/qwen3-coder-30b-a3b-instruct",
+      "mode": "primary",
+      "description": "Read-only patch author for ASU models",
+      "prompt": "You are a source patch author running on ASU AIR. You may read only the exact files named by the user. Never use edit, write, bash, glob, grep, task, web, skill, todo, or question tools. After the required reads, return one complete apply_patch patch as plain message content inside a fenced patch code block, with no text before or after it. Keep each patch narrowly scoped and include no changes the user did not request.",
+      "temperature": 0.2,
+      "steps": 8,
+      "permission": {
+        "read": "allow",
+        "glob": "deny",
+        "grep": "deny",
+        "edit": "deny",
+        "bash": "deny",
+        "codesearch": "deny",
+        "todowrite": "deny",
+        "todoread": "deny",
+        "skill": "deny",
+        "question": "deny",
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny"
+      }
+    },
+    "code-author": {
+      "model": "asu/qwen3-coder-30b-a3b-instruct",
+      "mode": "primary",
+      "description": "Text-only source author for models that cannot write long tool arguments",
+      "prompt": "You are a source-code author running on ASU AIR. Do not use tools, inspect files, plan, delegate, or explain. The user will provide every interface and requirement you need. Return the complete requested file as plain message content inside one fenced code block, with no text before or after it. Never omit code or replace sections with comments.",
+      "temperature": 0.2,
+      "steps": 2,
+      "permission": {
+        "read": "deny",
+        "glob": "deny",
+        "grep": "deny",
+        "edit": "deny",
+        "bash": "deny",
+        "codesearch": "deny",
+        "todowrite": "deny",
+        "todoread": "deny",
+        "skill": "deny",
+        "question": "deny",
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny"
+      }
+    },
+    "sprint": {
+      "model": "asu/qwen3-coder-30b-a3b-instruct",
+      "mode": "primary",
+      "description": "Hackathon sprint agent - implements one bounded vertical slice directly",
+      "prompt": "You are the implementation owner for a time-boxed hackathon sprint. Work directly: do not delegate, invoke the task tool, or ask another agent to implement or review. Read the repository AGENTS.md first. Then inspect only the files needed for the requested slice; use search and targeted ranges instead of loading whole large files. Make the smallest complete change that satisfies the acceptance criteria and preserve unrelated worktree changes. Use existing project patterns and keep every runtime model call inside src/lib/air. After editing, run the narrowest relevant test, typecheck, or build command. Never run a development server in the foreground; follow AGENTS.md for detached servers and store all smoke-test evidence under .council-smoke. Stop after one implementation-and-verification pass. Report only files actually changed, commands actually run, observed results, and any remaining blocker.",
+      "temperature": 0.2,
+      "steps": 16,
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "codesearch": "allow",
+        "lsp": "allow",
+        "todowrite": "allow",
+        "todoread": "allow",
+        "task": "deny",
+        "webfetch": "deny",
+        "websearch": "deny",
+        "bash": "ask"
+      }
+    }
+  }
+}

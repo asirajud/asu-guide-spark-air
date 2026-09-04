@@ -221,8 +221,6 @@ export function SideNav({
             </button>
           )}
 
-          {/* Neither of these is wired to anything — previews of where Sol is
-              going. See docs/ROADMAP.md. */}
           <button
             type="button"
             onClick={() => onOpenPreview('brief')}

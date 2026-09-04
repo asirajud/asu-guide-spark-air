@@ -15,6 +15,7 @@ export function Composer({
   attachment = null,
   onClearAttachment,
   attachOpen = false,
+  placeholder = 'Ask Sol',
 }: {
   value: string
   onChange: (v: string) => void
@@ -27,6 +28,7 @@ export function Composer({
   attachment?: { url: string; name: string; kind?: 'image' | 'video' } | null
   onClearAttachment?: () => void
   attachOpen?: boolean
+  placeholder?: string
 }) {
   const recording = voiceState === 'recording'
   const transcribing = voiceState === 'transcribing'
@@ -88,8 +90,8 @@ export function Composer({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={transcribing}
-          placeholder={recording ? 'Listening…' : 'Ask Sol'}
-          aria-label="Ask Sol"
+          placeholder={recording ? 'Listening…' : placeholder}
+          aria-label={placeholder}
           autoComplete="off"
           className="text-fg placeholder:text-muted min-w-0 flex-1 bg-transparent text-[17px] tracking-[-0.01em] outline-none disabled:opacity-50"
         />
