@@ -148,7 +148,10 @@ export function AppShell({
       // /c/<id> opens that chat. Only restore a conversation that still exists
       // and still belongs here; a foreign id lands on an empty chat at `/`.
       if (initialHeat && !heatrouteEnabled) setUrl('/')
-      if (initialNotebook && notebooksEnabled) {
+      if (initialHeat && heatrouteEnabled) {
+        // /heat wins: restoring the remembered chat here would call select(),
+        // which closes HeatRoute and rewrites the URL to /c/<id>.
+      } else if (initialNotebook && notebooksEnabled) {
         openNotebookById(initialNotebook)
       } else if (initialChat && list.some((c) => c.id === initialChat)) {
         void select(initialChat)
