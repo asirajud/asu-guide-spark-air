@@ -5,16 +5,18 @@ import { getSession } from '@/lib/session'
 import { isFeatureEnabled } from '@/lib/features'
 
 /**
- * The one page, reachable at `/`, `/c/<chat>` and `/n/<notebook>`. The id in
+ * The one page, reachable at `/`, `/c/<chat>`, `/n/<notebook>` and `/heat`. The id in
  * the URL only seeds what opens first; after that the shell keeps the address
  * bar in step with history.replaceState, so a refresh lands where you were.
  */
 export async function Home({
   initialChat = null,
   initialNotebook = null,
+  initialHeat = false,
 }: {
   initialChat?: string | null
   initialNotebook?: string | null
+  initialHeat?: boolean
 } = {}) {
   const [events, session, jar] = await Promise.all([getDemoEvents(5), getSession(), cookies()])
   // Rendered server-side so a collapsed rail never flashes open on reload.
@@ -35,6 +37,8 @@ export async function Home({
         notebooksEnabled={isFeatureEnabled('notebooks')}
         initialChat={initialChat}
         initialNotebook={initialNotebook}
+        heatrouteEnabled={isFeatureEnabled('heatroute')}
+        initialHeat={initialHeat}
       />
     </div>
   )

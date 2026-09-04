@@ -17,6 +17,29 @@ pnpm db:push && pnpm db:seed   # builds local.db from data/asu-events.json
 pnpm dev                       # http://localhost:3000
 ```
 
+HeatRoute uses its SVG pilot map unless `NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL` is
+set in `.env.local` to a MapLibre-compatible provider style URL. For MapTiler:
+
+1. Create a key at <https://cloud.maptiler.com/account/keys/>.
+2. Name it `HeatRoute ASU Local Dev`.
+3. Leave `Allowed user-agent header` empty.
+4. For local development, either leave `Allowed HTTP Origins` empty while
+   testing, or set:
+
+   ```text
+   localhost:3000
+   127.0.0.1:3000
+   ```
+
+5. Add the style URL to `.env.local`:
+
+   ```bash
+   NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL=https://api.maptiler.com/maps/streets-v2/style.json?key=YOUR_MAPTILER_KEY
+   ```
+
+The value after `key=` must be only the MapTiler key, not another URL. Restart
+`pnpm dev` after changing any `NEXT_PUBLIC_` env var.
+
 Sign-in needs `asu-sso` on :4000; tools need `asu-tools-api` on 127.0.0.1:5000,
 which in turn dispatches to `asu-events-api` (:5001) and `asu-search-api` (:5003).
 

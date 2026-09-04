@@ -6,6 +6,7 @@ import { Header, type ChatMode } from '@/components/header'
 import { SideNav, type NotebookNavItem } from '@/components/side-nav'
 import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
+import { HeatRouteDemo } from '@/components/heatroute-demo'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
@@ -74,8 +75,10 @@ export function AppShell({
   asurite,
   railInitiallyOpen = true,
   notebooksEnabled = false,
+  heatrouteEnabled = false,
   initialChat = null,
   initialNotebook = null,
+  initialHeat = false,
 }: {
   events: DemoEvent[]
   asurite: string | null
@@ -86,6 +89,9 @@ export function AppShell({
   /** From the URL (`/c/<id>`, `/n/<id>`): what to open first instead of the remembered chat. */
   initialChat?: string | null
   initialNotebook?: string | null
+  /** Admin feature switch for HeatRoute, and whether `/heat` was the URL. */
+  heatrouteEnabled?: boolean
+  initialHeat?: boolean
 }) {
   const [chats, setChats] = useState<ChatSummary[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -106,6 +112,8 @@ export function AppShell({
   const [mode, setMode] = useState<ChatMode>('fast')
   /** Notebook open in the stage. Null means the chat (or a preview) is showing. */
   const [openNotebook, setOpenNotebook] = useState<string | null>(null)
+  /** HeatRoute page open in the stage (`/heat`). */
+  const [openHeat, setOpenHeat] = useState(initialHeat && heatrouteEnabled)
 
   /**
    * The conversation row is created lazily on the first turn. Turns arrive about
@@ -139,6 +147,7 @@ export function AppShell({
       // The URL wins over the remembered chat, so a shared or refreshed
       // /c/<id> opens that chat. Only restore a conversation that still exists
       // and still belongs here; a foreign id lands on an empty chat at `/`.
+      if (initialHeat && !heatrouteEnabled) setUrl('/')
       if (initialNotebook && notebooksEnabled) {
         openNotebookById(initialNotebook)
       } else if (initialChat && list.some((c) => c.id === initialChat)) {
@@ -164,6 +173,7 @@ export function AppShell({
 
   function newChat() {
     setUrl('/')
+    setOpenHeat(false)
     setPreview(null)
     setOpenNotebook(null)
     chatIdRef.current = null
@@ -239,6 +249,7 @@ export function AppShell({
   async function select(id: string) {
     const res = await fetch(`/api/chats/${id}`)
     setPreview(null)
+    setOpenHeat(false)
     setOpenNotebook(null)
     setNavOpen(false)
     if (!res.ok) {
@@ -314,8 +325,17 @@ export function AppShell({
     openNotebookById(id)
   }
 
+  function openHeatRoute() {
+    setPreview(null)
+    setOpenNotebook(null)
+    setOpenHeat(true)
+    setNavOpen(false)
+    setUrl('/heat')
+  }
+
   function openNotebookById(id: string) {
     setPreview(null)
+    setOpenHeat(false)
     setOpenNotebook(id)
     setUrl(`/n/${id}`)
     setNavOpen(false)
@@ -327,7 +347,7 @@ export function AppShell({
         <SideNav
           open={navOpen}
           chats={chats}
-          activeId={openNotebook ? null : activeId}
+          activeId={openNotebook || openHeat ? null : activeId}
           onClose={() => setNavOpen(false)}
           onNewChat={newChat}
           onSelect={select}
@@ -341,12 +361,16 @@ export function AppShell({
           openPreview={preview}
           onOpenPreview={(id) => {
             setPreview(id)
+            setOpenHeat(false)
             setUrl('/')
             setOpenNotebook(null)
             setNavOpen(false)
           }}
           notebooks={notebooks}
           notebooksEnabled={notebooksEnabled}
+          heatrouteEnabled={heatrouteEnabled}
+          openHeat={openHeat}
+          onOpenHeatRoute={openHeatRoute}
           openNotebook={openNotebook}
           onOpenNotebook={openNotebookById}
           onNewNotebook={() => void newNotebook()}
@@ -374,7 +398,9 @@ export function AppShell({
         {/* Full-width stage — the thread centres itself inside it, so the
             ambient glow spans the whole area instead of ending mid-screen. */}
         <div className="relative flex min-h-0 w-full flex-1 flex-col">
-          {preview === 'brief' ? (
+          {openHeat ? (
+            <HeatRouteDemo />
+          ) : preview === 'brief' ? (
             <DailyBriefPreview events={events} />
           ) : openNotebook ? (
             <NotebookView

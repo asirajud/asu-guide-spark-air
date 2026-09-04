@@ -12,6 +12,7 @@ import {
   RenameIcon,
   BriefIcon,
   NotebookIcon,
+  SunIcon,
   SearchIcon,
   TrashIcon,
   Plus,
@@ -41,6 +42,9 @@ export function SideNav({
   /** Real notebooks owned by the signed-in student, most recent first. */
   notebooks = [],
   notebooksEnabled = false,
+  heatrouteEnabled = false,
+  openHeat = false,
+  onOpenHeatRoute,
   /** Notebook currently open in the stage, or null. */
   openNotebook = null,
   onOpenNotebook,
@@ -72,6 +76,10 @@ export function SideNav({
   notebooks?: NotebookNavItem[]
   /** Whether the Notebooks section shows at all (admin feature switch). */
   notebooksEnabled?: boolean
+  /** Admin feature switch for HeatRoute. */
+  heatrouteEnabled?: boolean
+  openHeat?: boolean
+  onOpenHeatRoute?: () => void
   /** Notebook currently open in the stage, or null. */
   openNotebook?: string | null
   onOpenNotebook: (id: string) => void
@@ -190,6 +198,27 @@ export function SideNav({
               No saved chats yet. Ask something and it&apos;ll show up here — titled by an AIR
               model.
             </p>
+          )}
+
+          {heatrouteEnabled && onOpenHeatRoute && (
+            <button
+              type="button"
+              onClick={onOpenHeatRoute}
+              className={`mt-3 flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
+                openHeat ? 'bg-[#3a1723]' : 'hover:bg-white/5'
+              }`}
+            >
+              <SunIcon
+                className={`size-[17px] shrink-0 ${openHeat ? 'text-[#ffc627]' : 'text-muted'}`}
+              />
+              <span
+                className={`min-w-0 flex-1 truncate text-[14.5px] ${
+                  openHeat ? 'font-medium text-white' : 'text-fg'
+                }`}
+              >
+                HeatRoute
+              </span>
+            </button>
           )}
 
           {/* Neither of these is wired to anything — previews of where Sol is

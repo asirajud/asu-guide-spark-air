@@ -281,3 +281,39 @@ export function ExternalLink(p: P) {
     </svg>
   )
 }
+
+export function SunIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+        stroke="currentColor"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+export function MapIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <path d="M3 6l9-3 9 3" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M21 9v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M12 20v-7l-3-1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function ListIcon(p: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...p}>
+      <path d="M8 6h12M8 12h12M8 18h12" strokeLinecap="round" />
+      <path d="M4 6h.01M4 12h.01M4 18h.01" strokeLinecap="round" />
+    </svg>
+  )
+}

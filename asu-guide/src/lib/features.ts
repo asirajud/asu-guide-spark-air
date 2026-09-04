@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { featureSettings } from '@/db/schema'
 
-export type Feature = 'notebooks'
+export type Feature = 'notebooks' | 'heatroute'
 
 export type FeatureInfo = {
   id: Feature
@@ -21,6 +21,13 @@ export const FEATURES: FeatureInfo[] = [
     summary:
       'Students drop in photos of notebook pages; an AIR vision model reads them one at a time and a running understanding is kept per notebook. Off by default while the ingest path is new.',
     defaultEnabled: false,
+  },
+  {
+    id: 'heatroute',
+    name: 'HeatRoute',
+    summary:
+      'Heat-aware walking routes across Tempe campus, scored on estimated sun exposure, shade, water and shuttles, with an AIR-written explanation. Pilot data; not turn-by-turn navigation.',
+    defaultEnabled: true,
   },
 ]
 
