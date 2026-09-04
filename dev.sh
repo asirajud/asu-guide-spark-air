@@ -4,6 +4,15 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+# better-sqlite3@13 segfaults under Node 20. Prefer the repo machine's local
+# Node 22 automatically so `./dev.sh` behaves correctly in a fresh shell.
+if [ -x "$HOME/.local/node22/bin/node" ]; then
+  export PATH="$HOME/.local/node22/bin:$HOME/.local/bin:$PATH"
+fi
+command -v node >/dev/null || { echo "node is not installed"; exit 1; }
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+[ "$NODE_MAJOR" -ge 22 ] || { echo "Node 22 or newer is required (found $(node -v))."; exit 1; }
+
 [ -f .env ] || { echo "no ./.env — run ./install.sh first"; exit 1; }
 set -a
 # shellcheck disable=SC1091
@@ -22,11 +31,25 @@ fi
 PORTS=(3000 4000 5000 5001 5003 5005 5014)
 busy=()
 for port in "${PORTS[@]}"; do
+  found=0
   # exclude AirPlay (ControlCenter) on 5000 — it does not block our 127.0.0.1 bind
   while read -r cmd pid; do
     [ "$cmd" = ControlCe ] && continue
+    found=1
     busy+=("$port $pid $cmd")
   done < <(lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | awk 'NR>1 {print $1, $2}' | sort -u)
+  # WSL can expose listeners that `lsof -i` misses even though they still own
+  # the port. `fuser` sees those process ids and prevents Next from silently
+  # moving the Guide to :3001, which breaks the registered OAuth callback.
+  if [ "$found" = 0 ] && command -v fuser >/dev/null; then
+    for pid in $(fuser -n tcp "$port" 2>/dev/null || true); do
+      cmd="$(ps -p "$pid" -o comm= 2>/dev/null | xargs)"
+      cmd="${cmd// /_}"
+      cmd="${cmd//(/}"
+      cmd="${cmd//)/}"
+      busy+=("$port $pid ${cmd:-unknown}")
+    done
+  fi
 done
 if [ "${#busy[@]}" -gt 0 ]; then
   echo "! These ports are already in use:"
@@ -59,7 +82,15 @@ run() {
   PIDS+=($!)
 }
 
-trap 'echo; echo "stopping…"; kill 0 2>/dev/null' INT TERM EXIT
+stop_all() {
+  # `kill 0` includes this shell. Remove the traps first so the resulting TERM
+  # uses its default action instead of recursively running this handler.
+  trap - INT TERM EXIT
+  echo
+  echo "stopping…"
+  kill 0 2>/dev/null || true
+}
+trap stop_all INT TERM EXIT
 
 run sso        asu-sso        "${C[0]}" $PM run dev
 run events     asu-events-api "${C[1]}" $PM run dev

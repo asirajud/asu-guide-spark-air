@@ -62,8 +62,19 @@ export const HEATROUTE_KIND_STYLE: Record<SegmentKind, { stroke: string; label: 
   shuttle: { stroke: '#ffc627', label: 'Shuttle' },
 }
 
+/** Accept the full MapLibre style URL documented by the app or a bare MapTiler key. */
+export function heatRouteStyleUrl(value: string | undefined): string | null {
+  const configured = value?.trim()
+  if (!configured) return null
+  if (/^https?:\/\//i.test(configured)) return configured
+  if (/^[A-Za-z0-9_-]+$/.test(configured)) {
+    return `https://api.maptiler.com/maps/streets-v2/style.json?key=${encodeURIComponent(configured)}`
+  }
+  return null
+}
+
 export const HEATROUTE_MAP_CONFIG = {
-  styleUrl: process.env.NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL?.trim() || null,
+  styleUrl: heatRouteStyleUrl(process.env.NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL),
   center: [-111.9332, 33.4201] satisfies Position,
   defaultZoom: 15.35,
   maxBounds: [

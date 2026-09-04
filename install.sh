@@ -5,11 +5,11 @@
 #   ./install.sh --yes      never prompt: skip anything that needs input
 #
 # What it does, in order:
-#   1. checks node >= 20, picks pnpm (falls back to npm), warns if ffmpeg is missing
+#   1. checks node >= 22, picks pnpm (falls back to npm), warns if ffmpeg is missing
 #   2. collects RC_OPENAI_API_KEY — reuses the shell env if already exported
 #   3. tests the ASU AIR gateway (needs the Cisco VPN); lets you connect and retry
 #   4. optionally collects BRAVE_API_KEY for web search (skip = "not configured")
-#   5. optionally collects a MapTiler style URL for the HeatRoute basemap
+#   5. optionally collects a MapTiler key or style URL for the HeatRoute basemap
 #   6. writes .env (root) + asu-guide/.env.local + asu-search-api/.env
 #   7. installs dependencies for the root (Prettier + pre-commit hook) and all seven services
 #   8. seeds the two SQLite databases (events embeddings need VPN + key)
@@ -81,10 +81,15 @@ set_env_line() {
 # ---------------------------------------------------------------- 1. toolchain
 step "Toolchain"
 
-command -v node >/dev/null || die "node is not installed — install Node 20+ (https://nodejs.org or nvm)"
+# The demo machine already has a compatible local Node. Prefer it so a shell
+# whose system default is Node 20 cannot install an addon that later segfaults.
+if [ -x "$HOME/.local/node22/bin/node" ]; then
+  export PATH="$HOME/.local/node22/bin:$HOME/.local/bin:$PATH"
+fi
+command -v node >/dev/null || die "node is not installed — install Node 22+ (https://nodejs.org or nvm)"
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
-if [ "$NODE_MAJOR" -lt 20 ]; then
-  die "node $(node -v) is too old; Next 16 needs Node 20.9+"
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  die "node $(node -v) is too old; this repo requires Node 22+ for better-sqlite3"
 fi
 ok "node $(node -v)"
 
@@ -193,20 +198,25 @@ else
 fi
 
 # ---------------------------------------------------------------- 5. MapTiler (optional)
-step "HeatRoute basemap (optional — MapTiler style URL)"
+step "HeatRoute basemap (optional — MapTiler)"
 
 if [ -z "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ] && [ -f asu-guide/.env.local ]; then
   NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL="$(grep '^NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL=' asu-guide/.env.local | cut -d= -f2- || true)"
 fi
 if [ -n "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ]; then
+  if [[ "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != http://* && "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != https://* ]]; then
+    NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL="https://api.maptiler.com/maps/streets-v2/style.json?key=${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL}"
+  fi
   ok "already set — skipping prompt"
 else
   echo "  Free key: https://cloud.maptiler.com/account/keys/ — then the style URL is"
   echo "  https://api.maptiler.com/maps/streets-v2/style.json?key=YOUR_KEY"
   echo "  Without it HeatRoute still works and draws its SVG pilot map instead."
-  ask NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL "MapTiler style URL, or Enter to skip: "
+  ask NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL "MapTiler key or style URL, or Enter to skip: "
   if [ -z "${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL:-}" ]; then
     warn "skipped — HeatRoute will draw the SVG pilot map"
+  elif [[ "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != http://* && "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != https://* ]]; then
+    NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL="https://api.maptiler.com/maps/streets-v2/style.json?key=${NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL}"
   elif [[ "$NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL" != http*style.json?key=* ]]; then
     warn "that does not look like a MapLibre style URL (…/style.json?key=…) — writing it anyway"
   fi

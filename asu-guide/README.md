@@ -31,10 +31,16 @@ set in `.env.local` to a MapLibre-compatible provider style URL. For MapTiler:
    127.0.0.1:3000
    ```
 
-5. Add the style URL to `.env.local`:
+5. Add either the key itself or the full style URL to `.env.local`:
 
    ```bash
    NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL=https://api.maptiler.com/maps/streets-v2/style.json?key=YOUR_MAPTILER_KEY
+   ```
+
+   A bare key is also accepted:
+
+   ```bash
+   NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL=YOUR_MAPTILER_KEY
    ```
 
 The value after `key=` must be only the MapTiler key, not another URL. Restart

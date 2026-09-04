@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { routesForJourney } from './heatroute-engine'
 import {
   HEATROUTE_KIND_STYLE,
+  heatRouteStyleUrl,
   latLngToPosition,
   mapPointsToGeoJson,
   routeBounds,
@@ -21,6 +22,17 @@ function muToHaydenRoutes() {
 }
 
 describe('HeatRoute map GeoJSON', () => {
+  it('accepts a full style URL or expands a bare MapTiler key', () => {
+    const url = 'https://maps.example.edu/style.json?key=demo'
+
+    expect(heatRouteStyleUrl(url)).toBe(url)
+    expect(heatRouteStyleUrl('demo_key-123')).toBe(
+      'https://api.maptiler.com/maps/streets-v2/style.json?key=demo_key-123',
+    )
+    expect(heatRouteStyleUrl('')).toBeNull()
+    expect(heatRouteStyleUrl('not a key')).toBeNull()
+  })
+
   it('converts lat/lng to GeoJSON [lng, lat] coordinates', () => {
     expect(latLngToPosition({ lat: 33.4178, lng: -111.9344 })).toEqual([-111.9344, 33.4178])
   })
