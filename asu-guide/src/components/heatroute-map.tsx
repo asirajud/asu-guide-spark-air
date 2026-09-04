@@ -319,7 +319,8 @@ export function HeatRouteMap({
       mapRef.current?.remove()
       mapRef.current = null
     }
-  }, [styleUrl])
+    // fit never changes for a mounted map; listed so the lint rule and the code agree.
+  }, [styleUrl, fit])
 
   useEffect(() => {
     if (!mapReady || !mapRef.current) return
