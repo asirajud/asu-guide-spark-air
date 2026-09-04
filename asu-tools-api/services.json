@@ -175,6 +175,35 @@
           }
         }
       ]
+    },
+    {
+      "id": "asu-weather-api",
+      "description": "Tempe campus weather from Open-Meteo (free, keyless): current conditions, hourly forecast, heat guidance. Deterministic; no model inside.",
+      "baseUrl": "http://127.0.0.1:5005",
+      "healthPath": "/health",
+      "contractVersion": "1.0.0",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Current conditions and an hourly forecast for the ASU Tempe campus: temperature, feels-like, humidity, UV, wind, chance of rain, sunrise and sunset, plus plain heat guidance. Call it when a student asks about the weather, the heat, whether to walk or wait, what to wear, or when it cools down. The hourly strip is drawn for them automatically, so summarise rather than list every hour. Source: Open-Meteo; no key, no personal data.",
+          "route": {
+            "method": "POST",
+            "path": "/weather"
+          },
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "hours": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 18,
+                "description": "How many hours ahead to return. Default 12."
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      ]
     }
   ]
 }

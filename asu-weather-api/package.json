@@ -1,0 +1,22 @@
+{
+  "name": "asu-weather-api",
+  "version": "1.0.0",
+  "description": "Tempe weather as a tool (Open-Meteo, no key), registered with asu-tools-api",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "packageManager": "pnpm@10.33.2",
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "private": true,
+  "type": "module",
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}

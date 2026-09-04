@@ -33,6 +33,7 @@ export async function getTools(): Promise<OpenAiTool[]> {
   // Feature switches hide their tools too: HeatRoute off means the model never
   // sees plan_heat_route, not just that the page is gone.
   if (!isFeatureEnabled('heatroute')) off.add('plan_heat_route')
+  if (!isFeatureEnabled('weather')) off.add('get_weather')
   const enabled = (tools: OpenAiTool[]) => tools.filter((t) => !off.has(t.function.name))
 
   if (cached !== null && Date.now() - cachedAt < CACHE_TTL_MS) {
@@ -280,6 +281,53 @@ export function extractHeatRoute(content: unknown): HeatRoutePlan | null {
         waterStops: Number(r.waterStops) || 0,
         heatRisk: typeof r.heatRisk === 'string' ? r.heatRisk : '',
       })),
+  }
+}
+
+export type WeatherHour = {
+  time: string
+  tempF: number
+  feelsLikeF: number
+  precipPct: number
+  uv: number
+  windMph: number
+  condition: string
+  icon: string
+}
+
+/** What get_weather returned, enough for the chat to draw the hourly card. */
+export type WeatherReport = {
+  kind: 'weather'
+  place: string
+  fetchedAt: string
+  current: {
+    time: string
+    tempF: number
+    feelsLikeF: number
+    humidity: number
+    uv: number
+    windMph: number
+    condition: string
+    icon: string
+    isDay: boolean
+  }
+  hourly: WeatherHour[]
+  today: { highF: number; lowF: number; uvMax: number; sunrise: string; sunset: string }
+  advice: { level: string; text: string }
+}
+
+export function extractWeather(content: unknown): WeatherReport | null {
+  if (!content || typeof content !== 'object') return null
+  const c = content as Record<string, unknown>
+  if (c.kind !== 'weather' || !c.current || !Array.isArray(c.hourly) || !c.today) return null
+  return {
+    kind: 'weather',
+    place: typeof c.place === 'string' ? c.place : 'ASU Tempe campus',
+    fetchedAt: typeof c.fetchedAt === 'string' ? c.fetchedAt : new Date().toISOString(),
+    current: c.current as WeatherReport['current'],
+    hourly: (c.hourly as WeatherHour[]).slice(0, 18),
+    today: c.today as WeatherReport['today'],
+    advice: (c.advice as WeatherReport['advice']) ?? { level: 'ok', text: '' },
   }
 }
 
