@@ -7,6 +7,7 @@ import { SideNav, type NotebookNavItem } from '@/components/side-nav'
 import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import { HeatRouteDemo } from '@/components/heatroute-demo'
+import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
@@ -371,7 +372,7 @@ export function AppShell({
           }}
           notebooks={notebooks}
           notebooksEnabled={notebooksEnabled}
-          heatrouteEnabled={heatrouteEnabled}
+          heatrouteEnabled={heatrouteEnabled && SHOW_HEATROUTE_PAGE}
           openHeat={openHeat}
           onOpenHeatRoute={openHeatRoute}
           openNotebook={openNotebook}
