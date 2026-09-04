@@ -45,6 +45,7 @@ export function Chat({
   asurite,
   onTurn,
   restoredTurns,
+  deep = false,
 }: {
   events: DemoEvent[]
   asurite?: string | null
@@ -56,6 +57,8 @@ export function Chat({
     imageName?: string | null
   }) => void
   restoredTurns?: Turn[] | null
+  /** Deep thinking, picked from the header's mode menu; the shell owns it. */
+  deep?: boolean
 }) {
   const [turns, setTurns] = useState<Turn[]>(restoredTurns ?? [])
   const [phase, setPhase] = useState<Phase>(restoredTurns?.length ? 'done' : 'idle')
@@ -179,6 +182,7 @@ export function Chat({
           content: t.content,
           kind: t.hidden ? 'media' : t.kind,
         })),
+        deep,
       }),
     })
     if (!res.ok || !res.body) {
@@ -490,7 +494,11 @@ export function Chat({
                 <div className="flex flex-col gap-3">
                   <ToolTrace steps={liveTrace} live />
                   <p className="shimmer-text text-[17px] font-medium">
-                    {liveTrace.some((s) => s.status === 'running') ? 'Working…' : 'Thinking…'}
+                    {liveTrace.some((s) => s.status === 'running')
+                      ? 'Working…'
+                      : deep
+                        ? 'Thinking deeply…'
+                        : 'Thinking…'}
                   </p>
                 </div>
               )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { CameraIcon, Paperclip, PhotoStack } from '@/components/icons'
 
 /**
@@ -19,11 +19,28 @@ export function AttachSheet({
   /** Signed out: sharing media is gated behind an ASURITE. */
   locked?: boolean
 }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // The backdrop only covers the chat stage, so a click on the header, the
+  // side nav or the composer's own + button landed outside it and left the
+  // sheet open. Listen at the window instead: any pointerdown outside the
+  // panel closes it. pointerdown, not click, so the trigger's own onClick
+  // cannot reopen what this just closed.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Element | null
+      // The + button toggles on its own click; closing here too would reopen it.
+      if (t?.closest('[data-attach-trigger]')) return
+      if (!panelRef.current?.contains(t)) onClose()
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('pointerdown', onDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onDown)
+    }
   }, [open, onClose])
 
   if (!open) return null
@@ -43,8 +60,11 @@ export function AttachSheet({
         className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
       />
 
-      <div className="animate-sheet-in relative mx-3 mb-[92px] w-full rounded-3xl bg-[#1e1f20] p-4 shadow-2xl shadow-black/60">
-        <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-white/20" />
+      <div
+        ref={panelRef}
+        className="animate-sheet-in relative mx-auto mb-[92px] w-[calc(100%-24px)] max-w-[440px] rounded-3xl bg-[#1e1f20] p-3 shadow-2xl shadow-black/60"
+      >
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-white/20" />
 
         {locked ? (
           <div className="px-3 pt-1 pb-2 text-center">
@@ -63,29 +83,23 @@ export function AttachSheet({
             </a>
           </div>
         ) : (
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-2">
             {actions.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => onPick(id)}
-                className="flex w-[92px] flex-col items-center gap-2 rounded-2xl py-3 transition-colors hover:bg-white/5 active:scale-95"
+                aria-label={label}
+                title={label}
+                className="flex w-[84px] flex-col items-center gap-1.5 rounded-2xl py-2 transition-colors hover:bg-white/5 active:scale-95"
               >
-                <span className="flex size-14 items-center justify-center rounded-full bg-[#2a2b2c]">
-                  <Icon className="text-fg size-[22px]" />
+                <span className="flex size-12 items-center justify-center rounded-full bg-[#2a2b2c]">
+                  <Icon className="text-fg size-5" />
                 </span>
                 <span className="text-fg text-[13px]">{label}</span>
               </button>
             ))}
           </div>
-        )}
-
-        {!locked && (
-          <p className="text-muted mt-3 px-1 text-center text-[12px] leading-snug">
-            Images and video are read on ASU AIR — <span className="text-fg/80">gemma4-31b-it</span>
-            , <span className="text-fg/80">qwen3-vl-32b</span> and{' '}
-            <span className="text-fg/80">qwen3-asr</span>.
-          </p>
         )}
       </div>
     </div>

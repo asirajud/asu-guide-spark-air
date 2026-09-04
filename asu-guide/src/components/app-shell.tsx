@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat } from '@/components/chat'
-import { Header } from '@/components/header'
-import { SideNav } from '@/components/side-nav'
-import { NOTEBOOKS, NotebookPreview } from '@/components/notebook-preview'
+import { Header, type ChatMode } from '@/components/header'
+import { SideNav, type NotebookNavItem } from '@/components/side-nav'
+import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import { HeatRouteDemo } from '@/components/heatroute-demo'
 import type { ChatSummary } from '@/lib/chats'
@@ -59,15 +59,39 @@ function writeStored(key: string, value: string | null) {
   }
 }
 
+/**
+ * Keep the address bar in step without a navigation: replaceState swaps the
+ * path and nothing re-renders or refetches, so the back button is not spammed
+ * with every chat switch either.
+ */
+function setUrl(path: string) {
+  if (typeof window !== 'undefined' && window.location.pathname !== path) {
+    window.history.replaceState(null, '', path)
+  }
+}
+
 export function AppShell({
   events,
   asurite,
   railInitiallyOpen = true,
+  notebooksEnabled = false,
+  heatrouteEnabled = false,
+  initialChat = null,
+  initialNotebook = null,
+  initialHeat = false,
 }: {
   events: DemoEvent[]
   asurite: string | null
   /** Read from a cookie on the server so the first paint matches. */
   railInitiallyOpen?: boolean
+  /** Admin switch from /s/admin. Off hides the section and skips the fetch. */
+  notebooksEnabled?: boolean
+  /** From the URL (`/c/<id>`, `/n/<id>`): what to open first instead of the remembered chat. */
+  initialChat?: string | null
+  initialNotebook?: string | null
+  /** Admin feature switch for HeatRoute, and whether `/heat` was the URL. */
+  heatrouteEnabled?: boolean
+  initialHeat?: boolean
 }) {
   const [chats, setChats] = useState<ChatSummary[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -75,15 +99,21 @@ export function AppShell({
   /** Desktop rail: shown by default, collapsible from the same hamburger. */
   const [railOpen, setRailOpen] = useState(railInitiallyOpen)
   const [sessionKey, setSessionKey] = useState(0)
-  const [view, setView] = useState<'chat' | 'heatroute'>('chat')
   /**
-   * Which preview is showing: 'brief', a notebook id, or null.
-   * Used for notebooks and daily brief previews.
+   * Which unbuilt feature is being previewed instead of the chat: 'brief', or a
+   * notebook id. Null is the normal chat.
    */
   const [preview, setPreview] = useState<string | null>(null)
   /** Chat just named by an AIR model, so the sidebar can type its title out. */
   const [justTitled, setJustTitled] = useState<string | null>(null)
   const [restoredTurns, setRestoredTurns] = useState<Turn[] | null>(null)
+  const [notebooks, setNotebooks] = useState<NotebookNavItem[]>([])
+  /** Fast vs deep thinking. Shown in the header title, toggled there or from the + tile. */
+  const [mode, setMode] = useState<ChatMode>('fast')
+  /** Notebook open in the stage. Null means the chat (or a preview) is showing. */
+  const [openNotebook, setOpenNotebook] = useState<string | null>(null)
+  /** HeatRoute page open in the stage (`/heat`). */
+  const [openHeat, setOpenHeat] = useState(initialHeat && heatrouteEnabled)
 
   /**
    * The conversation row is created lazily on the first turn. Turns arrive about
@@ -98,6 +128,11 @@ export function AppShell({
     if (res.ok) setChats(((await res.json()) as { chats: ChatSummary[] }).chats)
   }, [])
 
+  const refreshNotebooks = useCallback(async () => {
+    const res = await fetch('/api/notebooks')
+    if (res.ok) setNotebooks(((await res.json()) as { notebooks: NotebookNavItem[] }).notebooks)
+  }, [])
+
   // Load the saved conversation list once, then reopen whatever was last open.
   useEffect(() => {
     let cancelled = false
@@ -109,13 +144,26 @@ export function AppShell({
       if (cancelled) return
       setChats(list)
 
-      // Only restore a conversation that still exists and still belongs here.
-      const last = readStored(activeKey(asurite))
-      if (last && list.some((c) => c.id === last)) {
-        void select(last)
-      } else if (last) {
-        writeStored(activeKey(asurite), null)
+      // The URL wins over the remembered chat, so a shared or refreshed
+      // /c/<id> opens that chat. Only restore a conversation that still exists
+      // and still belongs here; a foreign id lands on an empty chat at `/`.
+      if (initialHeat && !heatrouteEnabled) setUrl('/')
+      if (initialNotebook && notebooksEnabled) {
+        openNotebookById(initialNotebook)
+      } else if (initialChat && list.some((c) => c.id === initialChat)) {
+        void select(initialChat)
+      } else {
+        if (initialChat || initialNotebook) setUrl('/')
+        const last = readStored(activeKey(asurite))
+        if (last && list.some((c) => c.id === last)) {
+          void select(last)
+        } else if (last) {
+          writeStored(activeKey(asurite), null)
+        }
       }
+
+      // Refresh notebooks if asurite is non-null
+      if (asurite && notebooksEnabled) void refreshNotebooks()
     })()
     return () => {
       cancelled = true
@@ -124,8 +172,10 @@ export function AppShell({
   }, [asurite])
 
   function newChat() {
-    setView('chat')
+    setUrl('/')
+    setOpenHeat(false)
     setPreview(null)
+    setOpenNotebook(null)
     chatIdRef.current = null
     writeStored(activeKey(asurite), null)
     setActiveId(null)
@@ -170,6 +220,7 @@ export function AppShell({
           }
           writeStored(activeKey(asurite), id)
           setActiveId(id)
+          setUrl(`/c/${id}`)
           // Only a title generated in this session animates; restores do not.
           setJustTitled(id)
           return id
@@ -197,8 +248,9 @@ export function AppShell({
 
   async function select(id: string) {
     const res = await fetch(`/api/chats/${id}`)
-    setView('chat')
     setPreview(null)
+    setOpenHeat(false)
+    setOpenNotebook(null)
     setNavOpen(false)
     if (!res.ok) {
       writeStored(activeKey(asurite), null)
@@ -212,6 +264,7 @@ export function AppShell({
 
     chatIdRef.current = Promise.resolve(id)
     setActiveId(id)
+    setUrl(`/c/${id}`)
     setSessionKey((k) => k + 1)
     setRestoredTurns(
       data.messages.map((m) => ({
@@ -260,7 +313,33 @@ export function AppShell({
     void refresh()
   }
 
-  const notebook = NOTEBOOKS.find((n) => n.id === preview) ?? null
+  async function newNotebook() {
+    const res = await fetch('/api/notebooks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'New notebook' }),
+    })
+    if (!res.ok) return
+    const { id } = (await res.json()) as { id: string }
+    await refreshNotebooks()
+    openNotebookById(id)
+  }
+
+  function openHeatRoute() {
+    setPreview(null)
+    setOpenNotebook(null)
+    setOpenHeat(true)
+    setNavOpen(false)
+    setUrl('/heat')
+  }
+
+  function openNotebookById(id: string) {
+    setPreview(null)
+    setOpenHeat(false)
+    setOpenNotebook(id)
+    setUrl(`/n/${id}`)
+    setNavOpen(false)
+  }
 
   return (
     <>
@@ -268,7 +347,7 @@ export function AppShell({
         <SideNav
           open={navOpen}
           chats={chats}
-          activeId={activeId}
+          activeId={openNotebook || openHeat ? null : activeId}
           onClose={() => setNavOpen(false)}
           onNewChat={newChat}
           onSelect={select}
@@ -282,14 +361,19 @@ export function AppShell({
           openPreview={preview}
           onOpenPreview={(id) => {
             setPreview(id)
-            setView('chat')
+            setOpenHeat(false)
+            setUrl('/')
+            setOpenNotebook(null)
             setNavOpen(false)
           }}
-          onOpenHeatRoute={() => {
-            setView('heatroute')
-            setPreview(null)
-            setNavOpen(false)
-          }}
+          notebooks={notebooks}
+          notebooksEnabled={notebooksEnabled}
+          heatrouteEnabled={heatrouteEnabled}
+          openHeat={openHeat}
+          onOpenHeatRoute={openHeatRoute}
+          openNotebook={openNotebook}
+          onOpenNotebook={openNotebookById}
+          onNewNotebook={() => void newNotebook()}
         />
       )}
 
@@ -308,24 +392,26 @@ export function AppShell({
           }
           onNewChat={newChat}
           asurite={asurite}
-          view={view}
-          onToggleView={() => {
-            if (view === 'chat') {
-              setView('heatroute')
-            } else {
-              setView('chat')
-            }
-          }}
+          mode={mode}
+          onModeChange={setMode}
         />
         {/* Full-width stage — the thread centres itself inside it, so the
             ambient glow spans the whole area instead of ending mid-screen. */}
         <div className="relative flex min-h-0 w-full flex-1 flex-col">
-          {view === 'heatroute' ? (
+          {openHeat ? (
             <HeatRouteDemo />
           ) : preview === 'brief' ? (
             <DailyBriefPreview events={events} />
-          ) : notebook ? (
-            <NotebookPreview notebook={notebook} />
+          ) : openNotebook ? (
+            <NotebookView
+              key={openNotebook}
+              id={openNotebook}
+              onRenamed={() => void refreshNotebooks()}
+              onDeleted={() => {
+                void refreshNotebooks()
+                newChat()
+              }}
+            />
           ) : (
             <Chat
               key={sessionKey}
@@ -333,6 +419,7 @@ export function AppShell({
               asurite={asurite}
               onTurn={persist}
               restoredTurns={restoredTurns}
+              deep={mode === 'deep'}
             />
           )}
         </div>

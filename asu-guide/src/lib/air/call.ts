@@ -2,7 +2,8 @@ import 'server-only'
 
 import { db } from '@/db'
 import { modelHealth } from '@/db/schema'
-import { AIR_BASE, DISABLE_TTL_MS, MODELS, type AirService } from './models'
+import { AIR_BASE, DISABLE_TTL_MS, type AirService } from './models'
+import { orderFor } from './settings'
 
 /**
  * Raised when a model itself is unusable — the gateway does not know it, it has
@@ -56,9 +57,23 @@ function benched(): Map<string, Date> {
   return map
 }
 
-function bench(model: string, service: AirService, reason: string, status?: number) {
+/**
+ * How long an overloaded model sits out. A 503/429 is not a broken model, so
+ * this is minutes, not the day a rejection earns — long enough that a batch of
+ * notebook pages stops paying the failed round trip on every page, short
+ * enough that the primary comes back on its own once the pods recover.
+ */
+export const COOLDOWN_MS = 2 * 60 * 1000
+
+function bench(
+  model: string,
+  service: AirService,
+  reason: string,
+  status?: number,
+  ttlMs = DISABLE_TTL_MS,
+) {
   const now = new Date()
-  const until = new Date(now.getTime() + DISABLE_TTL_MS)
+  const until = new Date(now.getTime() + ttlMs)
   db.insert(modelHealth)
     .values({
       model,
@@ -90,7 +105,8 @@ export async function callAir<T>(
   attempt: (model: string) => Promise<T>,
 ): Promise<AirResult<T>> {
   const skip = benched()
-  const configured = MODELS[service] ?? []
+  // An admin's pick from /s/admin goes first, then the compiled-in chain.
+  const configured = orderFor(service)
   const candidates = configured.filter((m) => !skip.has(m))
   // Everything is benched (or nothing configured) — try the primary anyway
   // rather than fail without asking.
@@ -110,6 +126,18 @@ export async function callAir<T>(
       if (err instanceof ModelUnavailable) {
         bench(model, service, err.message, err.status)
         console.warn(`[air] benched ${model} for ${service}: ${err.message}`)
+        continue
+      }
+      // Overloaded (503) or rate-limited (429): still fall through to the next
+      // model for this call, and skip this one for a couple of minutes so the
+      // next calls go straight to the fallback instead of re-paying the 503.
+      const message = err instanceof Error ? err.message : String(err)
+      const status = Number(/^AIR (\d{3})/.exec(message)?.[1])
+      if (status === 503 || status === 429) {
+        bench(model, service, message, status, COOLDOWN_MS)
+        console.warn(
+          `[air] ${model} overloaded for ${service} (${status}); cooling it down for ${COOLDOWN_MS / 1000}s`,
+        )
         continue
       }
       console.warn(`[air] transient failure on ${model} for ${service}:`, err)

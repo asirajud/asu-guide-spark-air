@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { airFetch, callAir } from '@/lib/air/call'
 import { THINKING_OFF } from '@/lib/air/models'
 import { safeError } from '@/lib/api-error'
+import { featureGate } from '@/lib/features'
 import type { HeatRouteExplainPayload } from '@/lib/heatroute-ai'
 
 export const runtime = 'nodejs'
@@ -44,6 +45,9 @@ ${JSON.stringify(payload, null, 2)}`
 }
 
 export async function POST(request: Request) {
+  const gate = featureGate('heatroute')
+  if (gate) return gate
+
   const body = await request.json().catch(() => null)
   if (!isPayload(body)) {
     return NextResponse.json(

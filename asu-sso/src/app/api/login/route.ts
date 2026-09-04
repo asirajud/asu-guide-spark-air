@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   const password = f('password')
   const client_id = f('client_id')
   const redirect_uri = f('redirect_uri')
+  const response_type = f('response_type')
   const state = f('state')
   const code_challenge = f('code_challenge')
   const code_challenge_method = f('code_challenge_method')
@@ -76,6 +77,9 @@ export async function POST(req: NextRequest) {
     // Copy all OAuth params back
     url.searchParams.set('client_id', client_id)
     url.searchParams.set('redirect_uri', redirect_uri)
+    // Every param /authorize validates has to be copied back, or the retry
+    // after a wrong password lands on "Unsupported response_type".
+    url.searchParams.set('response_type', response_type)
     url.searchParams.set('state', state)
     url.searchParams.set('code_challenge', code_challenge)
     url.searchParams.set('code_challenge_method', code_challenge_method)

@@ -186,7 +186,7 @@ else
   echo "  Free tier (2,000 queries/month): https://brave.com/search/api/"
   echo "  Without it the assistant still runs; web_search answers \"Web search is not configured\"."
   ask BRAVE_API_KEY "Brave key, or Enter to skip: " secret
-  if [ -z "$BRAVE_API_KEY" ]; then
+  if [ -z "${BRAVE_API_KEY:-}" ]; then
     warn "skipped — web search not configured"
   fi
 fi
@@ -197,6 +197,7 @@ step "Writing env files"
 # Root .env — sourced by ./dev.sh so the plain-node services see the key.
 set_env_line .env RC_OPENAI_API_KEY "${RC_OPENAI_API_KEY:-}"
 set_env_line .env AIR_BASE_URL "$AIR_BASE_URL"
+set_env_line .env APP_URL "http://localhost:3000"
 ok ".env"
 
 # asu-guide/.env.local — created from the example once, then only the key line is touched.
@@ -204,6 +205,8 @@ if [ ! -f asu-guide/.env.local ]; then
   cp asu-guide/.env.example asu-guide/.env.local
 fi
 set_env_line asu-guide/.env.local RC_OPENAI_API_KEY "${RC_OPENAI_API_KEY:-}"
+# Pin the app origin so the SSO redirect_uri never depends on a code default.
+set_env_line asu-guide/.env.local APP_URL "http://localhost:3000"
 ok "asu-guide/.env.local"
 
 set_env_line asu-search-api/.env BRAVE_API_KEY "${BRAVE_API_KEY:-}"

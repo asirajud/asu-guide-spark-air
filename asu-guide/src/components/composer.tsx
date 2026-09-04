@@ -74,6 +74,7 @@ export function Composer({
         <button
           type="button"
           onClick={onAttachClick}
+          data-attach-trigger
           aria-label={attachOpen ? 'Close attachment menu' : 'Add an image'}
           aria-expanded={attachOpen}
           className="text-fg/90 p-1 transition-transform duration-200"

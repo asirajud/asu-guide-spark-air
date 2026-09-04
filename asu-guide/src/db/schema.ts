@@ -58,3 +58,101 @@ export const modelHealth = sqliteTable('model_health', {
 })
 
 export type ModelHealthRow = typeof modelHealth.$inferSelect
+
+/**
+ * Admin overrides for which AIR model serves each capability.
+ *
+ * A row here is a *preference*, not a lock: the runner still falls back through
+ * the compiled-in list in lib/air/models.ts when the chosen model is refused by
+ * the gateway. An admin picking badly slows a request down; it cannot take the
+ * app offline.
+ */
+export const modelSettings = sqliteTable('model_settings', {
+  /** An AirService name — 'chat', 'vision', 'asr', … */
+  service: text('service').primaryKey(),
+  model: text('model').notNull(),
+  /** ASURITE of the admin who set it, for the audit line in the UI. */
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type ModelSettingRow = typeof modelSettings.$inferSelect
+
+/**
+ * Which registry tools this app exposes to the model.
+ *
+ * Absence means enabled: a tool newly registered in asu-tools-api is available
+ * without anyone visiting the dashboard, and only an explicit "off" is stored.
+ * The registry stays the source of truth for what *exists*; this decides what
+ * Sol is allowed to reach for.
+ */
+export const toolSettings = sqliteTable('tool_settings', {
+  name: text('name').primaryKey(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type ToolSettingRow = typeof toolSettings.$inferSelect
+
+/**
+ * A Notebook: a durable workspace that owns the pages a student uploaded and
+ * the running understanding built from them. Scoped to one ASURITE.
+ */
+export const notebooks = sqliteTable('notebooks', {
+  id: text('id').primaryKey(),
+  asurite: text('asurite').notNull().default(''),
+  name: text('name').notNull().default('New notebook'),
+  /** Running understanding of every page read so far, as markdown. Rewritten after each page. */
+  digest: text('digest').notNull().default(''),
+  /** Model that last rewrote the digest, for the audit line in the UI. */
+  digestModel: text('digest_model').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+/** One uploaded page image and what the vision model read off it. */
+export const notebookPages = sqliteTable('notebook_pages', {
+  id: text('id').primaryKey(),
+  notebookId: text('notebook_id')
+    .notNull()
+    .references(() => notebooks.id, { onDelete: 'cascade' }),
+  /** 1-based position in the notebook, in upload order. */
+  position: integer('position').notNull(),
+  imageName: text('image_name').notNull().default(''),
+  /** Full transcription + description of the page as read by the OCR model. */
+  reading: text('reading').notNull().default(''),
+  /** 'read' when the reading landed, 'failed' when every model refused. */
+  status: text('status', { enum: ['read', 'failed'] })
+    .notNull()
+    .default('read'),
+  model: text('model').notNull().default(''),
+  ms: integer('ms').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type NotebookRow = typeof notebooks.$inferSelect
+export type NotebookPageRow = typeof notebookPages.$inferSelect
+
+/**
+ * Feature switches an admin flips from /s/admin. Absence means the compiled-in
+ * default (see lib/features.ts); only an explicit choice is stored.
+ */
+export const featureSettings = sqliteTable('feature_settings', {
+  feature: text('feature').primaryKey(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull(),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type FeatureSettingRow = typeof featureSettings.$inferSelect
+
+/** Small scalar settings an admin edits from /s/admin (e.g. notebook page cap). Key/value, string-typed. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type AppSettingRow = typeof appSettings.$inferSelect
