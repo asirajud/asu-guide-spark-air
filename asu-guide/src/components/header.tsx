@@ -7,11 +7,17 @@ export function Header({
   onMenu,
   onNewChat,
   asurite,
+  view,
+  onToggleView,
 }: {
   onMenu?: () => void
   onNewChat?: () => void
   /** ASURITE of the signed-in user, or null when signed out. */
   asurite?: string | null
+  /** Current view: 'chat' or 'heatroute' */
+  view?: 'chat' | 'heatroute'
+  /** Callback when view changes */
+  onToggleView?: () => void
 }) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 px-4">
@@ -36,6 +42,24 @@ export function Header({
         <Chevron className="text-fg mt-[1px] size-[18px]" />
         <span className="bg-asu-gold ml-1.5 size-[7px] rounded-full" />
       </div>
+
+      {/* View switcher */}
+      {onToggleView && (
+        <button
+          type="button"
+          onClick={onToggleView}
+          className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[13px] font-medium transition-colors ${
+            view === 'heatroute' ? 'bg-[#2a2a2a] text-[#C2436A]' : 'text-muted hover:bg-[#2a2a2a]'
+          }`}
+        >
+          <span>HeatRoute</span>
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              view === 'heatroute' ? 'bg-[#C2436A]' : 'bg-transparent'
+            }`}
+          />
+        </button>
+      )}
 
       <button
         type="button"

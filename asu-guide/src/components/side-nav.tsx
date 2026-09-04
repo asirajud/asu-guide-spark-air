@@ -14,6 +14,7 @@ import {
   NotebookIcon,
   SearchIcon,
   TrashIcon,
+  SunIcon,
 } from '@/components/icons'
 import { RenameRow } from '@/components/rename-row'
 import { NOTEBOOKS } from '@/components/notebook-preview'
@@ -36,6 +37,7 @@ export function SideNav({
   onTitleTyped,
   asurite = null,
   railOpen = true,
+  onOpenHeatRoute,
 }: {
   open: boolean
   chats: ChatSummary[]
@@ -59,6 +61,8 @@ export function SideNav({
   asurite?: string | null
   /** Desktop only: whether the permanent rail is expanded. */
   railOpen?: boolean
+  /** Opens the HeatRoute demo. */
+  onOpenHeatRoute?: () => void
 }) {
   const [query, setQuery] = useState('')
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -202,6 +206,17 @@ export function SideNav({
           </button>
 
           <Section label="Notebooks">
+            {onOpenHeatRoute && (
+              <button
+                type="button"
+                onClick={onOpenHeatRoute}
+                className="mt-3 flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors hover:bg-white/5"
+              >
+                <SunIcon className="size-[17px] shrink-0 text-[#ffc627]" />
+                <span className="min-w-0 flex-1 truncate text-[14.5px] text-fg">HeatRoute ASU</span>
+              </button>
+            )}
+
             {NOTEBOOKS.map((n) => {
               const open = n.id === openPreview
               return (

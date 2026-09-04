@@ -6,6 +6,7 @@ import { Header } from '@/components/header'
 import { SideNav } from '@/components/side-nav'
 import { NOTEBOOKS, NotebookPreview } from '@/components/notebook-preview'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
+import { HeatRouteDemo } from '@/components/heatroute-demo'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
@@ -74,9 +75,10 @@ export function AppShell({
   /** Desktop rail: shown by default, collapsible from the same hamburger. */
   const [railOpen, setRailOpen] = useState(railInitiallyOpen)
   const [sessionKey, setSessionKey] = useState(0)
+  const [view, setView] = useState<'chat' | 'heatroute'>('chat')
   /**
-   * Which unbuilt feature is being previewed instead of the chat: 'brief', or a
-   * notebook id. Null is the normal chat.
+   * Which preview is showing: 'brief', a notebook id, or null.
+   * Used for notebooks and daily brief previews.
    */
   const [preview, setPreview] = useState<string | null>(null)
   /** Chat just named by an AIR model, so the sidebar can type its title out. */
@@ -122,6 +124,7 @@ export function AppShell({
   }, [asurite])
 
   function newChat() {
+    setView('chat')
     setPreview(null)
     chatIdRef.current = null
     writeStored(activeKey(asurite), null)
@@ -194,6 +197,7 @@ export function AppShell({
 
   async function select(id: string) {
     const res = await fetch(`/api/chats/${id}`)
+    setView('chat')
     setPreview(null)
     setNavOpen(false)
     if (!res.ok) {
@@ -278,6 +282,12 @@ export function AppShell({
           openPreview={preview}
           onOpenPreview={(id) => {
             setPreview(id)
+            setView('chat')
+            setNavOpen(false)
+          }}
+          onOpenHeatRoute={() => {
+            setView('heatroute')
+            setPreview(null)
             setNavOpen(false)
           }}
         />
@@ -298,11 +308,21 @@ export function AppShell({
           }
           onNewChat={newChat}
           asurite={asurite}
+          view={view}
+          onToggleView={() => {
+            if (view === 'chat') {
+              setView('heatroute')
+            } else {
+              setView('chat')
+            }
+          }}
         />
         {/* Full-width stage — the thread centres itself inside it, so the
             ambient glow spans the whole area instead of ending mid-screen. */}
         <div className="relative flex min-h-0 w-full flex-1 flex-col">
-          {preview === 'brief' ? (
+          {view === 'heatroute' ? (
+            <HeatRouteDemo />
+          ) : preview === 'brief' ? (
             <DailyBriefPreview events={events} />
           ) : notebook ? (
             <NotebookPreview notebook={notebook} />
