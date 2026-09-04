@@ -7,7 +7,7 @@ export const SSO_ISSUER = process.env.SSO_ISSUER ?? 'http://localhost:4000'
 export const SSO_CLIENT_ID = process.env.SSO_CLIENT_ID ?? 'asu-guide-demo'
 export const SSO_CLIENT_SECRET =
   process.env.SSO_CLIENT_SECRET ?? 'demo-secret-not-a-real-credential'
-export const APP_URL = process.env.APP_URL ?? 'http://localhost:3001'
+export const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
 export const REDIRECT_URI = `${APP_URL}/api/auth/callback`
 export const SCOPE = 'openid profile email'
 

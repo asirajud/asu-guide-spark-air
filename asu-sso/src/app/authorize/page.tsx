@@ -71,6 +71,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Se
     <SignInCard
       clientId={client_id}
       redirectUri={redirect_uri}
+      responseType={response_type}
       state={state}
       codeChallenge={code_challenge}
       codeChallengeMethod={code_challenge_method}
