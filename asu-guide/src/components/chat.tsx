@@ -67,7 +67,12 @@ export function Chat({
     kind: string
     imageName?: string | null
     /** What was drawn with the reply, so a restored chat can draw it again. */
-    payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan; weather?: WeatherReport } | null
+    payload?: {
+      events?: DemoEvent[]
+      heatroute?: HeatRoutePlan
+      weather?: WeatherReport
+      council?: CouncilContribution[]
+    } | null
   }) => void
   restoredTurns?: Turn[] | null
   /** Reasoning mode picked from the header; the shell owns it. */
@@ -131,11 +136,12 @@ export function Chat({
       content: body,
       kind,
       payload:
-        cards.length || heatroute || weather
+        cards.length || heatroute || weather || council.length
           ? {
               ...(cards.length ? { events: cards } : {}),
               ...(heatroute ? { heatroute } : {}),
               ...(weather ? { weather } : {}),
+              ...(council.length ? { council } : {}),
             }
           : null,
     })
@@ -502,6 +508,12 @@ export function Chat({
                 const streamingLast = phase === 'streaming' && i === turns.length - 1
                 const cards =
                   t.events && t.events.length > 0 ? t.events : t.kind === 'events' ? events : []
+                // Council progress is useful while the panel is working, but the
+                // finished turn should read like a conversation. Keep only real
+                // tool calls above the panel once its messages are available.
+                const visibleTrace = t.council?.length
+                  ? t.trace?.filter((step) => step.kind !== 'council')
+                  : t.trace
 
                 return t.role === 'user' ? (
                   <div key={t.id} className="flex flex-col items-end gap-2">
@@ -529,8 +541,13 @@ export function Chat({
                   </div>
                 ) : (
                   <div key={t.id}>
-                    {t.trace && t.trace.length > 0 && <ToolTrace steps={t.trace} />}
+                    {visibleTrace && visibleTrace.length > 0 && <ToolTrace steps={visibleTrace} />}
                     {t.council && <CouncilDebate contributions={t.council} />}
+                    {t.council && t.council.length > 0 && (
+                      <p className="text-asu-gold mb-2 text-[12px] font-semibold uppercase">
+                        Council resolution
+                      </p>
+                    )}
                     <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
                       {/* Normalised at render, not on receipt, so conversations
                           already stored lowercase come back looking right. */}

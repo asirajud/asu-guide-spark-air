@@ -133,7 +133,7 @@
     {
       "id": "asu-heatroute-api",
       "description": "HeatRoute: heat-aware campus route planning over curated Tempe pilot data. Deterministic scoring; no model inside.",
-      "baseUrl": "http://127.0.0.1:5004",
+      "baseUrl": "http://127.0.0.1:5014",
       "healthPath": "/health",
       "contractVersion": "1.0.0",
       "tools": [

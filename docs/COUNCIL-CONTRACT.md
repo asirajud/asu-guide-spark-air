@@ -3,7 +3,7 @@
 The Council is a reasoning mode of the normal Sol chat. It is not a separate
 page, form, or answer checker. Students select it beside Fast and Deep, write a
 normal message, and receive one final answer after several AIR agents challenge
-the lead response.
+one another's positions.
 
 ## Request
 
@@ -21,14 +21,15 @@ still accepted. Identity always comes from the signed server session.
 
 ## Orchestration
 
-1. A tool-capable lead researcher runs the existing bounded chat loop. This
+1. A tool-capable researcher runs the existing bounded chat loop. This
    keeps Events, HeatRoute, Weather, and other registered tools available.
-2. The evidence reviewer, skeptic, and student advocate inspect the same lead
-   answer in parallel with `Promise.allSettled`.
+2. The ally, skeptic, and pragmatist form independent positions in parallel
+   with `Promise.allSettled`. The ally makes the strongest defensible case for
+   the student; the other members are explicitly free to disagree.
 3. The Council chair receives the successful positions and tool evidence, then
-   resolves disagreements into the final answer.
-4. If a reviewer fails, the remaining members continue. If the chair fails,
-   the verified lead answer is returned instead.
+   resolves the conversation into the most reasonable final answer.
+4. If a panelist fails, the remaining members continue. If the chair fails,
+   the researcher's answer is returned instead.
 
 All model calls go through `callAir('council', ...)` and role-specific chains
 from `getCouncilModelChain`. There are no client-side gateway credentials,
@@ -58,7 +59,7 @@ type CouncilProgress =
 ```
 
 The terminal `done` event retains the normal chat fields and may include the
-positions displayed in the expandable transcript:
+positions displayed as an open group conversation before the resolution:
 
 ```ts
 type CouncilContribution = {
@@ -69,5 +70,5 @@ type CouncilContribution = {
 }
 ```
 
-Tool events may appear between Council events when the lead researcher needs
+Tool events may appear between Council events when the researcher needs
 live data. The final NDJSON line is always `done` or `error`.

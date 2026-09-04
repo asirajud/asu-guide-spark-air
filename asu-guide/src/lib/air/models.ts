@@ -67,7 +67,7 @@ export const MODELS: Record<AirService, string[]> = {
   // Text to image. Only flux-2 and wan-2-2 are diffusion models on AIR.
   image: ['flux-2', 'wan-2-2'],
 
-  // AI Study Council service
+  // Council panel and chair
   council: ['qwen35-27b', 'gpt-oss-120b'],
 }
 

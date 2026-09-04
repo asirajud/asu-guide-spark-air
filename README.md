@@ -16,8 +16,8 @@ external AI vendor is used at runtime.
 | `asu-tools-api/`     | 5000 | MCP tool registry + dispatch; also renders the registry as an OpenAI `tools` array       |
 | `asu-events-api/`    | 5001 | Hybrid BM25 + dense retrieval over the events, mock RSVPs                                |
 | `asu-search-api/`    | 5003 | Optional Brave web search. Without a key it answers "not configured", nothing breaks     |
-| `asu-heatroute-api/` | 5004 | HeatRoute as a tool: heat-scored campus routes over pilot data, drawn inline in the chat |
-| `asu-weather-api/` | 5005 | Tempe weather as a tool (Open-Meteo, keyless): hourly strip drawn inline in the chat |
+| `asu-heatroute-api/` | 5014 | HeatRoute as a tool: heat-scored campus routes over pilot data, drawn inline in the chat |
+| `asu-weather-api/`   | 5005 | Tempe weather as a tool (Open-Meteo, keyless): hourly strip drawn inline in the chat     |
 
 ## Architecture
 

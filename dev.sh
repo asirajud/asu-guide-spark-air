@@ -19,7 +19,7 @@ if [ "$(uname)" = Darwin ] && lsof -nP -iTCP:5000 -sTCP:LISTEN 2>/dev/null | gre
 fi
 
 # Ports already in use? Usually a previous dev.sh or a stray `pnpm dev`. Ask.
-PORTS=(3000 4000 5000 5001 5003 5004 5005)
+PORTS=(3000 4000 5000 5001 5003 5005 5014)
 busy=()
 for port in "${PORTS[@]}"; do
   # exclude AirPlay (ControlCenter) on 5000 — it does not block our 127.0.0.1 bind
@@ -74,7 +74,7 @@ echo "  asu-guide      http://localhost:3000"
 echo "  asu-sso        http://localhost:4000"
 echo "  asu-tools-api  http://127.0.0.1:5000/health"
 echo "  asu-events-api http://127.0.0.1:5001/health"
-echo "  asu-heatroute-api http://127.0.0.1:5004/health"
+echo "  asu-heatroute-api http://127.0.0.1:5014/health"
 echo "  asu-weather-api http://127.0.0.1:5005/health"
 echo "  asu-search-api http://127.0.0.1:5003/health"
 echo

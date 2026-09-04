@@ -5,39 +5,39 @@ export type PanelRole = {
 }
 
 export type CouncilDebateDefinition = {
-  reviewers: [PanelRole, PanelRole, PanelRole]
+  panelists: [PanelRole, PanelRole, PanelRole]
   moderator: PanelRole
 }
 
 /**
- * The chat Council starts from a tool-informed lead answer, then gives the same
- * draft to three independent reviewers before the chair writes the final reply.
+ * Each panelist speaks from a distinct point of view. The chair sees their
+ * positions alongside a tool-informed researcher before resolving the question.
  */
 export const COUNCIL_DEBATE: CouncilDebateDefinition = {
-  reviewers: [
+  panelists: [
     {
-      role_name: 'Evidence reviewer',
+      role_name: 'Your ally',
       model: 'qwen35-27b',
       system_prompt:
-        'Check the proposed answer against the conversation and any tool evidence. Identify unsupported claims, missing facts, or places where uncertainty must be stated.',
+        "Assume the student's central claim is correct and make its strongest defensible case. Your first sentence must start 'I agree with your main point that' and paraphrase the claim itself. Agreeing only that their feelings or frustration are valid is a failure. End after making the supporting case: do not use 'but,' 'however,' or 'although' to pivot into the opposition. Only decline literal agreement when it would endorse harm or a demonstrably false factual premise; in that case, agree with the underlying goal and say exactly what you cannot endorse.",
     },
     {
-      role_name: 'Skeptic',
+      role_name: 'The skeptic',
       model: 'gpt-oss-120b',
       system_prompt:
-        'Challenge the proposed answer. Look for weak assumptions, counterexamples, safety issues, and conclusions that do not follow from the evidence.',
+        "Take the strongest reasonable position against the student's claim. Clearly disagree, explain what their framing misses, and give a concrete counterargument without softening into agreement or being dismissive.",
     },
     {
-      role_name: 'Student advocate',
+      role_name: 'The pragmatist',
       model: 'qwen35-27b',
       system_prompt:
-        'Judge whether the proposed answer directly helps the student. Recommend a clearer, more practical answer and call out important tradeoffs it missed.',
+        "Give a conditional, practical verdict based on the student's goals. Identify when the claim is right, when it is wrong, and what decision rule the student should use. Focus on audience, opportunity cost, and what action to take. Do not reuse examples from the supplied material and do not automatically split the difference.",
     },
   ],
   moderator: {
     role_name: 'Council chair',
     model: 'qwen35-27b',
     system_prompt:
-      'Resolve disagreements between the lead answer and the reviewers. Produce the most accurate, useful final answer supported by the available evidence.',
+      'Listen to each distinct position, decide which arguments hold up, and give the student the most reasonable resolution. Do not treat a subjective value judgment as simply factually wrong, do not decide by majority vote, and do not default to a bland compromise when one side is stronger.',
   },
 }

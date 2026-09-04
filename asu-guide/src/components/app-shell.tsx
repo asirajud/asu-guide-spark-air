@@ -12,6 +12,7 @@ import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
 import type { Turn } from '@/components/chat'
 import type { HeatRoutePlan, WeatherReport } from '@/lib/tools'
+import type { CouncilContribution } from '@/lib/tool-trace'
 
 /** One finished turn, as reported by Chat. */
 export type PersistTurn = {
@@ -19,7 +20,12 @@ export type PersistTurn = {
   content: string
   kind: string
   imageName?: string | null
-  payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan; weather?: WeatherReport } | null
+  payload?: {
+    events?: DemoEvent[]
+    heatroute?: HeatRoutePlan
+    weather?: WeatherReport
+    council?: CouncilContribution[]
+  } | null
 }
 
 /** Owns conversation persistence; Chat stays focused on the conversation itself. */
@@ -76,18 +82,30 @@ function setUrl(path: string) {
 /** Cards and plans stored with a turn come back as JSON text; a bad row is just a turn without them. */
 function parsePayload(
   raw: string | null | undefined,
-): Pick<Turn, 'events' | 'heatroute' | 'weather'> {
+): Pick<Turn, 'events' | 'heatroute' | 'weather' | 'council'> {
   if (!raw) return {}
   try {
     const p = JSON.parse(raw) as {
       events?: DemoEvent[]
       heatroute?: HeatRoutePlan
       weather?: WeatherReport
+      council?: CouncilContribution[]
     }
+    const council = Array.isArray(p.council)
+      ? p.council.filter(
+          (item): item is CouncilContribution =>
+            Boolean(item) &&
+            typeof item.role === 'string' &&
+            typeof item.text === 'string' &&
+            typeof item.model === 'string' &&
+            typeof item.ms === 'number',
+        )
+      : []
     return {
       ...(Array.isArray(p.events) && p.events.length ? { events: p.events } : {}),
       ...(p.heatroute && typeof p.heatroute === 'object' ? { heatroute: p.heatroute } : {}),
       ...(p.weather && typeof p.weather === 'object' ? { weather: p.weather } : {}),
+      ...(council.length ? { council } : {}),
     }
   } catch {
     return {}

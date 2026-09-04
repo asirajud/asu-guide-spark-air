@@ -13,7 +13,7 @@ import {
   type EvaluatedRoute,
 } from '../../asu-guide/src/lib/heatroute-engine.ts'
 
-const PORT = Number(process.env.PORT ?? 5004)
+const PORT = Number(process.env.PORT ?? 5014)
 
 function json(res: ServerResponse, status: number, body: unknown) {
   res.setHeader('Content-Type', 'application/json')

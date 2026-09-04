@@ -22,7 +22,7 @@ export const MODES: { id: ChatMode; label: string; model: string; hint: string }
     id: 'council',
     label: 'Council',
     model: '4 agents + chair',
-    hint: 'A lead answer is challenged by three AIR agents, then reconciled by a chair.',
+    hint: 'Four distinct viewpoints discuss your message, then a chair gives the resolution.',
   },
 ]
 
