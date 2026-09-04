@@ -8,6 +8,32 @@ import { getNotebook } from '@/lib/notebooks'
 import { notebookChatSystemPrompt } from '@/lib/notebook-prompts'
 import { callTool, getTools, summariseForModel } from '@/lib/tools'
 
+type WebHit = { title?: string; url?: string; snippet?: string; source?: string }
+
+/**
+ * The registry returns MCP content: `[{ type: 'text', text: '<json>' }]` with the
+ * hits inside the string. summariseForModel() JSON-escapes all of that and cuts
+ * it at 1200 chars, which left the model one and a half results to work from —
+ * hence the one-sentence answers. Unpack and lay the hits out plainly.
+ */
+function formatWebResults(content: unknown): string | null {
+  try {
+    const parts = (content as { content?: { type?: string; text?: string }[] })?.content
+    const text =
+      parts?.find((p) => p.type === 'text')?.text ?? (typeof content === 'string' ? content : null)
+    if (!text) return null
+    const data = JSON.parse(text) as { results?: WebHit[] }
+    const hits = (data.results ?? []).filter((h) => h.title && h.url)
+    if (hits.length === 0) return null
+    return hits
+      .slice(0, 5)
+      .map((h, i) => `${i + 1}. ${h.title} — ${h.url}${h.snippet ? `\n   ${h.snippet}` : ''}`)
+      .join('\n')
+  } catch {
+    return null
+  }
+}
+
 export const runtime = 'nodejs'
 export const maxDuration = 60
 const MAX_TURNS = 16
@@ -22,18 +48,21 @@ type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string }
  * SEARCH request instead; the code runs the search and asks again with results.
  */
 const WEB_FALLBACK = `
-One more rule. When the pages do NOT contain what is asked (a name, a date, a definition, background the student never wrote down), do not answer from memory. Instead reply with exactly one line and nothing else:
-SEARCH: <a short web search query for the missing part>
-You will then be given web results and asked again. When the pages do cover the question, answer normally and never emit a SEARCH line.`
+One more rule, and it overrides the "never pull in outside knowledge" line above: you CAN reach the web, through me. Two cases call for it. (1) The student explicitly asks you to search, look something up, find other courses, check online, etc. (2) The pages do NOT contain what is asked (a name, a date, a definition, background the student never wrote down). In either case do not answer from memory and never say you cannot search. Reply with exactly one line and nothing else:
+SEARCH: <a short web search query>
+You will then be given web results and asked again. When the pages do cover the question and the student did not ask for a search, answer normally and never emit a SEARCH line.`
 
 // Multiline: the model tends to put a sentence about the notebook before the line.
 const SEARCH_LINE = /^\s*SEARCH:\s*(.+?)\s*$/im
 
 function withResults(query: string, results: string): string {
-  return `Web results for "${query}":\n${results}\n\nNow answer the student's last question. Say first what the notebook does say about it, with page numbers, or that it does not cover it. Then write "From the web:" and what the results show, naming the source. Never present web results as if they were in the notebook. Do not emit a SEARCH line.`
+  return `Web results for "${query}":
+${results}
+
+Now answer the student's last question. One short sentence first on what the notebook does say about it, with page numbers, or that it does not cover it. Then a new paragraph starting "From the web:" that actually answers from the results — when the student asked for options or a list, give the relevant results as a short list, each with its title and link and a phrase on what it offers; otherwise two or three sentences naming the source. Use only what the results say. Never present web results as if they were in the notebook. Do not emit a SEARCH line.`
 }
 
-async function complete(messages: ChatMessage[]) {
+async function complete(messages: ChatMessage[], maxTokens = 500) {
   return callAir('chat', async (m) => {
     const gptOss = m.startsWith('gpt-oss')
     const res = await airFetch(
@@ -43,7 +72,7 @@ async function complete(messages: ChatMessage[]) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: m,
-          max_tokens: gptOss ? 1000 : 500,
+          max_tokens: gptOss ? maxTokens + 500 : maxTokens,
           temperature: 0.4,
           ...(gptOss ? { reasoning_effort: 'low' } : {}),
           ...(THINKING_OFF.has(m) ? { chat_template_kwargs: { enable_thinking: false } } : {}),
@@ -117,19 +146,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       const query = wanted[1].slice(0, 200)
       const r = await callTool('web_search', { query, count: 5 })
       searched = r.ok
-      const second = await complete([
-        ...messages,
-        { role: 'assistant', content: text },
-        {
-          role: 'user',
-          content: withResults(
-            query,
-            r.ok
-              ? summariseForModel(r.content, true)
-              : 'The web search failed; answer from the notebook only and say the rest could not be looked up.',
-          ),
-        },
-      ])
+      const second = await complete(
+        [
+          ...messages,
+          { role: 'assistant', content: text },
+          {
+            role: 'user',
+            content: withResults(
+              query,
+              r.ok
+                ? (formatWebResults(r.content) ?? summariseForModel(r.content, true))
+                : 'The web search failed; answer from the notebook only and say the rest could not be looked up.',
+            ),
+          },
+        ],
+        800,
+      )
       text = second.value.replace(SEARCH_LINE, '').trim() || second.value
       model = second.model
       ms += second.ms
