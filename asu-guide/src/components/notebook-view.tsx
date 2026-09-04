@@ -128,6 +128,8 @@ export function NotebookView({
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  /** The notebook's own scroll column; nudges and new answers glide it to the thread. */
+  const scrollRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const n = nb.pages.length
   const total = n + nb.queued.length
@@ -135,7 +137,11 @@ export function NotebookView({
   const hasRead = nb.pages.some((p) => p.status === 'read')
 
   useEffect(() => {
-    if (!nb.asking && nb.turns.length > 0) inputRef.current?.focus()
+    if (nb.turns.length === 0) return
+    // Every new turn (question or answer) glides the column to the thread end.
+    const el = scrollRef.current
+    if (el) requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }))
+    if (!nb.asking) inputRef.current?.focus()
   }, [nb.asking, nb.turns.length])
 
   useEffect(() => {
@@ -173,10 +179,18 @@ export function NotebookView({
   }
 
   /** A nudged note becomes the student's next chat turn, framed the way they asked, and is struck through. */
+  function scrollToThread() {
+    const el = scrollRef.current
+    if (!el) return
+    requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }))
+  }
+
   function nudge(note: StickyNote) {
     if (!hasRead || nb.asking) return
     void nb.ask(`${NUDGE_PREFIX}\n\n${note.text}`, { source: 'sticky', display: note.text })
     sticky.markDone(note.id)
+    // The note lands in the thread far below the board; take the student there.
+    scrollToThread()
   }
 
   function submit() {
@@ -214,7 +228,10 @@ export function NotebookView({
 
   return (
     <div className="relative z-10 flex min-h-0 w-full flex-1 flex-row">
-      <div className="thin-scroll relative flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="thin-scroll relative flex min-w-0 flex-1 flex-col overflow-y-auto"
+      >
         <div className="mx-auto w-full max-w-[820px] px-5 pt-6 pb-8">
           <div className="flex items-center gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#3a1723] text-[#ffc627]">
