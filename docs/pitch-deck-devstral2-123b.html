@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sol Pitch Deck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --asu-maroon: #8C1D40;
+            --asu-gold: #FFC627;
+            --bg-dark: #121212;
+            --text-light: #f0f0f0;
+            --text-dark: #1a1a1a;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow: hidden;
+            font-size: 16px;
+        }
+        
+        .slides {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        .slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .slide-number {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.8rem;
+            color: var(--asu-gold);
+            font-weight: 600;
+        }
+        
+        h1, h2, h3, h4 {
+            margin: 0;
+            line-height: 1.2;
+            font-weight: 800;
+        }
+        
+        h1 { font-size: 3.5rem; }
+        h2 { font-size: 2.5rem; }
+        h3 { font-size: 2rem; }
+        h4 { font-size: 1.5rem; }
+        
+        p {
+            margin: 1rem 0;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 800px;
+        }
+        
+        .highlight {
+            color: var(--asu-gold);
+        }
+        
+        .section-title {
+            color: var(--asu-maroon);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .stat {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--asu-gold);
+        }
+        
+        .demo-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            max-width: 600px;
+            text-align: left;
+        }
+        
+        .demo-card h4 {
+            margin-bottom: 0.5rem;
+            color: var(--asu-gold);
+        }
+        
+        .demo-card p {
+            font-size: 1rem;
+        }
+        
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+        
+        .team-member {
+            text-align: center;
+        }
+        
+        .team-member h4 {
+            margin-bottom: 0.25rem;
+        }
+        
+        .team-member p {
+            font-size: 1rem;
+            color: #ccc;
+            margin: 0;
+        }
+        
+        .key-fact {
+            margin: 0.5rem 0;
+        }
+        
+        .key-fact .label {
+            font-weight: 700;
+            color: var(--asu-maroon);
+        }
+        
+        .key-fact .value {
+            font-weight: 400;
+        }
+        
+        /* Slide-specific styles */
+        #slide-1 {
+            text-align: center;
+        }
+        #slide-1 h1 {
+            color: var(--asu-gold);
+        }
+        #slide-1 .subtitle {
+            font-size: 1.5rem;
+            color: #ccc;
+            margin-top: 1rem;
+        }
+        
+        #slide-2 {
+            text-align: center;
+        }
+        
+        #slide-3 {
+            text-align: center;
+        }
+        #slide-3 .north-star {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text-light);
+            max-width: 900px;
+            margin-top: 2rem;
+        }
+        
+        #slide-4, #slide-5, #slide-6 {
+            text-align: left;
+            align-items: flex-start;
+        }
+        
+        #slide-7 {
+            text-align: center;
+        }
+        
+        #slide-8 {
+            text-align: center;
+        }
+        #slide-8 .limitation {
+            font-size: 1rem;
+            color: #ccc;
+            margin-top: 2rem;
+        }
+        
+        /* Arrow key navigation hint */
+        .nav-hint {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="slides">
+        <!-- Slide 1: Title/hook -->
+        <div class="slide" id="slide-1">
+            <h1>Sol</h1>
+            <p class="subtitle">AI Campus Assistant for ASU Students</p>
+            <p style="margin-top: 2rem;">Team InnovatAIRs &mdash; ASU AIR Spark Challenge</p>
+            <div class="slide-number">1/8</div>
+        </div>
+        
+        <!-- Slide 2: Problem -->
+        <div class="slide" id="slide-2">
+            <h2>The Problem</h2>
+            <p style="margin-top: 2rem;">1,962 upcoming events on Sun Devil Central iCal feed</p>
+            <p>No personal search. No easy way to find what matters.</p>
+            <p style="margin-top: 2rem;">Students drown in information overload.</p>
+            <div class="slide-number">2/8</div>
+        </div>
+        
+        <!-- Slide 3: Solution -->
+        <div class="slide" id="slide-3">
+            <h2>The Solution</h2>
+            <p class="north-star">
+                "Sol turns any firehose of unstructured ASU information into something a student can search, understand, and act on &mdash; powered entirely by ASU's AI Research Platform."
+            </p>
+            <div class="slide-number">3/8</div>
+        </div>
+        
+        <!-- Slide 4: Demo Events -->
+        <div class="slide" id="slide-4">
+            <h2>Demo 1: Events</h2>
+            <div class="demo-card">
+                <h4>Snap a flyer photo &rarr; Vision reads it</h4>
+                <p>Hybrid BM25+embedding search matches the live event &rarr; Shows card</p>
+                <p style="margin-top: 1rem;">User: "reserve me a spot for the first one"</p>
+                <p><strong>Tool loop:</strong> reserve_spot fails on guessed id &rarr; Model reads tool's JSON-Schema error &rarr; Calls search_events to recover real id &rarr; reserve_spot succeeds</p>
+                <p style="margin-top: 1rem;"><strong>3 tool calls, 1 turn, live.</strong></p>
+            </div>
+            <div class="slide-number">4/8</div>
+        </div>
+        
+        <!-- Slide 5: Demo HeatRoute -->
+        <div class="slide" id="slide-5">
+            <h2>Demo 2: HeatRoute</h2>
+            <div class="demo-card">
+                <h4>User asks: "MU to Hayden at 12:30 without frying"</h4>
+                <p>Model calls <code>plan_heat_route</code> tool (22ms)</p>
+                <p>Shade-aware walking route, honest time estimate</p>
+                <p style="margin-top: 1rem;"><strong>5.6s end to end.</strong></p>
+                <p>The AI reaches for the tool mid-conversation, no page navigation needed.</p>
+            </div>
+            <div class="slide-number">5/8</div>
+        </div>
+        
+        <!-- Slide 6: Demo Notebooks -->
+        <div class="slide" id="slide-6">
+            <h2>Demo 3: Notebooks</h2>
+            <div class="demo-card">
+                <h4>Upload page photos in order</h4>
+                <p><strong>qwen3-vl-32b-instruct</strong> OCRs each page</p>
+                <p>Running digest kept: Topics / Key facts / Connections / Open questions, each cites a page number</p>
+                <p style="margin-top: 1rem;">Example digest:</p>
+                <div class="key-fact"><span class="label">Topics:</span> <span class="value">"Regular languages, finite automata (p.1)"</span></div>
+                <div class="key-fact"><span class="label">Key facts:</span> <span class="value">"Pumping lemma disproves 0^n1^n is regular (p.2)"</span></div>
+                <div class="key-fact"><span class="label">Connections:</span> <span class="value">"0^n1^n returns as a context-free grammar (p.3)"</span></div>
+                <p style="margin-top: 1rem;">Chat answers from digest + raw pages, cited.</p>
+                <p style="margin-top: 1rem;"><strong>Best line to demo live:</strong> "what is still unclear or unfinished?"</p>
+            </div>
+            <div class="slide-number">6/8</div>
+        </div>
+        
+        <!-- Slide 7: Built on AIR -->
+        <div class="slide" id="slide-7">
+            <h2>Built Entirely on AIR</h2>
+            <p style="margin-top: 2rem;">Models & measured latency:</p>
+            <div class="key-fact"><span class="label">qwen35-27b</span> <span class="value">(chat/reasoning, 1.7s, beat a 120B model on speed AND quality)</span></div>
+            <div class="key-fact"><span class="label">qwen3-vl-32b-instruct</span> <span class="value">(vision/OCR, 5-12s)</span></div>
+            <div class="key-fact"><span class="label">qwen3-embedding-4b</span> <span class="value">(retrieval embeddings, 278ms)</span></div>
+            <div class="key-fact"><span class="label">qwen3-coder-30b</span> <span class="value">(wrote most of the app itself via opencode)</span></div>
+            <p style="margin-top: 2rem;">Usage: <span class="stat">486</span> gateway requests, <span class="stat">4.5M</span> tokens processed during build week</p>
+            <p>Zero calls to anything but AIR.</p>
+            <div class="slide-number">7/8</div>
+        </div>
+        
+        <!-- Slide 8: Team + Limitation + Close -->
+        <div class="slide" id="slide-8">
+            <h2>Team InnovatAIRs</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <h4>Azhar</h4>
+                    <p>Platform (AIR stack, retrieval engine, tool registry)</p>
+                </div>
+                <div class="team-member">
+                    <h4>Nikhil</h4>
+                    <p>Frontend builder, MS Data Science & Engineering</p>
+                </div>
+                <div class="team-member">
+                    <h4>Tino</h4>
+                    <p>RAG & eval, AI Innovation Engineer at ASU</p>
+                </div>
+                <div class="team-member">
+                    <h4>Adam</h4>
+                    <p>Pitch/strategist, Physics PhD, MS AI in Business</p>
+                </div>
+            </div>
+            <p class="limitation">Honest limitation: retrieval is a proof of concept over a real corpus, not yet evaluated against gold labels.</p>
+            <p style="margin-top: 2rem;">Built for ASU students, by ASU students.</p>
+            <div class="slide-number">8/8</div>
+        </div>
+    </div>
+    
+    <div class="nav-hint">Use &larr;/&rarr; arrow keys to navigate</div>
+    
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        function updateSlidePosition() {
+            document.querySelector('.slides').style.transform = `translateX(-${currentSlide * 100}%)`;
+            document.querySelector('.slide-number').textContent = `${currentSlide + 1}/${totalSlides}`;
+        }
+        
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlidePosition();
+            }
+        }
+        
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlidePosition();
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+        
+        // Swipe support for touch devices
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, {passive: true});
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, {passive: true});
+        
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            if (touchEndX < touchStartX - swipeThreshold) {
+                nextSlide();
+            } else if (touchEndX > touchStartX + swipeThreshold) {
+                prevSlide();
+            }
+        }
+    </script>
+</body>
+</html>
