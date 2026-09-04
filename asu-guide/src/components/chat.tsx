@@ -6,7 +6,9 @@ import { Composer } from '@/components/composer'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 import { downscaleImage } from '@/lib/image'
 import { EventList } from '@/components/event-list'
+import { CouncilDebate } from '@/components/council-debate'
 import { HeatRouteCard } from '@/components/heatroute-card'
+import type { ChatMode } from '@/components/header'
 import { WeatherCard } from '@/components/weather-card'
 import type { HeatRoutePlan, WeatherReport } from '@/lib/tools'
 import { RichText } from '@/components/rich-text'
@@ -14,7 +16,7 @@ import { capitaliseReply } from '@/lib/capitalise'
 import Image from 'next/image'
 import { ToolTrace } from '@/components/tool-trace'
 import type { DemoEvent } from '@/lib/events'
-import type { ToolStep, TraceEvent } from '@/lib/tool-trace'
+import type { CouncilContribution, ToolStep, TraceEvent } from '@/lib/tool-trace'
 
 export type Turn = {
   id: string
@@ -34,6 +36,8 @@ export type Turn = {
   meta?: { model: string; ms: number; note?: string } | null
   /** Tool calls the assistant made on this turn, in order, failures included. */
   trace?: ToolStep[]
+  /** Positions considered before the Council chair wrote the final answer. */
+  council?: CouncilContribution[]
   /** Rehydrated from SQLite — its cited cards were not stored. */
   restored?: boolean
   /** Sent to the model but not drawn: what a vision model read off an image. */
@@ -52,7 +56,7 @@ export function Chat({
   asurite,
   onTurn,
   restoredTurns,
-  deep = false,
+  mode = 'fast',
 }: {
   events: DemoEvent[]
   asurite?: string | null
@@ -66,8 +70,8 @@ export function Chat({
     payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan; weather?: WeatherReport } | null
   }) => void
   restoredTurns?: Turn[] | null
-  /** Deep thinking, picked from the header's mode menu; the shell owns it. */
-  deep?: boolean
+  /** Reasoning mode picked from the header; the shell owns it. */
+  mode?: ChatMode
 }) {
   const [turns, setTurns] = useState<Turn[]>(restoredTurns ?? [])
   const [phase, setPhase] = useState<Phase>(restoredTurns?.length ? 'done' : 'idle')
@@ -99,12 +103,24 @@ export function Chat({
     trace: ToolStep[] = [],
     heatroute: HeatRoutePlan | null = null,
     weather: WeatherReport | null = null,
+    council: CouncilContribution[] = [],
   ) {
     const body = full.trim() || 'Sorry — I did not get an answer that time.'
     const id = uid()
     setTurns((t) => [
       ...t,
-      { id, role: 'assistant', content: '', kind, events: cards, meta, trace, heatroute, weather },
+      {
+        id,
+        role: 'assistant',
+        content: '',
+        kind,
+        events: cards,
+        meta,
+        trace,
+        heatroute,
+        weather,
+        council,
+      },
     ])
     setLiveTrace([])
     setPhase('streaming')
@@ -165,6 +181,7 @@ export function Chat({
         trace,
         (final.heatroute as HeatRoutePlan | undefined) ?? null,
         (final.weather as WeatherReport | undefined) ?? null,
+        final.council ?? [],
       )
     } catch (err) {
       appendAssistant(
@@ -185,15 +202,16 @@ export function Chat({
    */
   async function runChat(thread: Turn[], trace: ToolStep[]): Promise<ChatDone> {
     const applyTrace = (ev: TraceEvent) => {
-      if (ev.type === 'tool_start') {
+      if (ev.type === 'tool_start' || ev.type === 'council_start') {
         trace.push({
           id: ev.id,
-          name: ev.name,
+          name: ev.type === 'tool_start' ? ev.name : ev.role,
           label: ev.label,
           status: 'running',
           round: ev.round,
+          kind: ev.type === 'council_start' ? 'council' : 'tool',
         })
-      } else if (ev.type === 'tool_end') {
+      } else if (ev.type === 'tool_end' || ev.type === 'council_end') {
         const step = trace.find((s) => s.id === ev.id)
         if (step) {
           step.status = ev.ok ? 'ok' : 'error'
@@ -213,7 +231,7 @@ export function Chat({
           content: t.content,
           kind: t.hidden ? 'media' : t.kind,
         })),
-        deep,
+        mode,
       }),
     })
     if (!res.ok || !res.body) {
@@ -323,6 +341,7 @@ export function Chat({
         trace,
         (final.heatroute as HeatRoutePlan | undefined) ?? null,
         (final.weather as WeatherReport | undefined) ?? null,
+        final.council ?? [],
       )
     } catch (err) {
       appendAssistant(
@@ -427,6 +446,20 @@ export function Chat({
   }
 
   const isEmpty = turns.length === 0 && phase === 'idle'
+  const councilMode = mode === 'council'
+  const suggestions = councilMode
+    ? [
+        'Debate the best way to approach this decision',
+        'Challenge my reasoning on this idea',
+        'Compare both sides of this question',
+        'Find the strongest answer to my problem',
+      ]
+    : [
+        "What's happening this week?",
+        'Find me a coding club',
+        'Something social tonight',
+        'Free food on campus',
+      ]
 
   return (
     <>
@@ -455,7 +488,11 @@ export function Chat({
                 className="size-[64px] drop-shadow-[0_0_18px_rgba(255,198,39,0.25)]"
               />
               <h1 className="text-fg mt-5 max-w-[19ch] text-center text-[clamp(26px,7.6vw,32px)] leading-[1.18] font-normal tracking-[-0.03em]">
-                {asurite ? 'Where should we start?' : 'Meet Sol, your personal campus assistant'}
+                {councilMode
+                  ? 'What should the Council debate?'
+                  : asurite
+                    ? 'Where should we start?'
+                    : 'Meet Sol, your personal campus assistant'}
               </h1>
             </div>
           ) : (
@@ -493,6 +530,7 @@ export function Chat({
                 ) : (
                   <div key={t.id}>
                     {t.trace && t.trace.length > 0 && <ToolTrace steps={t.trace} />}
+                    {t.council && <CouncilDebate contributions={t.council} />}
                     <div className="text-fg text-[17px] leading-[1.55] tracking-[-0.01em]">
                       {/* Normalised at render, not on receipt, so conversations
                           already stored lowercase come back looking right. */}
@@ -531,9 +569,11 @@ export function Chat({
                   <p className="shimmer-text text-[17px] font-medium">
                     {liveTrace.some((s) => s.status === 'running')
                       ? 'Working…'
-                      : deep
-                        ? 'Thinking deeply…'
-                        : 'Thinking…'}
+                      : mode === 'council'
+                        ? 'The Council is debating…'
+                        : mode === 'deep'
+                          ? 'Thinking deeply…'
+                          : 'Thinking…'}
                   </p>
                 </div>
               )}
@@ -545,12 +585,7 @@ export function Chat({
       <div className="relative z-10 mx-auto w-full max-w-[820px] shrink-0 px-4 pb-5">
         {isEmpty && (
           <div className="no-scroll -mx-4 mb-3 flex gap-2 overflow-x-auto px-4">
-            {[
-              "What's happening this week?",
-              'Find me a coding club',
-              'Something social tonight',
-              'Free food on campus',
-            ].map((s) => (
+            {suggestions.map((s) => (
               <button
                 key={s}
                 type="button"
@@ -582,6 +617,7 @@ export function Chat({
             if (attachment) URL.revokeObjectURL(attachment.url)
             setAttachment(null)
           }}
+          placeholder={councilMode ? 'Ask the Council' : 'Ask Sol'}
         />
 
         <input

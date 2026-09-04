@@ -16,7 +16,6 @@ import {
   SearchIcon,
   TrashIcon,
   Plus,
-  CouncilIcon,
 } from '@/components/icons'
 import { RenameRow } from '@/components/rename-row'
 import { TypedTitle } from '@/components/typed-title'
@@ -221,28 +220,6 @@ export function SideNav({
               </span>
             </button>
           )}
-
-          {/* Preview surfaces. */}
-          <button
-            type="button"
-            onClick={() => onOpenPreview('council')}
-            className={`mt-3 flex w-full items-center gap-3 rounded-full py-2.5 pr-3 pl-4 text-left transition-colors ${
-              openPreview === 'council' ? 'bg-[#3a1723]' : 'hover:bg-white/5'
-            }`}
-          >
-            <CouncilIcon
-              className={`size-[17px] shrink-0 ${
-                openPreview === 'council' ? 'text-[#ffc627]' : 'text-muted'
-              }`}
-            />
-            <span
-              className={`min-w-0 flex-1 truncate text-[14.5px] ${
-                openPreview === 'council' ? 'font-medium text-white' : 'text-fg'
-              }`}
-            >
-              Study council
-            </span>
-          </button>
 
           <button
             type="button"

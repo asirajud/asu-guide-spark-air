@@ -4,68 +4,40 @@ export type PanelRole = {
   system_prompt: string
 }
 
-export type PanelDefinition = {
-  panelists: [PanelRole, PanelRole, PanelRole, PanelRole]
+export type CouncilDebateDefinition = {
+  reviewers: [PanelRole, PanelRole, PanelRole]
   moderator: PanelRole
 }
 
-export const PANEL_DEFINITIONS: Record<'study' | 'rubric', PanelDefinition> = {
-  study: {
-    panelists: [
-      {
-        role_name: 'pedagogy_1',
-        model: 'qwen35-27b',
-        system_prompt: 'Explain from historical perspective.',
-      },
-      {
-        role_name: 'pedagogy_2',
-        model: 'qwen35-27b',
-        system_prompt: 'Explain from real-world application perspective.',
-      },
-      {
-        role_name: 'pedagogy_3',
-        model: 'qwen35-27b',
-        system_prompt: 'Explain from mathematical formalism perspective.',
-      },
-      {
-        role_name: 'pedagogy_4',
-        model: 'qwen35-27b',
-        system_prompt: 'Explain from misconception perspective.',
-      },
-    ],
-    moderator: {
-      role_name: 'moderator',
+/**
+ * The chat Council starts from a tool-informed lead answer, then gives the same
+ * draft to three independent reviewers before the chair writes the final reply.
+ */
+export const COUNCIL_DEBATE: CouncilDebateDefinition = {
+  reviewers: [
+    {
+      role_name: 'Evidence reviewer',
       model: 'qwen35-27b',
-      system_prompt: 'Synthesize four perspectives into cohesive summary and verdict.',
+      system_prompt:
+        'Check the proposed answer against the conversation and any tool evidence. Identify unsupported claims, missing facts, or places where uncertainty must be stated.',
     },
-  },
-  rubric: {
-    panelists: [
-      {
-        role_name: 'rubric_1',
-        model: 'qwen35-27b',
-        system_prompt: 'Assess for clarity of explanation.',
-      },
-      {
-        role_name: 'rubric_2',
-        model: 'qwen35-27b',
-        system_prompt: 'Assess for relevance to course outcomes.',
-      },
-      {
-        role_name: 'rubric_3',
-        model: 'qwen35-27b',
-        system_prompt: 'Assess for depth of analysis.',
-      },
-      {
-        role_name: 'rubric_4',
-        model: 'qwen35-27b',
-        system_prompt: 'Assess for real-world examples alignment.',
-      },
-    ],
-    moderator: {
-      role_name: 'moderator',
+    {
+      role_name: 'Skeptic',
+      model: 'gpt-oss-120b',
+      system_prompt:
+        'Challenge the proposed answer. Look for weak assumptions, counterexamples, safety issues, and conclusions that do not follow from the evidence.',
+    },
+    {
+      role_name: 'Student advocate',
       model: 'qwen35-27b',
-      system_prompt: 'Consolidate rubric assessments into verdict and summary.',
+      system_prompt:
+        'Judge whether the proposed answer directly helps the student. Recommend a clearer, more practical answer and call out important tradeoffs it missed.',
     },
+  ],
+  moderator: {
+    role_name: 'Council chair',
+    model: 'qwen35-27b',
+    system_prompt:
+      'Resolve disagreements between the lead answer and the reviewers. Produce the most accurate, useful final answer supported by the available evidence.',
   },
 }

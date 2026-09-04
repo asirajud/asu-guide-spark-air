@@ -7,7 +7,6 @@ import { SideNav, type NotebookNavItem } from '@/components/side-nav'
 import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
 import { HeatRouteDemo } from '@/components/heatroute-demo'
-import { StudyCouncil } from '@/components/study-council'
 import { SHOW_HEATROUTE_PAGE } from '@/lib/heatroute-ui'
 import type { ChatSummary } from '@/lib/chats'
 import type { DemoEvent } from '@/lib/events'
@@ -133,7 +132,7 @@ export function AppShell({
   const [justTitled, setJustTitled] = useState<string | null>(null)
   const [restoredTurns, setRestoredTurns] = useState<Turn[] | null>(null)
   const [notebooks, setNotebooks] = useState<NotebookNavItem[]>([])
-  /** Fast vs deep thinking. Shown in the header title, toggled there or from the + tile. */
+  /** Fast, deep, or Council reasoning. Shown in the header and owned by the shell. */
   const [mode, setMode] = useState<ChatMode>('fast')
   /** Notebook open in the stage. Null means the chat (or a preview) is showing. */
   const [openNotebook, setOpenNotebook] = useState<string | null>(null)
@@ -438,8 +437,6 @@ export function AppShell({
             <HeatRouteDemo />
           ) : preview === 'brief' ? (
             <DailyBriefPreview events={events} />
-          ) : preview === 'council' ? (
-            <StudyCouncil />
           ) : openNotebook ? (
             <NotebookView
               key={openNotebook}
@@ -457,7 +454,7 @@ export function AppShell({
               asurite={asurite}
               onTurn={persist}
               restoredTurns={restoredTurns}
-              deep={mode === 'deep'}
+              mode={mode}
             />
           )}
         </div>

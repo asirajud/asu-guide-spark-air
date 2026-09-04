@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check, Chevron, ComposePencil, Hamburger } from '@/components/icons'
+import { Check, Chevron, ComposePencil, CouncilIcon, Hamburger } from '@/components/icons'
 
-export type ChatMode = 'fast' | 'deep'
+export type ChatMode = 'fast' | 'deep' | 'council'
 
 export const MODES: { id: ChatMode; label: string; model: string; hint: string }[] = [
   {
@@ -17,6 +17,12 @@ export const MODES: { id: ChatMode; label: string; model: string; hint: string }
     label: 'Deep thinking',
     model: 'gpt-oss-120b',
     hint: 'Slower, more careful. A reasoning model with its budget turned up.',
+  },
+  {
+    id: 'council',
+    label: 'Council',
+    model: '4 agents + chair',
+    hint: 'A lead answer is challenged by three AIR agents, then reconciled by a chair.',
   },
 ]
 
@@ -120,6 +126,7 @@ export function Header({
                 >
                   <span className="min-w-0 flex-1">
                     <span className="text-fg flex items-center gap-2 text-[15px]">
+                      {m.id === 'council' && <CouncilIcon className="size-4 text-[#ffc627]" />}
                       {m.label}
                       <span className="text-muted font-mono text-[11.5px]">{m.model}</span>
                     </span>
