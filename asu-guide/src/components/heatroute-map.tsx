@@ -162,13 +162,17 @@ function addHeatRouteLayers(map: MapLibreMap) {
   }
 }
 
-function fitSelectedRoute(map: MapLibreMap, route: EvaluatedRoute | null) {
+function fitSelectedRoute(map: MapLibreMap, route: EvaluatedRoute | null, compact = false) {
   const bounds = routeBounds(route)
   if (!bounds) return
+  // The big bottom padding leaves room for the /heat page's route-details
+  // overlay. In a 360px chat card it pushes the route below the visible area.
   map.fitBounds(bounds, {
     duration: 450,
-    maxZoom: 17.4,
-    padding: { top: 80, right: 80, bottom: 180, left: 80 },
+    maxZoom: compact ? 17 : 17.4,
+    padding: compact
+      ? { top: 56, right: 40, bottom: 40, left: 40 }
+      : { top: 80, right: 80, bottom: 180, left: 80 },
   })
 }
 
@@ -234,7 +238,7 @@ export function HeatRouteMap({
         addHeatRouteLayers(map)
         source(map, SEGMENT_SOURCE_ID)?.setData(latest.segmentData)
         source(map, POINT_SOURCE_ID)?.setData(latest.pointData)
-        fitSelectedRoute(map, latest.selectedRoute)
+        fitSelectedRoute(map, latest.selectedRoute, fit)
         ready = true
         if (timeoutId) clearTimeout(timeoutId)
         if (retryId) clearInterval(retryId)
@@ -321,8 +325,8 @@ export function HeatRouteMap({
     if (!mapReady || !mapRef.current) return
     source(mapRef.current, SEGMENT_SOURCE_ID)?.setData(segmentData)
     source(mapRef.current, POINT_SOURCE_ID)?.setData(pointData)
-    fitSelectedRoute(mapRef.current, selectedRoute)
-  }, [mapReady, pointData, segmentData, selectedRoute])
+    fitSelectedRoute(mapRef.current, selectedRoute, fit)
+  }, [mapReady, pointData, segmentData, selectedRoute, fit])
 
   if (!styleUrl) {
     return (
