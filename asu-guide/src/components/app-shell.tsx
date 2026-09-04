@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat } from '@/components/chat'
-import { Header } from '@/components/header'
+import { Header, type ChatMode } from '@/components/header'
 import { SideNav, type NotebookNavItem } from '@/components/side-nav'
 import { NotebookView } from '@/components/notebook-view'
 import { DailyBriefPreview } from '@/components/daily-brief-preview'
@@ -102,6 +102,8 @@ export function AppShell({
   const [justTitled, setJustTitled] = useState<string | null>(null)
   const [restoredTurns, setRestoredTurns] = useState<Turn[] | null>(null)
   const [notebooks, setNotebooks] = useState<NotebookNavItem[]>([])
+  /** Fast vs deep thinking. Shown in the header title, toggled there or from the + tile. */
+  const [mode, setMode] = useState<ChatMode>('fast')
   /** Notebook open in the stage. Null means the chat (or a preview) is showing. */
   const [openNotebook, setOpenNotebook] = useState<string | null>(null)
 
@@ -366,6 +368,8 @@ export function AppShell({
           }
           onNewChat={newChat}
           asurite={asurite}
+          mode={mode}
+          onModeChange={setMode}
         />
         {/* Full-width stage — the thread centres itself inside it, so the
             ambient glow spans the whole area instead of ending mid-screen. */}
@@ -389,6 +393,7 @@ export function AppShell({
               asurite={asurite}
               onTurn={persist}
               restoredTurns={restoredTurns}
+              deep={mode === 'deep'}
             />
           )}
         </div>

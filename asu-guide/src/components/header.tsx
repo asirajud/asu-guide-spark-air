@@ -1,18 +1,61 @@
 'use client'
 
-import { Chevron, ComposePencil, Hamburger } from '@/components/icons'
+import { useEffect, useRef, useState } from 'react'
+import { Check, Chevron, ComposePencil, Hamburger } from '@/components/icons'
+
+export type ChatMode = 'fast' | 'deep'
+
+export const MODES: { id: ChatMode; label: string; model: string; hint: string }[] = [
+  {
+    id: 'fast',
+    label: 'Fast',
+    model: 'qwen35-27b',
+    hint: 'Answers in a couple of seconds. The default.',
+  },
+  {
+    id: 'deep',
+    label: 'Deep thinking',
+    model: 'gpt-oss-120b',
+    hint: 'Slower, more careful. A reasoning model with its budget turned up.',
+  },
+]
 
 /** Mirrors the Gemini app bar: hamburger · "Sol AIR ⌄ •" · compose · avatar. */
 export function Header({
   onMenu,
   onNewChat,
   asurite,
+  mode = 'fast',
+  onModeChange,
 }: {
   onMenu?: () => void
   onNewChat?: () => void
   /** ASURITE of the signed-in user, or null when signed out. */
   asurite?: string | null
+  /** Which model answers: shown in the title, picked from its dropdown. */
+  mode?: ChatMode
+  onModeChange?: (mode: ChatMode) => void
 }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const current = MODES.find((m) => m.id === mode) ?? MODES[0]
+
+  // Close on outside pointerdown (a click listener would fire after the
+  // trigger's own onClick and reopen what it just closed) and on Escape.
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('pointerdown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 px-4">
       {onMenu && (
@@ -26,15 +69,72 @@ export function Header({
         </button>
       )}
 
-      <div className="flex flex-1 items-center gap-1.5 pl-1">
-        <span className="text-[18px] leading-none font-medium tracking-[-0.02em] text-white">
-          Sol
-        </span>
-        <span className="text-muted text-[18px] leading-none font-normal tracking-[-0.02em]">
-          AIR
-        </span>
-        <Chevron className="text-fg mt-[1px] size-[18px]" />
-        <span className="bg-asu-gold ml-1.5 size-[7px] rounded-full" />
+      <div ref={menuRef} className="relative flex flex-1 items-center pl-1">
+        <button
+          type="button"
+          onClick={() => onModeChange && setOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={`Mode: ${current.label}`}
+          className={`flex items-center gap-1.5 rounded-full py-1.5 pr-2.5 pl-2 transition-colors ${
+            onModeChange ? 'hover:bg-white/5' : 'cursor-default'
+          }`}
+        >
+          <span className="text-[18px] leading-none font-medium tracking-[-0.02em] text-white">
+            Sol
+          </span>
+          <span className="text-muted text-[18px] leading-none font-normal tracking-[-0.02em]">
+            AIR
+          </span>
+          {mode !== 'fast' && (
+            <span className="ml-1 rounded-full border border-[#ffc627]/40 bg-[#ffc627]/10 px-2 py-0.5 text-[12px] leading-none text-[#ffc627]">
+              {current.label}
+            </span>
+          )}
+          <Chevron
+            className={`text-fg mt-[1px] size-[18px] transition-transform ${open ? 'rotate-180' : ''}`}
+          />
+          <span className="bg-asu-gold ml-1 size-[7px] rounded-full" />
+        </button>
+
+        {open && onModeChange && (
+          <div
+            role="menu"
+            className="animate-rise absolute top-full left-1 z-40 mt-2 w-[300px] rounded-2xl border border-white/10 bg-[#1e1f20] p-1.5 shadow-2xl shadow-black/60"
+          >
+            {MODES.map((m) => {
+              const active = m.id === mode
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => {
+                    onModeChange(m.id)
+                    setOpen(false)
+                  }}
+                  className={`flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    active ? 'bg-white/[0.06]' : 'hover:bg-white/5'
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="text-fg flex items-center gap-2 text-[15px]">
+                      {m.label}
+                      <span className="text-muted font-mono text-[11.5px]">{m.model}</span>
+                    </span>
+                    <span className="text-muted mt-0.5 block text-[12.5px] leading-snug">
+                      {m.hint}
+                    </span>
+                  </span>
+                  <Check
+                    className={`mt-1 size-4 shrink-0 ${active ? 'text-[#ffc627]' : 'text-transparent'}`}
+                  />
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <button
