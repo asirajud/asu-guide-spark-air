@@ -44,7 +44,7 @@ export function CouncilDebate({ contributions }: { contributions: CouncilContrib
                   </span>
                 </div>
                 <p
-                  className={`text-fg/85 mt-1.5 rounded-2xl rounded-tl-md border bg-white/[0.035] px-4 py-3 text-[14px] leading-relaxed whitespace-pre-wrap ${speaker.bubbleClass}`}
+                  className={`text-fg/85 mt-1.5 rounded-2xl rounded-tl-md border bg-white/[0.035] px-4 py-3 text-[16px] leading-[1.55] tracking-[-0.01em] whitespace-pre-wrap ${speaker.bubbleClass}`}
                 >
                   {contribution.text}
                 </p>
