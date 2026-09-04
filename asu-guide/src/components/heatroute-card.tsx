@@ -147,7 +147,7 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
           role="dialog"
           aria-modal="true"
           aria-label={`${plan.start.label} to ${plan.destination.label} map`}
-          className="fixed inset-0 z-50 flex flex-col bg-black/85 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 p-2 backdrop-blur-sm sm:p-4"
         >
           <button
             type="button"
@@ -177,47 +177,13 @@ export function HeatRouteCard({ plan }: { plan: HeatRoutePlan }) {
                 <Close className="size-[18px]" />
               </button>
             </div>
-            <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="relative min-h-[320px]">
-                <HeatRouteMap
-                  routes={routes}
-                  selectedRoute={selected}
-                  recommended={recommended}
-                  fit
-                />
-              </div>
-              <ul className="thin-scroll flex flex-col gap-1.5 overflow-y-auto border-t border-white/6 p-3 lg:border-t-0 lg:border-l">
-                {plan.routes.map((r) => {
-                  const active = r.id === (selected?.id ?? plan.recommendedId)
-                  return (
-                    <li key={r.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(r.id)}
-                        className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-2.5 text-left transition-colors ${
-                          active
-                            ? 'border-[#ffc627]/40 bg-[#ffc627]/[0.07]'
-                            : 'border-transparent hover:bg-white/[0.04]'
-                        }`}
-                      >
-                        <span className="min-w-0 flex-1">
-                          <span className="text-fg block text-[15.5px]">{r.label}</span>
-                          <span className="text-muted block text-[13px]">
-                            {r.protectedMinutes}m protected · {r.waterStops}{' '}
-                            {r.waterStops === 1 ? 'water stop' : 'water stops'}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-right tabular-nums">
-                          <span className="text-fg block text-[17px]">{r.durationMinutes}m</span>
-                          <span className={`block text-[13px] ${RISK[r.heatRisk] ?? 'text-muted'}`}>
-                            {r.exposurePercent}% sun
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+            <div className="relative min-h-0 flex-1">
+              <HeatRouteMap
+                routes={routes}
+                selectedRoute={selected}
+                recommended={recommended}
+                fit
+              />
             </div>
           </div>
         </div>
