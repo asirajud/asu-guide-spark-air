@@ -17,6 +17,9 @@ pnpm db:push && pnpm db:seed   # builds local.db from data/asu-events.json
 pnpm dev                       # http://localhost:3000
 ```
 
+HeatRoute uses its SVG pilot map unless `NEXT_PUBLIC_HEATROUTE_MAP_STYLE_URL` is
+set in `.env.local` to a MapLibre-compatible provider style URL.
+
 Sign-in needs `asu-sso` on :4000; tools need `asu-tools-api` on 127.0.0.1:5000,
 which in turn dispatches to `asu-events-api` (:5001) and `asu-search-api` (:5003).
 
