@@ -108,6 +108,21 @@ export function Chat({
     ])
     setLiveTrace([])
     setPhase('streaming')
+    // Persist NOW, not when the word-by-word reveal ends: a refresh mid-reveal
+    // used to lose the whole turn (and its cards) because the save had not fired.
+    onTurn?.({
+      role: 'assistant',
+      content: body,
+      kind,
+      payload:
+        cards.length || heatroute || weather
+          ? {
+              ...(cards.length ? { events: cards } : {}),
+              ...(heatroute ? { heatroute } : {}),
+              ...(weather ? { weather } : {}),
+            }
+          : null,
+    })
     // Split on whitespace but KEEP the separators, so newlines and indentation
     // survive the reveal. Joining tokens with ' ' flattens code blocks.
     const words = body.split(/(\s+)/).filter((w) => w.length > 0)
@@ -116,21 +131,7 @@ export function Chat({
         setTimeout(() => {
           const partial = words.slice(0, i + 1).join('')
           setTurns((t) => t.map((x) => (x.id === id ? { ...x, content: partial } : x)))
-          if (i === words.length - 1) {
-            setPhase('done')
-            onTurn?.({
-              role: 'assistant',
-              content: body,
-              kind,
-              payload:
-                cards.length || heatroute
-                  ? {
-                      ...(cards.length ? { events: cards } : {}),
-                      ...(heatroute ? { heatroute } : {}),
-                    }
-                  : null,
-            })
-          }
+          if (i === words.length - 1) setPhase('done')
         }, i * 18),
       )
     })
