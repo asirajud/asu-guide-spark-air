@@ -20,6 +20,14 @@ export async function GET(_req: Request, { params }: Ctx) {
   return NextResponse.json(found)
 }
 
+const PAYLOAD_CAP = 40_000
+
+function serialisePayload(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null
+  const json = JSON.stringify(value)
+  return json.length > PAYLOAD_CAP ? null : json
+}
+
 /** Rename, pin/unpin, or append a message to an existing conversation. */
 export async function PATCH(req: Request, { params }: Ctx) {
   const session = await getSession()
@@ -38,6 +46,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       content: string
       kind?: string
       imageName?: string | null
+      /** Cards / plan drawn on the turn; stored as JSON, capped so a runaway client cannot bloat a row. */
+      payload?: unknown
     }
   }
 
@@ -56,6 +66,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       content: body.append.content,
       kind: body.append.kind ?? 'text',
       imageName: body.append.imageName ?? null,
+      payload: serialisePayload(body.append.payload),
       createdAt: new Date(),
     })
   }

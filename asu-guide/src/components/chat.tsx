@@ -59,6 +59,8 @@ export function Chat({
     content: string
     kind: string
     imageName?: string | null
+    /** What was drawn with the reply, so a restored chat can draw it again. */
+    payload?: { events?: DemoEvent[]; heatroute?: HeatRoutePlan } | null
   }) => void
   restoredTurns?: Turn[] | null
   /** Deep thinking, picked from the header's mode menu; the shell owns it. */
@@ -112,7 +114,18 @@ export function Chat({
           setTurns((t) => t.map((x) => (x.id === id ? { ...x, content: partial } : x)))
           if (i === words.length - 1) {
             setPhase('done')
-            onTurn?.({ role: 'assistant', content: body, kind })
+            onTurn?.({
+              role: 'assistant',
+              content: body,
+              kind,
+              payload:
+                cards.length || heatroute
+                  ? {
+                      ...(cards.length ? { events: cards } : {}),
+                      ...(heatroute ? { heatroute } : {}),
+                    }
+                  : null,
+            })
           }
         }, i * 18),
       )
