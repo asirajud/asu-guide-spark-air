@@ -94,3 +94,65 @@ export const toolSettings = sqliteTable('tool_settings', {
 })
 
 export type ToolSettingRow = typeof toolSettings.$inferSelect
+
+/**
+ * A Notebook: a durable workspace that owns the pages a student uploaded and
+ * the running understanding built from them. Scoped to one ASURITE.
+ */
+export const notebooks = sqliteTable('notebooks', {
+  id: text('id').primaryKey(),
+  asurite: text('asurite').notNull().default(''),
+  name: text('name').notNull().default('New notebook'),
+  /** Running understanding of every page read so far, as markdown. Rewritten after each page. */
+  digest: text('digest').notNull().default(''),
+  /** Model that last rewrote the digest, for the audit line in the UI. */
+  digestModel: text('digest_model').notNull().default(''),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+/** One uploaded page image and what the vision model read off it. */
+export const notebookPages = sqliteTable('notebook_pages', {
+  id: text('id').primaryKey(),
+  notebookId: text('notebook_id')
+    .notNull()
+    .references(() => notebooks.id, { onDelete: 'cascade' }),
+  /** 1-based position in the notebook, in upload order. */
+  position: integer('position').notNull(),
+  imageName: text('image_name').notNull().default(''),
+  /** Full transcription + description of the page as read by the OCR model. */
+  reading: text('reading').notNull().default(''),
+  /** 'read' when the reading landed, 'failed' when every model refused. */
+  status: text('status', { enum: ['read', 'failed'] })
+    .notNull()
+    .default('read'),
+  model: text('model').notNull().default(''),
+  ms: integer('ms').notNull().default(0),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type NotebookRow = typeof notebooks.$inferSelect
+export type NotebookPageRow = typeof notebookPages.$inferSelect
+
+/**
+ * Feature switches an admin flips from /s/admin. Absence means the compiled-in
+ * default (see lib/features.ts); only an explicit choice is stored.
+ */
+export const featureSettings = sqliteTable('feature_settings', {
+  feature: text('feature').primaryKey(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull(),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type FeatureSettingRow = typeof featureSettings.$inferSelect
+
+/** Small scalar settings an admin edits from /s/admin (e.g. notebook page cap). Key/value, string-typed. */
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedBy: text('updated_by').notNull().default(''),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+})
+
+export type AppSettingRow = typeof appSettings.$inferSelect

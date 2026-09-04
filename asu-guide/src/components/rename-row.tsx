@@ -29,7 +29,14 @@ export function RenameRow({
   const done = useRef(false)
 
   useEffect(() => {
-    ref.current?.select()
+    // Next frame: the ⋮ menu that opened this row is still unmounting and its
+    // outside-pointerdown handler runs in the same tick, so a synchronous
+    // focus() here was lost and the row appeared without a cursor.
+    const id = requestAnimationFrame(() => {
+      ref.current?.focus()
+      ref.current?.select()
+    })
+    return () => cancelAnimationFrame(id)
   }, [])
 
   function commit() {

@@ -1,8 +1,17 @@
 # Roadmap
 
-Where Sol goes after the Spark build. Everything here is unbuilt; the only
-thing shipped is the Notebooks entry in the side nav, which opens a static
-preview and calls nothing.
+Where Sol goes after the Spark build.
+
+**Shipped so far (the sequential-ingest slice of Notebooks):** a notebook is a
+real, per-ASURITE row; a student drops in any number of page photos; an AIR
+vision model (`qwen3-vl-32b-instruct`, `gemma4-31b-it` fallback) transcribes
+them **one at a time, in order**, each read given the digest of the pages before
+it; after every page `qwen35-27b` rewrites one running **digest** (topics, key
+facts, connections, open questions, all page-cited); and questions asked inside
+the notebook are answered against that digest plus the raw readings, hard-
+filtered to the notebook's id. There is no vector index and no entity graph yet
+— every page reading is sent whole, capped at 24K characters. That is fine at
+demo scale and is exactly the ceiling the rest of this section is about.
 
 ## Notebooks
 

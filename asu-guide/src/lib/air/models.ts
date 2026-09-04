@@ -6,7 +6,8 @@
  * They are NOT tried because a model is slow — see ./call.ts for that
  * distinction. Latencies below were measured against the live gateway.
  */
-export type AirService = 'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image'
+export type AirService =
+  'title' | 'vision' | 'asr' | 'chat' | 'video' | 'summarize' | 'image' | 'ocr'
 
 export const AIR_BASE = process.env.AIR_BASE_URL ?? 'https://openai.rc.asu.edu/v1'
 
@@ -27,6 +28,11 @@ export const MODELS: Record<AirService, string[]> = {
   // Describing an uploaded image. gemma4-31b-it was 1.78s vs 6.5s for qwen3-vl.
   // gemma3-27b-it is deliberately absent: vision is disabled on it (HTTP 400).
   vision: ['gemma4-31b-it', 'qwen3-vl-32b-instruct', 'llama4-scout-17b', 'qwen35-27b'],
+
+  // Transcribing a page of a student's notebook. Fidelity beats speed here:
+  // qwen3-vl keeps small handwriting and formulas (7.5s) where gemma4's heavy
+  // downsample (~300 prompt tokens per image) drops them.
+  ocr: ['qwen3-vl-32b-instruct', 'gemma4-31b-it', 'qwen35-27b'],
 
   // Speech to text. qwen3-asr is ~3x faster than whisper at equal accuracy on
   // short utterances; whisper is the fallback and adds timestamps.

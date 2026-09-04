@@ -58,6 +58,11 @@ export const CAPABILITIES: Capability[] = [
         hint: 'Describes flyers and photos. Vision is disabled on some models even when the catalog lists them.',
       },
       {
+        service: 'ocr',
+        label: 'Page transcription',
+        hint: 'Reads pages uploaded into a Notebook one at a time. Fidelity matters more than speed here.',
+      },
+      {
         service: 'image',
         label: 'Image generation',
         hint: 'Diffusion only. Most models in the catalog cannot do this at all.',

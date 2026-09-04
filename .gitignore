@@ -38,3 +38,5 @@ next-env.d.ts
 .air-sentinel
 *.tsbuildinfo
 .history/
+.air-done/
+
