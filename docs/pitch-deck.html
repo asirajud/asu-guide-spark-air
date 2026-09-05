@@ -1,3 +1,6 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sol Pitch Deck</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
@@ -240,7 +243,7 @@
     line-height: 1.9;
   }
   .trace .prompt { color: var(--ink); }
-  .trace .prompt::before { content: "&rsaquo; "; color: var(--maroon-text); }
+  .trace .prompt::before { content: "\203A\00a0"; color: var(--maroon-text); }
   .trace .step { color: var(--ink-2); display: flex; gap: 10px; }
   .trace .step .arrow { color: var(--muted); flex: none; }
   .trace .step.fail .status { color: var(--maroon-text); }
@@ -260,6 +263,20 @@
   .digest .card .h { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 6px; }
   .digest .card .b { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
   .digest .card .b sup { color: var(--muted); font-family: var(--font-mono); }
+
+  /* ---------- 07 architecture ---------- */
+  .arch { margin: 0; }
+  .arch img {
+    display: block; margin: 0 auto;
+    /* the diagram is 3:2 — cap the height so the caption stays on the slide */
+    max-width: 100%; max-height: 68vh; width: auto; height: auto;
+    border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-2);
+  }
+  .arch figcaption {
+    margin-top: 18px; text-align: center;
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--muted);
+  }
+  .arch figcaption b { color: var(--ink-2); font-weight: 400; }
 
   /* ---------- 07 models ---------- */
   .model-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
@@ -333,7 +350,7 @@
         <span class="tag">qwen35-27b</span>
         <span class="tag">qwen3-vl-32b-instruct</span>
         <span class="tag">qwen3-embedding-4b</span>
-        <span class="tag gold">86 open-weight AIR models, one gateway</span>
+        <span class="tag gold">48 open-weight AIR models, one gateway</span>
       </div>
     </div>
   </section>
@@ -351,7 +368,7 @@
           </li>
           <li>
             <span class="n">02</span>
-            <span><span class="lead">Deadlines buried in long official emails</span><span class="sub">The action item is in there &mdash; nobody reads to paragraph four.</span></span>
+            <span><span class="lead">Which walk has shade at 3 PM in 105&deg;F</span><span class="sub">The forecast and the tree cover both exist. Nothing answers the question.</span></span>
           </li>
           <li>
             <span class="n">03</span>
@@ -429,7 +446,7 @@
     <div class="content">
       <p class="eyebrow"><span class="dot"></span>Demo 3 &mdash; notebooks</p>
       <h2 style="font-size:clamp(28px,3.6vw,40px); font-weight:500; max-width:24ch;">Same engine, second corpus &mdash; this time it's your own notes.</h2>
-      <p style="color:var(--ink-2); font-size:16.5px; max-width:56ch; margin:14px 0 30px; line-height:1.6;">Upload page photos in order. Sol OCRs each one, keeps a running digest as it goes, then answers questions from the digest plus the raw pages &mdash; citing the page it came from.</p>
+      <p style="color:var(--ink-2); font-size:16.5px; max-width:56ch; margin:14px 0 30px; line-height:1.6;">Upload page photos in order. Sol OCRs each one, keeps a running digest as it goes, then answers questions from the digest plus the raw pages &mdash; citing the page it came from. Ships behind an admin feature switch, off by default.</p>
       <div class="digest">
         <div class="card"><div class="h">Topics</div><div class="b">Regular languages, finite automata <sup>p.1</sup></div></div>
         <div class="card"><div class="h">Key facts</div><div class="b">Pumping lemma disproves <code>0&#8319;1&#8319;</code> is regular <sup>p.2</sup></div></div>
@@ -439,7 +456,18 @@
     </div>
   </section>
 
-  <!-- 07 &mdash; Built on AIR -->
+  <!-- 07 &mdash; Architecture -->
+  <section class="slide" data-note="One engine, seven services, seven tools. Say it plainly: the model decides which tool to reach for; the registry validates the call before it runs. Every model box on this diagram is an AIR model.">
+    <div class="content">
+      <p class="eyebrow"><span class="dot"></span>How it fits together</p>
+      <figure class="arch">
+        <img src="../assets/architecture-2026-09-03-1536x1024.png" alt="Sol architecture: the web app and demo identity provider call a tool registry, which dispatches to the events, search, HeatRoute and weather services; every model call goes to the ASU AI Research Platform gateway." />
+        <figcaption><b>Seven tools, one registry.</b> Every call is JSON&#8209;Schema validated before dispatch &mdash; and every model box is an AIR model.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 08 &mdash; Built on AIR -->
   <section class="slide" data-note="Every model call this app makes goes to openai.rc.asu.edu. Point at the usage dashboard export as harder evidence than any claim in the deck.">
     <div class="content narrow">
       <p class="eyebrow"><span class="dot"></span>Built entirely on ASU AIR</p>
@@ -447,28 +475,29 @@
         <thead><tr><th>Model</th><th>Does</th><th style="text-align:right">Latency</th></tr></thead>
         <tbody>
           <tr><td class="name">qwen35-27b</td><td class="role">Chat &amp; reasoning &mdash; beat a 120B model on speed <em>and</em> quality</td><td class="lat stat">1.7s</td></tr>
-          <tr><td class="name">qwen3-vl-32b-instruct</td><td class="role">Vision &mdash; flyer &amp; notebook OCR</td><td class="lat stat">5&ndash;12s</td></tr>
+          <tr><td class="name">qwen3-vl-32b-instruct</td><td class="role">Notebook page OCR &mdash; and video</td><td class="lat stat">5&ndash;12s</td></tr>
+          <tr><td class="name">gemma4-31b-it</td><td class="role">Vision &mdash; reads a flyer photo</td><td class="lat stat">1.8s</td></tr>
           <tr><td class="name">qwen3-embedding-4b</td><td class="role">Hybrid retrieval over the events corpus</td><td class="lat stat">278ms</td></tr>
-          <tr><td class="name">qwen3-coder-30b</td><td class="role">Wrote most of the app itself, via opencode</td><td class="lat stat">workhorse</td></tr>
+          <tr><td class="name">qwen3-coder-30b</td><td class="role">Agentic coding on AIR &mdash; service code written through opencode</td><td class="lat stat">build&#8209;time</td></tr>
         </tbody>
       </table>
       <div class="usage-row">
-        <div class="u"><b class="stat">486</b><span>gateway requests, build week</span></div>
-        <div class="u"><b class="stat">4.5M</b><span>tokens processed</span></div>
-        <div class="u"><b class="stat">0</b><span>calls to anything but AIR</span></div>
+        <div class="u"><b class="stat">486</b><span>gateway requests <i>(Sep&nbsp;2&ndash;3 snapshot)</i></span></div>
+        <div class="u"><b class="stat">4.5M</b><span>tokens processed <i>(same snapshot)</i></span></div>
+        <div class="u"><b class="stat">0</b><span>model calls to anything but AIR</span></div>
       </div>
     </div>
   </section>
 
-  <!-- 08 &mdash; Team + close -->
+  <!-- 09 &mdash; Team + close -->
   <section class="slide" data-note="Name who did what &mdash; it's a scored criterion. Close on the honest caveat, then the ask.">
     <div class="content">
       <p class="eyebrow"><span class="dot"></span>Team InnovatAIRs</p>
       <div class="team-grid">
         <div class="member"><div class="role">Platform</div><div class="name">Azhar</div><div class="desc">Owns the AIR stack, retrieval engine, tool registry.</div></div>
-        <div class="member"><div class="role">Frontend</div><div class="name">Nikhil</div><div class="desc">Builder, MS Data Science &amp; Engineering.</div></div>
-        <div class="member"><div class="role">RAG &amp; eval</div><div class="name">Tino</div><div class="desc">AI Innovation Engineer at ASU.</div></div>
-        <div class="member"><div class="role">Pitch</div><div class="name">Adam</div><div class="desc">Physics PhD, MS AI in Business.</div></div>
+        <div class="member"><div class="role">Frontend</div><div class="name">Nikhil</div><div class="desc">Interface build and review passes. MS Data Science &amp; Engineering.</div></div>
+        <div class="member"><div class="role">HeatRoute</div><div class="name">Tino</div><div class="desc">Shipped the shade-aware routing engine and its map. AI Innovation Engineer at ASU.</div></div>
+        <div class="member"><div class="role">Pitch</div><div class="name">Adam</div><div class="desc">Owns the story and delivers it. Physics PhD, MS AI in Business.</div></div>
       </div>
       <div class="caveat"><b>Where we're honest about the gap:</b> retrieval is a proof of concept over a real corpus, not yet evaluated against gold labels. The engine is real; the evaluation is next.</div>
       <p class="ask">Give Sol a wider corpus and a real cohort &mdash; <span class="mark">the engine is corpus-agnostic already.</span></p>
